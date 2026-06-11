@@ -1,832 +1,655 @@
-const revealItems = document.querySelectorAll(".reveal");
+/* VetraEstate — полная логика v2 */
+'use strict';
 
-const revealObserver = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add("visible");
-    }
-  });
-}, { threshold: 0.12 });
-
-revealItems.forEach((item) => revealObserver.observe(item));
-
-const filters = document.querySelectorAll(".filter");
-const projects = document.querySelectorAll(".project");
-
-filters.forEach((filter) => {
-  filter.addEventListener("click", () => {
-    filters.forEach((f) => f.classList.remove("active"));
-    filter.classList.add("active");
-
-    const selected = filter.dataset.filter;
-
-    projects.forEach((project) => {
-      const categories = project.dataset.category;
-      const shouldShow = selected === "all" || categories.includes(selected);
-      project.classList.toggle("hidden", !shouldShow);
-    });
-  });
+// ══ PAGE LOADER ══
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const loader = document.getElementById('page-loader');
+    if (loader) loader.classList.add('hidden');
+  }, 2200);
 });
 
-const navToggle = document.querySelector(".nav-toggle");
-const navLinks = document.querySelector(".nav-links");
+// ══ HERO CANVAS — particles ══
+(function initHeroCanvas() {
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
 
-navToggle.addEventListener("click", () => {
-  navLinks.classList.toggle("open");
-});
-
-navLinks.querySelectorAll("a").forEach((link) => {
-  link.addEventListener("click", () => navLinks.classList.remove("open"));
-});
-
-
-
-
-// Layout-linked smart installment calculators
-function formatRub(value) {
-  const n = Math.max(Math.round(Number(value) || 0), 0);
-  return n.toLocaleString("ru-RU") + " ₽";
-}
-
-function getSmartPrice(area, down, minDown, maxPrice, fullPrice) {
-  const fullPaymentTotal = area * fullPrice;
-
-  if (down <= minDown) return maxPrice;
-  if (down >= fullPaymentTotal) return fullPrice;
-
-  const progress = (down - minDown) / Math.max(fullPaymentTotal - minDown, 1);
-  const price = maxPrice - progress * (maxPrice - fullPrice);
-
-  return Math.round(price / 1000) * 1000;
-}
-
-function setAnimatedText(el, text) {
-  if (!el) return;
-  if (el.textContent !== text) {
-    el.textContent = text;
-    el.classList.remove("number-pop");
-    void el.offsetWidth;
-    el.classList.add("number-pop");
-    setTimeout(() => el.classList.remove("number-pop"), 260);
-  }
-}
-
-function updateCalc(calcBox) {
-  const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
-  let down = Number(calcBox.querySelector(".calc-down")?.value || 0);
-  const term = Math.max(Number(calcBox.querySelector(".calc-term")?.value || 1), 1);
-
-  const maxPrice = Number(calcBox.dataset.currentMaxprice || calcBox.dataset.defaultPrice || 0);
-  const fullPrice = Number(calcBox.dataset.currentFullprice || calcBox.dataset.defaultFullprice || 0);
-  const minDown = Number(calcBox.dataset.currentMindown || 0);
-
-  const smartPrice = getSmartPrice(area, down, minDown, maxPrice, fullPrice);
-  const priceInput = calcBox.querySelector(".calc-price");
-  if (priceInput) priceInput.value = smartPrice;
-
-  const total = area * smartPrice;
-  if (down > total) {
-    down = total;
-    const downInput = calcBox.querySelector(".calc-down");
-    if (downInput) downInput.value = Math.round(down);
+  function resize() {
+    W = canvas.width = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
   }
 
-  const rest = Math.max(total - down, 0);
-  const monthly = rest / term;
-  const fullTotal = area * fullPrice;
-
-  setAnimatedText(calcBox.querySelector(".calc-total"), formatRub(total));
-  setAnimatedText(calcBox.querySelector(".calc-rest"), formatRub(rest));
-  setAnimatedText(calcBox.querySelector(".calc-monthly"), formatRub(monthly) + "/мес");
-  setAnimatedText(calcBox.querySelector(".calc-full"), formatRub(fullTotal));
-
-  const project = calcBox.querySelector(".calc-project")?.textContent.trim() || "";
-  const plan = calcBox.querySelector(".calc-plan-title")?.textContent.trim() || "";
-  const msg = `Здравствуйте! Хочу отправить расчет с сайта VetraEstate.
-Объект: ${project}
-Планировка: ${plan}
-Площадь: ${area} м²
-Цена за м²: ${formatRub(smartPrice)}
-Первый взнос: ${formatRub(down)}
-Срок рассрочки: ${term} мес.
-Стоимость квартиры: ${formatRub(total)}
-Остаток: ${formatRub(rest)}
-Ежемесячный платеж: ${formatRub(monthly)}/мес.`;
-  const sendBtn = calcBox.querySelector(".calc-send-wa");
-  if (sendBtn) sendBtn.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
-
-}
-
-function selectPlan(card, shouldScroll = true) {
-  const section = card.closest(".calculator-section");
-  const calcBox = section.querySelector(".calc-box");
-  if (!calcBox) return;
-
-  section.querySelectorAll(".plan-calc-card").forEach((c) => c.classList.remove("active"));
-  card.classList.add("active");
-
-  const project = card.dataset.project;
-  const type = card.dataset.type;
-  const area = card.dataset.area;
-  const price = card.dataset.price;
-  const fullprice = card.dataset.fullprice;
-  const down = card.dataset.down;
-  const minDown = card.dataset.mindown || down;
-  const term = card.dataset.term;
-
-  calcBox.dataset.currentMaxprice = price;
-  calcBox.dataset.currentFullprice = fullprice;
-  calcBox.dataset.currentMindown = minDown;
-
-  calcBox.querySelector(".calc-project").textContent = project;
-  calcBox.querySelector(".calc-plan-title").textContent = `${type} • ${area} м²`;
-  calcBox.querySelector(".calc-area").value = area;
-  calcBox.querySelector(".calc-down").value = down;
-  calcBox.querySelector(".calc-term").value = term;
-
-  updateCalc(calcBox);
-
-  if (shouldScroll) {
-    calcBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-}
-
-document.querySelectorAll(".calculator-section").forEach((section) => {
-  const firstCard = section.querySelector(".plan-calc-card");
-  const calcBox = section.querySelector(".calc-box");
-
-  section.querySelectorAll(".plan-calc-card").forEach((card) => {
-    card.addEventListener("click", () => selectPlan(card, true));
-  });
-
-  if (calcBox) {
-    calcBox.querySelectorAll("input").forEach((input) => {
-      input.addEventListener("input", () => updateCalc(calcBox));
-    });
-  }
-
-  // Initial selection without jumping down the page
-  if (firstCard) selectPlan(firstCard, false);
-});
-
-
-// Premium layout modal
-document.querySelectorAll(".layouts-grid").forEach((grid) => {
-  const imgs = Array.from(grid.querySelectorAll(".zoomable-layout"));
-  if (!imgs.length) return;
-
-  const modal = document.querySelector(".layout-modal");
-  if (!modal) return;
-
-  const modalImg = modal.querySelector("img");
-  const closeBtn = modal.querySelector(".layout-modal-close");
-  const prevBtn = modal.querySelector(".layout-prev");
-  const nextBtn = modal.querySelector(".layout-next");
-  let index = 0;
-
-  function openModal(i) {
-    index = i;
-    modalImg.src = imgs[index].src;
-    modalImg.alt = imgs[index].alt || "Планировка";
-    modal.classList.add("open");
-    modal.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden";
-  }
-
-  function closeModal() {
-    modal.classList.remove("open");
-    modal.setAttribute("aria-hidden", "true");
-    document.body.style.overflow = "";
-  }
-
-  function move(step) {
-    index = (index + step + imgs.length) % imgs.length;
-    modalImg.src = imgs[index].src;
-    modalImg.alt = imgs[index].alt || "Планировка";
-  }
-
-  imgs.forEach((img, i) => img.addEventListener("click", () => openModal(i)));
-  closeBtn?.addEventListener("click", closeModal);
-  prevBtn?.addEventListener("click", () => move(-1));
-  nextBtn?.addEventListener("click", () => move(1));
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) closeModal();
-  });
-  document.addEventListener("keydown", (e) => {
-    if (!modal.classList.contains("open")) return;
-    if (e.key === "Escape") closeModal();
-    if (e.key === "ArrowLeft") move(-1);
-    if (e.key === "ArrowRight") move(1);
-  });
-});
-
-// Range slider sync and golden price highlight
-document.querySelectorAll(".calc-box").forEach((calcBox) => {
-  const downInput = calcBox.querySelector(".calc-down");
-  const range = calcBox.querySelector(".calc-down-range");
-  const priceInput = calcBox.querySelector(".calc-price");
-
-  function syncRangeFromInputs() {
-    const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
-    const maxPrice = Number(calcBox.dataset.currentMaxprice || calcBox.dataset.defaultPrice || 0);
-    const maxTotal = Math.max(area * maxPrice, 1000000);
-
-    if (range) {
-      range.max = Math.round(maxTotal);
-      range.value = Number(downInput?.value || 0);
-    }
-
-    if (priceInput) {
-      const currentPrice = Number(priceInput.value || 0);
-      const fullPrice = Number(calcBox.dataset.currentFullprice || calcBox.dataset.defaultFullprice || 0);
-      priceInput.classList.toggle("good-price", currentPrice <= fullPrice + 5000);
-    }
-  }
-
-  if (range && downInput) {
-    range.addEventListener("input", () => {
-      downInput.value = range.value;
-      if (typeof updateCalc === "function") updateCalc(calcBox);
-      syncRangeFromInputs();
-    });
-
-    downInput.addEventListener("input", () => {
-      if (typeof updateCalc === "function") updateCalc(calcBox);
-      syncRangeFromInputs();
-    });
-
-    calcBox.querySelector(".calc-area")?.addEventListener("input", syncRangeFromInputs);
-  }
-
-  setTimeout(syncRangeFromInputs, 100);
-});
-
-// Patch selectPlan to keep range updated after choosing a plan
-if (typeof selectPlan === "function" && !window.__vetraSelectPlanPatched) {
-  window.__vetraSelectPlanPatched = true;
-  const originalSelectPlan = selectPlan;
-  selectPlan = function(card, shouldScroll = true) {
-    originalSelectPlan(card, shouldScroll);
-    const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
-    if (!calcBox) return;
-    const downInput = calcBox.querySelector(".calc-down");
-    const range = calcBox.querySelector(".calc-down-range");
-    if (range && downInput) {
-      const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
-      const maxPrice = Number(calcBox.dataset.currentMaxprice || calcBox.dataset.defaultPrice || 0);
-      range.max = Math.round(Math.max(area * maxPrice, 1000000));
-      range.value = downInput.value;
-    }
-  };
-}
-
-
-// Final WhatsApp send calculation updater
-function vetraUpdateSendButton(calcBox) {
-  if (!calcBox) return;
-
-  const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
-  const price = Number(calcBox.querySelector(".calc-price")?.value || 0);
-  const down = Number(calcBox.querySelector(".calc-down")?.value || 0);
-  const term = Math.max(Number(calcBox.querySelector(".calc-term")?.value || 1), 1);
-
-  const total = area * price;
-  const rest = Math.max(total - down, 0);
-  const monthly = rest / term;
-
-  const project = calcBox.querySelector(".calc-project")?.textContent.trim() || "";
-  const plan = calcBox.querySelector(".calc-plan-title")?.textContent.trim() || "";
-
-  const msg = `Здравствуйте! Хочу отправить расчет с сайта VetraEstate.
-
-Объект: ${project}
-Планировка: ${plan}
-Площадь: ${area} м²
-Цена за м²: ${formatRub(price)}
-Первый взнос: ${formatRub(down)}
-Срок рассрочки: ${term} мес.
-
-Стоимость квартиры: ${formatRub(total)}
-Остаток после взноса: ${formatRub(rest)}
-Ежемесячный платеж: ${formatRub(monthly)}/мес.`;
-
-  const btn = calcBox.querySelector(".calc-send-wa");
-  if (btn) btn.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
-}
-
-document.querySelectorAll(".calc-box").forEach((calcBox) => {
-  const update = () => setTimeout(() => vetraUpdateSendButton(calcBox), 30);
-  calcBox.querySelectorAll("input").forEach((input) => input.addEventListener("input", update));
-  update();
-});
-
-document.querySelectorAll(".plan-calc-card").forEach((card) => {
-  card.addEventListener("click", () => {
-    const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
-    setTimeout(() => vetraUpdateSendButton(calcBox), 80);
-  });
-});
-
-
-// Final reliable send calculation button
-function vetraFinalFormatRub(value) {
-  const n = Math.max(Math.round(Number(value) || 0), 0);
-  return n.toLocaleString("ru-RU") + " ₽";
-}
-
-function vetraFinalSendCalc(calcBox) {
-  if (!calcBox) return;
-
-  const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
-  const price = Number(calcBox.querySelector(".calc-price")?.value || 0);
-  const down = Number(calcBox.querySelector(".calc-down")?.value || 0);
-  const term = Math.max(Number(calcBox.querySelector(".calc-term")?.value || 1), 1);
-
-  const total = area * price;
-  const rest = Math.max(total - down, 0);
-  const monthly = rest / term;
-
-  const project = calcBox.querySelector(".calc-project")?.textContent.trim() || "";
-  const plan = calcBox.querySelector(".calc-plan-title")?.textContent.trim() || "";
-
-  const msg = `Здравствуйте! Хочу отправить расчет с сайта VetraEstate.
-
-Объект: ${project}
-Планировка: ${plan}
-Площадь: ${area} м²
-Цена за м²: ${vetraFinalFormatRub(price)}
-Первый взнос: ${vetraFinalFormatRub(down)}
-Срок рассрочки: ${term} мес.
-
-Стоимость квартиры: ${vetraFinalFormatRub(total)}
-Остаток после взноса: ${vetraFinalFormatRub(rest)}
-Ежемесячный платеж: ${vetraFinalFormatRub(monthly)}/мес.`;
-
-  const btn = calcBox.querySelector(".calc-send-wa");
-  if (btn) btn.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
-}
-
-function vetraBindSendButtons() {
-  document.querySelectorAll(".calc-box").forEach((calcBox) => {
-    const update = () => setTimeout(() => vetraFinalSendCalc(calcBox), 50);
-    calcBox.querySelectorAll("input").forEach((input) => input.addEventListener("input", update));
-    update();
-  });
-
-  document.querySelectorAll(".plan-calc-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
-      setTimeout(() => vetraFinalSendCalc(calcBox), 120);
-    });
-  });
-}
-
-document.addEventListener("DOMContentLoaded", vetraBindSendButtons);
-vetraBindSendButtons();
-
-
-// Send current calculator result to WhatsApp
-function formatRubVetra(value) {
-  const n = Math.max(Math.round(Number(value) || 0), 0);
-  return n.toLocaleString("ru-RU") + " ₽";
-}
-
-function sendCurrentCalcToWhatsAppVetra(calcBox) {
-  if (!calcBox) return;
-
-  const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
-  const price = Number(calcBox.querySelector(".calc-price")?.value || 0);
-  const down = Number(calcBox.querySelector(".calc-down")?.value || 0);
-  const term = Math.max(Number(calcBox.querySelector(".calc-term")?.value || 1), 1);
-
-  const total = area * price;
-  const rest = Math.max(total - down, 0);
-  const monthly = rest / term;
-
-  const project = calcBox.querySelector(".calc-project")?.textContent.trim() || "";
-  const plan = calcBox.querySelector(".calc-plan-title")?.textContent.trim() || "";
-
-  const message = `Здравствуйте! Хочу отправить расчет с сайта VetraEstate.
-
-Объект: ${project}
-Планировка: ${plan}
-Площадь: ${area} м²
-Цена за м²: ${formatRubVetra(price)}
-Первый взнос: ${formatRubVetra(down)}
-Срок рассрочки: ${term} мес.
-
-Стоимость квартиры: ${formatRubVetra(total)}
-Остаток после взноса: ${formatRubVetra(rest)}
-Ежемесячный платеж: ${formatRubVetra(monthly)}/мес.`;
-
-  const btn = calcBox.querySelector(".calc-send-wa");
-  if (btn) {
-    btn.href = "https://wa.me/79894702263?text=" + encodeURIComponent(message);
-  }
-}
-
-function bindVetraCalcWhatsAppButtons() {
-  document.querySelectorAll(".calc-box").forEach((calcBox) => {
-    const update = () => setTimeout(() => sendCurrentCalcToWhatsAppVetra(calcBox), 50);
-
-    calcBox.querySelectorAll("input").forEach((input) => {
-      input.addEventListener("input", update);
-      input.addEventListener("change", update);
-    });
-
-    update();
-  });
-
-  document.querySelectorAll(".plan-calc-card").forEach((card) => {
-    card.addEventListener("click", () => {
-      const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
-      setTimeout(() => sendCurrentCalcToWhatsAppVetra(calcBox), 150);
-    });
-  });
-}
-
-document.addEventListener("DOMContentLoaded", bindVetraCalcWhatsAppButtons);
-bindVetraCalcWhatsAppButtons();
-
-
-// Link top layout option cards to calculator
-function vetraScrollToCalculator(calcBox) {
-  if (!calcBox) return;
-  const y = calcBox.getBoundingClientRect().top + window.pageYOffset - 115;
-  window.scrollTo({ top: y, behavior: "smooth" });
-}
-
-function vetraChooseCalculatorPlanByIndex(section, index) {
-  const calculatorSection = document.querySelector(".calculator-section");
-  if (!calculatorSection) return;
-
-  const cards = calculatorSection.querySelectorAll(".plan-calc-card");
-  const card = cards[index] || cards[0];
-  if (!card) return;
-
-  if (typeof selectPlan === "function") {
-    selectPlan(card, false);
-  } else {
-    card.click();
-  }
-
-  document.querySelectorAll(".layout-calc-trigger").forEach((el) => el.classList.remove("active"));
-  const trigger = document.querySelector(`.layout-calc-trigger[data-plan-index="${index}"]`);
-  if (trigger) trigger.classList.add("active");
-
-  const calcBox = calculatorSection.querySelector(".calc-box");
-  setTimeout(() => vetraScrollToCalculator(calcBox), 80);
-}
-
-document.querySelectorAll(".layout-calc-trigger").forEach((trigger) => {
-  const run = () => {
-    const index = Number(trigger.dataset.planIndex || 0);
-    vetraChooseCalculatorPlanByIndex(trigger.closest(".section"), index);
-  };
-
-  trigger.addEventListener("click", run);
-  trigger.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      run();
-    }
-  });
-});
-
-// Make existing calculator cards scroll to calculator top clearly
-document.querySelectorAll(".plan-calc-card").forEach((card) => {
-  card.addEventListener("click", () => {
-    const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
-    setTimeout(() => vetraScrollToCalculator(calcBox), 100);
-  });
-});
-
-
-// FIX: top layout cards select calculator plan and scroll to calculator
-function vetraCalcScrollToBox(calcBox) {
-  if (!calcBox) return;
-  const y = calcBox.getBoundingClientRect().top + window.pageYOffset - 110;
-  window.scrollTo({ top: y, behavior: "smooth" });
-}
-
-function vetraSelectCalcPlanByIndex(index) {
-  const calculatorSection = document.querySelector(".calculator-section");
-  if (!calculatorSection) return;
-
-  const cards = Array.from(calculatorSection.querySelectorAll(".plan-calc-card"));
-  const card = cards[index] || cards[0];
-  if (!card) return;
-
-  if (typeof selectPlan === "function") {
-    selectPlan(card, false);
-  } else {
-    card.click();
-  }
-
-  document.querySelectorAll(".layout-calc-trigger").forEach((el) => el.classList.remove("active"));
-  const trigger = document.querySelector(`.layout-calc-trigger[data-plan-index="${index}"]`);
-  if (trigger) trigger.classList.add("active");
-
-  const calcBox = calculatorSection.querySelector(".calc-box");
-  setTimeout(() => vetraCalcScrollToBox(calcBox), 90);
-}
-
-document.querySelectorAll(".layout-calc-trigger").forEach((trigger) => {
-  const run = () => vetraSelectCalcPlanByIndex(Number(trigger.dataset.planIndex || 0));
-  trigger.addEventListener("click", run);
-  trigger.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      run();
-    }
-  });
-});
-
-
-/* ===== Imported calculator logic from “Калькулятор берем” ===== */
-function fmt(n) {
-  return Math.max(Math.round(n || 0), 0).toLocaleString('ru-RU') + ' ₽';
-}
-
-function smartPrice(area, down, minDown, prMax, prFull) {
-  const full = area * prFull;
-  if (down <= minDown) return prMax;
-  if (down >= full)    return prFull;
-  const r = (down - minDown) / Math.max(full - minDown, 1);
-  return Math.round((prMax - r * (prMax - prFull)) / 500) * 500;
-}
-
-function anim(el, text) {
-  if (!el || el.textContent === text) return;
-  el.classList.remove('npop');
-  void el.offsetWidth;
-  el.textContent = text;
-  el.classList.add('npop');
-}
-
-function fillRange(r) {
-  if (!r) return;
-  const p = ((+r.value - +r.min) / Math.max(+r.max - +r.min, 1) * 100).toFixed(1) + '%';
-  r.style.setProperty('--p', p);
-}
-
-function calc(box) {
-  const area  = parseFloat(box.querySelector('.c-area')?.value)  || 0;
-  let   down  = parseFloat(box.querySelector('.c-down')?.value)  || 0;
-  const term  = Math.max(parseInt(box.querySelector('.c-term')?.value) || 1, 1);
-  const prMax = parseFloat(box.dataset.prMax  || 0);
-  const prFul = parseFloat(box.dataset.prFull || 0);
-  const minDn = parseFloat(box.dataset.minDn  || 0);
-
-  const price   = smartPrice(area, down, minDn, prMax, prFul);
-  const prEl    = box.querySelector('.c-price');
-  if (prEl) prEl.value = price;
-
-  const total   = area * price;
-  if (down > total) { down = total; const d = box.querySelector('.c-down'); if (d) d.value = Math.round(down); }
-  const rest    = Math.max(total - down, 0);
-  const monthly = rest / term;
-  const fullAmt = area * prFul;
-  const saving  = total - fullAmt;
-
-  anim(box.querySelector('.c-monthly'), fmt(monthly) + '/мес');
-  anim(box.querySelector('.c-total'),   fmt(total));
-  anim(box.querySelector('.c-rest'),    fmt(rest));
-  const fe = box.querySelector('.c-full');
-  if (fe) { fe.textContent = fmt(fullAmt); fe.classList.toggle('good-val', fullAmt < total * 0.985); }
-
-  const sv = box.querySelector('.savings');
-  if (sv) { sv.textContent = `Экономия при полной оплате: ${fmt(saving)}`; sv.classList.toggle('show', saving > 5000); }
-
-  const rng = box.querySelector('.crange');
-  if (rng) {
-    const mx = Math.ceil(total / 10000) * 10000 || 1000000;
-    rng.max = mx; rng.value = down; fillRange(rng);
-  }
-
-  buildWA(box, area, price, down, term, total, rest, monthly);
-}
-
-function buildWA(box, area, price, down, term, total, rest, monthly) {
-  const btn = box.querySelector('.wa-btn');
-  if (!btn) return;
-  const proj = box.querySelector('.calc-title')?.textContent?.trim() || '';
-  const plan = box.querySelector('.calc-sub')?.textContent?.trim()   || '';
-  btn.href = `https://wa.me/79894702263?text=${encodeURIComponent(
-    `Здравствуйте! Расчёт с сайта VetraEstate:\n\n` +
-    `Объект: ${proj}\nПланировка: ${plan}\n` +
-    `Площадь: ${area} м²\nЦена за м²: ${fmt(price)}\n` +
-    `Первый взнос: ${fmt(down)}\nСрок: ${term} мес.\n\n` +
-    `Стоимость: ${fmt(total)}\nОстаток: ${fmt(rest)}\nПлатёж: ${fmt(monthly)}/мес.`
-  )}`;
-}
-
-function activatePlan(card, scroll) {
-  const sec = card.closest('.calc-section');
-  if (!sec) return;
-  sec.querySelectorAll('.cplan').forEach(c => c.classList.remove('on'));
-  card.classList.add('on');
-
-  const box = sec.querySelector('.calc-box');
-  if (!box) return;
-
-  box.dataset.prMax  = card.dataset.price;
-  box.dataset.prFull = card.dataset.fullprice;
-  box.dataset.minDn  = card.dataset.mindown || card.dataset.down;
-
-  const ttl = box.querySelector('.calc-title');
-  const sub = box.querySelector('.calc-sub');
-  if (ttl) ttl.textContent = card.dataset.project || '';
-  if (sub) sub.textContent = (card.querySelector('strong')?.textContent || '') + ' · ' + (card.dataset.area || '') + ' м²';
-
-  const ai = box.querySelector('.c-area'), ti = box.querySelector('.c-term'), di = box.querySelector('.c-down');
-  if (ai) ai.value = card.dataset.area  || '';
-  if (ti) ti.value = card.dataset.term  || '';
-  if (di) di.value = card.dataset.down  || 0;
-
-  box.querySelectorAll('.tbtn').forEach(b => b.classList.toggle('on', b.dataset.val === card.dataset.term));
-
-  calc(box);
-
-  const sl = box.querySelector('.crange');
-  if (sl) {
-    sl.classList.remove('vibe'); void sl.offsetWidth; sl.classList.add('vibe');
-    setTimeout(() => sl.classList.remove('vibe'), 320);
-    if (navigator.vibrate) navigator.vibrate([18, 6, 12]);
-  }
-
-  if (scroll) setTimeout(() => {
-    window.scrollTo({ top: box.getBoundingClientRect().top + scrollY - 110, behavior: 'smooth' });
-  }, 60);
-}
-
-/* Init plan cards */
-document.querySelectorAll('.cplan').forEach(c => c.addEventListener('click', () => activatePlan(c, true)));
-document.querySelectorAll('.calc-section').forEach(sec => {
-  const first = sec.querySelector('.cplan.on') || sec.querySelector('.cplan');
-  if (first) activatePlan(first, false);
-});
-
-/* Calc inputs */
-document.querySelectorAll('.calc-box').forEach(box => {
-  const ai = box.querySelector('.c-area'), di = box.querySelector('.c-down'), ti = box.querySelector('.c-term');
-  const sl = box.querySelector('.crange');
-  [ai, di, ti].forEach(i => i?.addEventListener('input', () => calc(box)));
-  if (sl && di) {
-    sl.addEventListener('input', () => { di.value = sl.value; fillRange(sl); calc(box); });
-    di.addEventListener('input', () => { sl.value = di.value; fillRange(sl); });
-    fillRange(sl);
-  }
-  box.querySelectorAll('.tbtn').forEach(b => b.addEventListener('click', () => {
-    box.querySelectorAll('.tbtn').forEach(x => x.classList.remove('on'));
-    b.classList.add('on');
-    if (ti) { ti.value = b.dataset.val; calc(box); }
-  }));
-});
-
-/* Plan trigger cards */
-document.querySelectorAll('.ptrig, .layout-calc-trigger').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.ptrig').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const idx = +btn.dataset.planIndex || 0;
-    const cards = [...document.querySelectorAll('.cplan')];
-    const t = cards[idx] || cards[0];
-    if (!t) return;
-    activatePlan(t, false);
-    const s = document.querySelector('.calc-section');
-    if (s) setTimeout(() => window.scrollTo({ top: s.getBoundingClientRect().top + scrollY - 96, behavior: 'smooth' }), 60);
-  });
-});
-
-
-
-
-// MY MONEY FEATURE V2 — bottom drawer budget finder
-(function(){
-  const plans = [
-    { project:"ЖК Новый Горизонт", type:"1К", area:47, price:85000, fullPrice:60000, minDown:150000, term:60, page:"new-horizon.html", photo:"images/horizon-new-photo-1.jpg" },
-    { project:"ЖК Новый Горизонт", type:"2К", area:70, price:85000, fullPrice:60000, minDown:200000, term:60, page:"new-horizon.html", photo:"images/horizon-new-photo-4.jpg" },
-    { project:"ЖК Новый Горизонт", type:"2К", area:76, price:85000, fullPrice:60000, minDown:200000, term:60, page:"new-horizon.html", photo:"images/horizon-new-photo-6.jpg" },
-    { project:"АК Алые Паруса", type:"Студия", area:32, price:90000, fullPrice:50000, minDown:150000, term:42, page:"alye-parusa.html", photo:"images/alye-photo-2.jpg" },
-    { project:"АК Алые Паруса", type:"Евро 2К", area:55, price:90000, fullPrice:50000, minDown:150000, term:42, page:"alye-parusa.html", photo:"images/alye-photo-3.jpg" },
-    { project:"ЖК Московский", type:"1К", area:39, price:85000, fullPrice:70000, minDown:500000, term:70, page:"moskovskiy.html", photo:"images/moscow-photo-1.jpg" },
-    { project:"ЖК Московский", type:"1К", area:53, price:85000, fullPrice:70000, minDown:500000, term:70, page:"moskovskiy.html", photo:"images/moscow-photo-2.jpg" },
-    { project:"ЖК Московский", type:"2К", area:77, price:85000, fullPrice:70000, minDown:500000, term:70, page:"moskovskiy.html", photo:"images/moscow-photo-5.jpg" }
-  ];
-
-  const rub = (v) => Math.max(Math.round(Number(v)||0),0).toLocaleString("ru-RU") + " ₽";
-  const $ = (s) => document.querySelector(s);
-
-  function monthly(plan, money) {
-    return Math.max(plan.area * plan.price - money, 0) / plan.term;
-  }
-
-  function open() {
-    $(".money-drawer-v2")?.classList.add("open");
-    $(".money-drawer-v2")?.setAttribute("aria-hidden", "false");
-    document.body.style.overflow = "hidden";
-    setTimeout(() => $(".money-input-v2")?.focus(), 120);
-  }
-
-  function close() {
-    $(".money-drawer-v2")?.classList.remove("open");
-    $(".money-drawer-v2")?.setAttribute("aria-hidden", "true");
-    document.body.style.overflow = "";
-  }
-
-  function render() {
-    const input = $(".money-input-v2");
-    const summary = $(".money-summary-v2");
-    const results = $(".money-results-v2");
-    const wa = $(".money-whatsapp-v2");
-    if (!input || !summary || !results || !wa) return;
-
-    const money = Number(input.value || 0);
-    const suitable = plans
-      .filter(p => money >= p.minDown)
-      .map(p => ({ ...p, total: p.area * p.price, monthly: monthly(p, money), userDown: money }))
-      .sort((a,b) => a.monthly - b.monthly);
-
-    if (!money) {
-      summary.innerHTML = "Введите сумму или выберите быстрый вариант.";
-      results.innerHTML = "";
-      wa.classList.remove("show");
-      return;
-    }
-
-    summary.innerHTML = `<strong>У вас: ${rub(money)}</strong><br>Подходящих вариантов: ${suitable.length}`;
-
-    if (!suitable.length) {
-      results.innerHTML = `<div class="money-empty-v2">Пока нет вариантов под эту сумму. Минимальный взнос начинается от ${rub(150000)}. Напишите нам — подберём горящие предложения или альтернативы.</div>`;
-      wa.classList.add("show");
-      wa.href = "https://wa.me/79894702263?text=" + encodeURIComponent(`Здравствуйте! У меня есть ${rub(money)} на первоначальный взнос. Подберите, пожалуйста, варианты.`);
-      return;
-    }
-
-    results.innerHTML = suitable.map(p => `
-      <article class="money-card-v2">
-        <div class="money-card-photo-wrap">
-          <img class="money-card-photo-v2" src="${p.photo}" alt="${p.project}" loading="lazy">
-          <span class="money-card-badge-v2">✓ Подходит</span>
-          <div class="money-card-photo-title">
-            <h3>${p.project}</h3>
-            <p>${p.type} · ${p.area} м²</p>
-          </div>
-        </div>
-        <div class="money-card-body-v2">
-          <div class="money-card-top-v2">
-            <div>
-              <h3>${p.project}</h3>
-              <p>${p.type} • ${p.area} м²</p>
-            </div>
-            <span class="money-card-badge-old">✓ Подходит</span>
-          </div>
-
-          <div class="money-info-v2">
-            <div><small>Цена за м²</small><strong>${rub(p.price)}</strong></div>
-            <div><small>Ваш взнос</small><strong>${rub(p.userDown)}</strong></div>
-            <div><small>Срок</small><strong>${p.term} мес.</strong></div>
-            <div><small>Платёж</small><strong>≈ ${rub(p.monthly)}/мес</strong></div>
-          </div>
-
-          <a href="${p.page}#calculator">Открыть калькулятор</a>
-        </div>
-      </article>
-    `).join("");
-
-    const msg = `Здравствуйте! Хочу отправить подборку по функции «Мои деньги».
-
-У меня есть: ${rub(money)}
-
-Подходящие варианты:
-${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос ${rub(p.userDown)}, срок ${p.term} мес., платёж ≈ ${rub(p.monthly)}/мес.`).join("\n")}`;
-
-    wa.classList.add("show");
-    wa.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
-  }
-
-  function bind() {
-    $(".money-mini-v2")?.addEventListener("click", open);
-    $(".money-close-v2")?.addEventListener("click", close);
-    $(".money-drawer-bg-v2")?.addEventListener("click", close);
-    $(".money-run-v2")?.addEventListener("click", render);
-    $(".money-input-v2")?.addEventListener("input", render);
-    $(".money-input-v2")?.addEventListener("keydown", e => {
-      if (e.key === "Enter") render();
-    });
-    document.querySelectorAll(".money-chips-v2 button").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const input = $(".money-input-v2");
-        if (input) input.value = btn.dataset.money;
-        render();
+  function createParticles() {
+    particles = [];
+    const count = Math.min(Math.floor(W * H / 8000), 120);
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.8 + 0.4,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        alpha: Math.random() * 0.6 + 0.2,
+        color: Math.random() > 0.6 ? '#00D4FF' : Math.random() > 0.5 ? '#7B5FFF' : '#FFB800'
       });
-    });
-    document.addEventListener("keydown", e => {
-      if (e.key === "Escape" && $(".money-drawer-v2")?.classList.contains("open")) close();
-    });
+    }
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
-  else bind();
+  function drawLines() {
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 130) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(0,212,255,${0.08 * (1 - dist / 130)})`;
+          ctx.lineWidth = 0.5;
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, W, H);
+    drawLines();
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.alpha;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+    requestAnimationFrame(animate);
+  }
+
+  resize(); createParticles(); animate();
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { resize(); createParticles(); }, 200);
+  });
 })();
+
+// ══ ABOUT CANVAS — animated building construction ══
+(function initAboutCanvas() {
+  const canvas = document.getElementById('about-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, t = 0;
+
+  function resize() {
+    W = canvas.width = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+  }
+
+  function drawBuilding(x, targetH, color, progress) {
+    const h = targetH * Math.min(progress, 1);
+    const floors = Math.floor(h / 20);
+    // Main body
+    ctx.fillStyle = color;
+    ctx.fillRect(x, H - h, 40, h);
+    // Windows
+    ctx.fillStyle = 'rgba(0,212,255,0.4)';
+    for (let f = 0; f < floors; f++) {
+      for (let w = 0; w < 2; w++) {
+        const wy = H - h + f * 20 + 4;
+        const wx = x + 4 + w * 18;
+        if (Math.random() > 0.3) {
+          ctx.fillStyle = Math.random() > 0.7 ? 'rgba(255,184,0,0.6)' : 'rgba(0,212,255,0.5)';
+          ctx.fillRect(wx, wy, 8, 10);
+        }
+      }
+    }
+    // Crane on top
+    if (progress < 1.2) {
+      ctx.strokeStyle = '#FFB800';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x + 20, H - h);
+      ctx.lineTo(x + 20, H - h - 30);
+      ctx.lineTo(x + 55, H - h - 30);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + 20, H - h - 30);
+      ctx.lineTo(x + 5, H - h - 20);
+      ctx.stroke();
+      // Hanging rope
+      const ropeX = x + 55 - (t % 50) * 0.8;
+      ctx.beginPath();
+      ctx.moveTo(ropeX, H - h - 30);
+      ctx.lineTo(ropeX, H - h - 10 + Math.sin(t * 0.05) * 5);
+      ctx.stroke();
+    }
+  }
+
+  function animate() {
+    t++;
+    ctx.clearRect(0, 0, W, H);
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(0,212,255,0.05)';
+    ctx.lineWidth = 1;
+    for (let y = 0; y < H; y += 30) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    const phase = t / 120;
+    drawBuilding(20, 140, 'rgba(0,212,255,0.15)', phase);
+    drawBuilding(80, 200, 'rgba(123,95,255,0.15)', phase - 0.3);
+    drawBuilding(150, 160, 'rgba(0,212,255,0.12)', phase - 0.6);
+    drawBuilding(220, 220, 'rgba(255,184,0,0.10)', phase - 0.9);
+
+    // Ground line
+    ctx.strokeStyle = 'rgba(0,212,255,0.20)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(W, H); ctx.stroke();
+
+    // Floating particles
+    for (let i = 0; i < 8; i++) {
+      const px = (t * 0.5 + i * 40) % W;
+      const py = H * 0.3 + Math.sin(t * 0.02 + i) * 40;
+      ctx.beginPath();
+      ctx.arc(px, py, 2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,212,255,0.3)';
+      ctx.fill();
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  resize(); animate();
+  window.addEventListener('resize', resize);
+})();
+
+// ══ NAVBAR ══
+const navbar = document.getElementById('navbar');
+const navToggle = document.getElementById('navToggle');
+
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 60);
+}, { passive: true });
+
+navToggle?.addEventListener('click', () => {
+  const open = navbar.classList.toggle('open');
+  navToggle.setAttribute('aria-expanded', String(open));
+});
+document.querySelectorAll('.nav-links a').forEach(a =>
+  a.addEventListener('click', () => navbar.classList.remove('open'))
+);
+
+// ══ REVEAL ON SCROLL ══
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 60);
+      revealObserver.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+// ══ COUNTER ANIMATION ══
+function animateCounter(el) {
+  const target = parseInt(el.dataset.target) || 0;
+  const prefix = el.dataset.prefix || '';
+  const suffix = el.dataset.suffix || '';
+  let current = 0;
+  const step = Math.max(1, Math.floor(target / 60));
+  const timer = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = prefix + current.toLocaleString('ru') + suffix;
+    if (current >= target) clearInterval(timer);
+  }, 30);
+}
+
+const counterObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      animateCounter(e.target);
+      counterObserver.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('.stat-num[data-target]').forEach(el => counterObserver.observe(el));
+
+// ══ FILTER BAR ══
+document.querySelectorAll('.filter').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filter = btn.dataset.filter;
+    document.querySelectorAll('.project').forEach(card => {
+      const match = filter === 'all' || (card.dataset.category || '').includes(filter);
+      card.style.transition = 'opacity .35s, transform .35s';
+      card.style.opacity = match ? '1' : '0.25';
+      card.style.transform = match ? '' : 'scale(0.96)';
+      card.style.pointerEvents = match ? '' : 'none';
+    });
+  });
+});
+
+// ══ LIGHTBOX ══
+function openLightbox(src) {
+  const lb = document.getElementById('lightbox');
+  const img = document.getElementById('lightbox-img');
+  img.src = src;
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+window.openLightbox = openLightbox;
+
+document.getElementById('lightbox-close')?.addEventListener('click', () => {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+});
+document.getElementById('lightbox')?.addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) {
+    e.currentTarget.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+});
+
+// ══ MORTGAGE CALCULATOR ══
+function fmt(n) { return Math.round(n).toLocaleString('ru') + ' ₽'; }
+function calcUpdate() {
+  const price = parseInt(document.getElementById('r-price').value);
+  const down  = parseInt(document.getElementById('r-down').value);
+  const term  = parseInt(document.getElementById('r-term').value);
+  const rest  = Math.max(0, price - down);
+  const monthly = rest / term;
+  document.getElementById('v-price').textContent = fmt(price);
+  document.getElementById('v-down').textContent  = fmt(down);
+  document.getElementById('v-term').textContent  = term + (term === 1 ? ' месяц' : term < 5 ? ' месяца' : ' месяцев');
+  const el = document.getElementById('calc-monthly');
+  el.style.transform = 'scale(1.08)';
+  el.textContent = fmt(monthly);
+  setTimeout(() => el.style.transform = '', 300);
+  document.getElementById('cb-price').textContent = fmt(price);
+  document.getElementById('cb-down').textContent  = fmt(down);
+  document.getElementById('cb-rest').textContent  = fmt(rest);
+  document.getElementById('cb-term').textContent  = term + ' мес.';
+}
+['r-price','r-down','r-term'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', calcUpdate);
+});
+calcUpdate();
+
+// ══ MONEY WIDGET ══
+const moneyDrawer = document.querySelector('.money-drawer-v2');
+const moneyMini   = document.querySelector('.money-mini-v2');
+const moneyClose  = document.querySelector('.money-close-v2');
+const moneyBg     = document.querySelector('.money-drawer-bg-v2');
+
+function openMoneyDrawer() {
+  moneyDrawer.classList.add('open');
+  moneyDrawer.setAttribute('aria-hidden','false');
+  document.body.style.overflow = 'hidden';
+}
+function closeMoneyDrawer() {
+  moneyDrawer.classList.remove('open');
+  moneyDrawer.setAttribute('aria-hidden','true');
+  document.body.style.overflow = '';
+}
+moneyMini?.addEventListener('click', openMoneyDrawer);
+moneyClose?.addEventListener('click', closeMoneyDrawer);
+moneyBg?.addEventListener('click', closeMoneyDrawer);
+
+const PROJECTS_DATA = [
+  { name: 'ЖК «Новый Горизонт»', min: 100000, price: 'от 60 000 ₽/м²', img: 'images/horizon-5.jpeg', url: 'new-horizon.html' },
+  { name: 'АК «Алые Паруса»',    min: 100000, price: 'от 50 000 ₽/м²', img: 'images/alye-photo-5.jpg',  url: 'alye-parusa.html' },
+  { name: 'ЖК «Московский»',     min: 200000, price: 'от 70 000 ₽/м²', img: 'images/moscow-photo-2.jpg', url: 'moskovskiy.html' },
+];
+
+document.querySelectorAll('.money-chips-v2 button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.money-chips-v2 button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector('.money-input-v2').value = btn.dataset.money;
+  });
+});
+
+document.querySelector('.money-run-v2')?.addEventListener('click', () => {
+  const val = parseInt(document.querySelector('.money-input-v2').value) || 0;
+  const results = PROJECTS_DATA.filter(p => val >= p.min);
+  const summary = document.querySelector('.money-summary-v2');
+  const resultsEl = document.querySelector('.money-results-v2');
+  summary.textContent = val > 0 ? `При взносе ${val.toLocaleString('ru')} ₽ доступно: ${results.length} ЖК` : '';
+  resultsEl.innerHTML = results.map(p => `
+    <div class="money-result-card" onclick="window.location.href='${p.url}'">
+      <img src="${p.img}" alt="${p.name}">
+      <div class="money-result-info">
+        <h4>${p.name}</h4>
+        <span>Взнос от ${p.min.toLocaleString('ru')} ₽</span>
+      </div>
+      <span class="money-result-price">${p.price}</span>
+    </div>`).join('') || '<p style="color:var(--text3);font-size:.82rem;text-align:center;padding:16px">Увеличьте сумму взноса</p>';
+});
+
+// ══ CONFETTI ══
+function launchConfetti() {
+  const container = document.getElementById('confetti-container');
+  const colors = ['#00D4FF','#FFB800','#7B5FFF','#00E887','#FF4D6A','#FF8C00','#4DE8FF'];
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.cssText = `
+      left:${Math.random()*100}%;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      animation-duration:${1.5 + Math.random()*2}s;
+      animation-delay:${Math.random()*0.6}s;
+      transform:rotate(${Math.random()*360}deg);
+      width:${6 + Math.random()*6}px;
+      height:${8 + Math.random()*8}px;
+    `;
+    container.appendChild(piece);
+    piece.addEventListener('animationend', () => piece.remove());
+  }
+}
+
+// ══ GAME ══
+(function initGame() {
+  const modal       = document.getElementById('gameModal');
+  const modalBg     = document.getElementById('gameModalBg');
+  const closeBtn    = document.getElementById('gameClose');
+  const startBtn    = document.getElementById('gameStartBtn');
+  const canvas      = document.getElementById('game-canvas');
+  const prizeBanner = document.getElementById('gamePrize');
+  const hudScore    = document.getElementById('hud-score');
+  const hudBest     = document.getElementById('hud-best');
+  const hudLevel    = document.getElementById('hud-level');
+
+  if (!modal || !canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  let state = 'idle'; // idle | playing | over | win
+  let blocks = [], movingBlock = null, score = 0, best = 0, animId = null;
+
+  const COLORS = ['#00D4FF','#7B5FFF','#00E887','#FFB800','#FF4D6A','#4DE8FF','#FF8C00'];
+  const BLOCK_H = 22, CAMERA_SPEED = 1;
+  let cameraY = 0, targetCameraY = 0;
+
+  function openModal() {
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    prizeBanner.classList.remove('show');
+    if (state === 'idle') drawIdle();
+  }
+  function closeModal() {
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+    if (animId) { cancelAnimationFrame(animId); animId = null; }
+  }
+
+  document.getElementById('openGame')?.addEventListener('click', openModal);
+  document.getElementById('openGameHero')?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  modalBg?.addEventListener('click', closeModal);
+
+  function drawIdle() {
+    ctx.clearRect(0, 0, W, H);
+    // Animated background
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#07091A');
+    grad.addColorStop(1, '#0D1228');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(0,212,255,0.06)';
+    ctx.lineWidth = 1;
+    for (let y = 0; y < H; y += 30) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+    for (let x = 0; x < W; x += 30) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+
+    // Sample building
+    ctx.fillStyle = 'rgba(0,212,255,0.08)';
+    ctx.fillRect(W/2 - 30, H - 100, 60, 100);
+
+    // Text
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 24px Cinzel, serif';
+    ctx.fillStyle = '#00D4FF';
+    ctx.fillText('🏗️ Стройка', W/2, H/2 - 20);
+    ctx.font = '14px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(232,240,255,.55)';
+    ctx.fillText('Нажми «Начать игру» и стопи блоки!', W/2, H/2 + 10);
+    ctx.fillText('Цель: построить 10 этажей', W/2, H/2 + 32);
+  }
+
+  function initGame() {
+    state = 'playing';
+    score = 0; cameraY = 0; targetCameraY = 0;
+    prizeBanner.classList.remove('show');
+    startBtn.textContent = '🔄 Начать заново';
+
+    blocks = [{
+      x: W/2 - 60, y: H - BLOCK_H, w: 120, color: COLORS[0], fixed: true
+    }];
+
+    spawnBlock();
+    updateHUD();
+    if (animId) cancelAnimationFrame(animId);
+    loop();
+  }
+
+  function spawnBlock() {
+    const color = COLORS[blocks.length % COLORS.length];
+    const topBlock = blocks[blocks.length - 1];
+    const maxW = topBlock.w + 20;
+    const w = Math.min(maxW, 120);
+    const dir = blocks.length % 2 === 0 ? 1 : -1;
+    movingBlock = {
+      x: dir > 0 ? -w : W,
+      y: topBlock.y - BLOCK_H,
+      w, color,
+      dir,
+      speed: 2.5 + blocks.length * 0.12
+    };
+  }
+
+  function placeBlock() {
+    if (!movingBlock || state !== 'playing') return;
+    const top = blocks[blocks.length - 1];
+
+    // Overlap calculation
+    const overlapLeft  = Math.max(movingBlock.x, top.x);
+    const overlapRight = Math.min(movingBlock.x + movingBlock.w, top.x + top.w);
+    const overlap = overlapRight - overlapLeft;
+
+    if (overlap <= 0) {
+      // Miss — game over
+      gameOver();
+      return;
+    }
+
+    // Place block with trimmed width
+    const placed = {
+      x: overlapLeft, y: movingBlock.y,
+      w: overlap, color: movingBlock.color, fixed: true
+    };
+    blocks.push(placed);
+    score += Math.floor(overlap);
+    updateHUD();
+
+    // Perfect bonus
+    if (Math.abs(overlap - top.w) < 4) {
+      placed.x = top.x; placed.w = top.w; // snap perfect
+      showPerfect(placed.x + placed.w/2, placed.y);
+    }
+
+    // Camera pan up
+    targetCameraY = Math.max(0, (blocks.length - 10) * BLOCK_H);
+
+    if (blocks.length - 1 >= 10) {
+      winGame();
+      return;
+    }
+    movingBlock = null;
+    spawnBlock();
+  }
+
+  function showPerfect(x, y) {
+    const fx = x, fy = y - cameraY;
+    const perfObj = { x: fx, y: fy, alpha: 1, t: 0 };
+    const draw = () => {
+      if (perfObj.alpha <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = perfObj.alpha;
+      ctx.font = 'bold 16px Inter, sans-serif';
+      ctx.fillStyle = '#00E887';
+      ctx.textAlign = 'center';
+      ctx.fillText('✨ PERFECT!', perfObj.x, perfObj.y - perfObj.t);
+      ctx.restore();
+      perfObj.t += 1.5; perfObj.alpha -= 0.03;
+      requestAnimationFrame(draw);
+    };
+    requestAnimationFrame(draw);
+  }
+
+  function gameOver() {
+    state = 'over';
+    if (score > best) best = score;
+    updateHUD();
+    startBtn.textContent = '🔄 Играть снова';
+    // Draw game over overlay
+    setTimeout(() => {
+      ctx.fillStyle = 'rgba(0,0,0,.6)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 22px Cinzel, serif';
+      ctx.fillStyle = '#FF4D6A';
+      ctx.fillText('Игра окончена!', W/2, H/2 - 16);
+      ctx.font = '14px Inter, sans-serif';
+      ctx.fillStyle = 'rgba(232,240,255,.7)';
+      ctx.fillText(`Этажей: ${blocks.length - 1}  |  Рекорд: ${best}`, W/2, H/2 + 12);
+    }, 100);
+  }
+
+  function winGame() {
+    state = 'win';
+    if (score > best) best = score;
+    updateHUD();
+    startBtn.textContent = '🔄 Играть снова';
+    prizeBanner.classList.add('show');
+    launchConfetti();
+  }
+
+  function updateHUD() {
+    hudScore.textContent = score;
+    hudBest.textContent = best;
+    hudLevel.textContent = Math.max(0, blocks.length - 1);
+  }
+
+  function loop() {
+    animId = requestAnimationFrame(loop);
+    ctx.clearRect(0, 0, W, H);
+
+    // Smooth camera
+    cameraY += (targetCameraY - cameraY) * CAMERA_SPEED * 0.1;
+
+    // BG
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#07091A'); grad.addColorStop(1, '#0D1228');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(0,212,255,0.05)'; ctx.lineWidth = 1;
+    for (let y = 0; y < H; y += BLOCK_H) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // Placed blocks
+    blocks.forEach(b => {
+      const sy = b.y - cameraY;
+      const grad2 = ctx.createLinearGradient(b.x, sy, b.x, sy + BLOCK_H);
+      grad2.addColorStop(0, b.color);
+      grad2.addColorStop(1, b.color + '88');
+      ctx.fillStyle = grad2;
+      ctx.beginPath();
+      ctx.roundRect(b.x + 1, sy + 1, b.w - 2, BLOCK_H - 2, 4);
+      ctx.fill();
+      // Glow
+      ctx.shadowColor = b.color; ctx.shadowBlur = 8;
+      ctx.strokeStyle = b.color + 'AA'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(b.x + 1, sy + 1, b.w - 2, BLOCK_H - 2, 4);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    });
+
+    // Moving block
+    if (movingBlock && state === 'playing') {
+      movingBlock.x += movingBlock.dir * movingBlock.speed;
+      if (movingBlock.x + movingBlock.w > W + 20) movingBlock.dir = -1;
+      if (movingBlock.x < -20) movingBlock.dir = 1;
+
+      const sy = movingBlock.y - cameraY;
+      ctx.fillStyle = movingBlock.color + 'CC';
+      ctx.beginPath();
+      ctx.roundRect(movingBlock.x + 1, sy + 1, movingBlock.w - 2, BLOCK_H - 2, 4);
+      ctx.fill();
+      // Glow
+      ctx.shadowColor = movingBlock.color; ctx.shadowBlur = 12;
+      ctx.strokeStyle = movingBlock.color; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(movingBlock.x + 1, sy + 1, movingBlock.w - 2, BLOCK_H - 2, 4);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Guide line from top block
+      const top = blocks[blocks.length - 1];
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+      ctx.beginPath();
+      ctx.moveTo(top.x, top.y - cameraY);
+      ctx.lineTo(top.x, sy + BLOCK_H);
+      ctx.moveTo(top.x + top.w, top.y - cameraY);
+      ctx.lineTo(top.x + top.w, sy + BLOCK_H);
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // Score overlay
+    ctx.textAlign = 'left';
+    ctx.font = '11px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(232,240,255,.3)';
+    ctx.fillText(`Цель: 10 этажей`, 10, 18);
+  }
+
+  function handleAction() {
+    if (state === 'playing') placeBlock();
+  }
+
+  startBtn?.addEventListener('click', initGame);
+  canvas.addEventListener('click', handleAction);
+  canvas.addEventListener('touchend', (e) => { e.preventDefault(); handleAction(); }, { passive: false });
+  document.addEventListener('keydown', (e) => {
+    if (modal.classList.contains('open') && (e.code === 'Space' || e.code === 'Enter')) {
+      e.preventDefault(); handleAction();
+    }
+  });
+
+  drawIdle();
+})();
+
+// ══ KEYBOARD ESCAPE ══
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.getElementById('lightbox').classList.remove('open');
+    document.getElementById('gameModal').classList.remove('open');
+    document.querySelector('.money-drawer-v2').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+});
