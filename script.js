@@ -1,655 +1,833 @@
-/* VetraEstate — полная логика v2 */
 'use strict';
+/* VetraEstate — script v3 */
 
-// ══ PAGE LOADER ══
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    const loader = document.getElementById('page-loader');
-    if (loader) loader.classList.add('hidden');
-  }, 2200);
-});
+/* ══════════════════════════════════════
+   PRELOADER
+══════════════════════════════════════ */
+(function initLoader() {
+  const loader = document.getElementById('page-loader');
+  const pct = document.getElementById('loaderPct');
+  if (!loader) return;
+  let p = 0;
+  const iv = setInterval(() => {
+    p = Math.min(p + Math.random() * 18, 99);
+    if (pct) pct.textContent = Math.floor(p) + '%';
+  }, 80);
+  window.addEventListener('load', () => {
+    clearInterval(iv);
+    if (pct) pct.textContent = '100%';
+    setTimeout(() => loader.classList.add('hidden'), 400);
+  });
+  setTimeout(() => loader.classList.add('hidden'), 2600);
+})();
 
-// ══ HERO CANVAS — particles ══
+/* ══════════════════════════════════════
+   HERO CANVAS — Aurora / Nebula
+══════════════════════════════════════ */
 (function initHeroCanvas() {
-  const canvas = document.getElementById('hero-canvas');
+  const canvas = document.getElementById('heroCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
-  let W, H, particles = [];
+  let W, H, t = 0;
+
+  const blobs = [
+    { x: 0.2, y: 0.3, r: 420, color: 'rgba(10,20,80,0.70)', vx: 0.00015, vy: 0.0001, phase: 0 },
+    { x: 0.75, y: 0.4, r: 380, color: 'rgba(50,10,80,0.50)', vx: -0.00012, vy: 0.00018, phase: 1.2 },
+    { x: 0.5, y: 0.65, r: 460, color: 'rgba(5,40,50,0.40)', vx: 0.0001, vy: -0.00015, phase: 2.5 },
+    { x: 0.15, y: 0.7, r: 320, color: 'rgba(80,55,5,0.30)', vx: 0.00018, vy: 0.0001, phase: 0.8 },
+    { x: 0.85, y: 0.6, r: 350, color: 'rgba(10,20,80,0.55)', vx: -0.00016, vy: -0.00012, phase: 3.2 },
+    { x: 0.5, y: 0.2, r: 300, color: 'rgba(60,20,5,0.25)', vx: 0.00008, vy: 0.00022, phase: 1.8 },
+  ];
+
+  const particles = [];
 
   function resize() {
     W = canvas.width = canvas.offsetWidth;
     H = canvas.height = canvas.offsetHeight;
-  }
-
-  function createParticles() {
-    particles = [];
-    const count = Math.min(Math.floor(W * H / 8000), 120);
+    particles.length = 0;
+    const count = Math.min(Math.floor(W * H / 9000), 80);
     for (let i = 0; i < count; i++) {
       particles.push({
         x: Math.random() * W,
         y: Math.random() * H,
-        r: Math.random() * 1.8 + 0.4,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        alpha: Math.random() * 0.6 + 0.2,
-        color: Math.random() > 0.6 ? '#00D4FF' : Math.random() > 0.5 ? '#7B5FFF' : '#FFB800'
+        r: Math.random() * 1.5 + 0.5,
+        vy: -(Math.random() * 0.3 + 0.05),
+        vx: (Math.random() - 0.5) * 0.1,
+        alpha: Math.random() * 0.5 + 0.1,
       });
     }
   }
 
-  function drawLines() {
-    for (let i = 0; i < particles.length; i++) {
-      for (let j = i + 1; j < particles.length; j++) {
-        const dx = particles[i].x - particles[j].x;
-        const dy = particles[i].y - particles[j].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 130) {
-          ctx.beginPath();
-          ctx.strokeStyle = `rgba(0,212,255,${0.08 * (1 - dist / 130)})`;
-          ctx.lineWidth = 0.5;
-          ctx.moveTo(particles[i].x, particles[i].y);
-          ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.stroke();
-        }
-      }
-    }
-  }
-
-  function animate() {
+  function draw() {
     ctx.clearRect(0, 0, W, H);
-    drawLines();
+    ctx.fillStyle = '#0C0C0C';
+    ctx.fillRect(0, 0, W, H);
+
+    // Blobs
+    blobs.forEach(b => {
+      const bx = (b.x + Math.sin(t * b.vx * 1000 + b.phase) * 0.18) * W;
+      const by = (b.y + Math.cos(t * b.vy * 1000 + b.phase) * 0.14) * H;
+      const grad = ctx.createRadialGradient(bx, by, 0, bx, by, b.r * (W / 1440));
+      grad.addColorStop(0, b.color);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.beginPath();
+      ctx.arc(bx, by, b.r * (W / 1440), 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+    });
+
+    // Vignette overlay
+    const vig = ctx.createRadialGradient(W / 2, H / 2, H * 0.1, W / 2, H / 2, W * 0.75);
+    vig.addColorStop(0, 'rgba(12,12,12,0)');
+    vig.addColorStop(1, 'rgba(12,12,12,0.85)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, W, H);
+
+    // Particles
     particles.forEach(p => {
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
-      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.y < -4) { p.y = H + 4; p.x = Math.random() * W; }
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = p.color;
-      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = `rgba(201,168,76,${p.alpha})`;
       ctx.fill();
-      ctx.globalAlpha = 1;
     });
-    requestAnimationFrame(animate);
+
+    t++;
+    requestAnimationFrame(draw);
   }
 
-  resize(); createParticles(); animate();
-  let resizeTimer;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => { resize(); createParticles(); }, 200);
-  });
+  const ro = new ResizeObserver(resize);
+  ro.observe(canvas.parentElement || document.body);
+  resize();
+  draw();
 })();
 
-// ══ ABOUT CANVAS — animated building construction ══
+/* ══════════════════════════════════════
+   ABOUT CANVAS — Building construction
+══════════════════════════════════════ */
 (function initAboutCanvas() {
-  const canvas = document.getElementById('about-canvas');
+  const canvas = document.getElementById('aboutCanvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   let W, H, t = 0;
 
   function resize() {
-    W = canvas.width = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
+    const p = canvas.parentElement;
+    if (!p) return;
+    W = canvas.width = p.offsetWidth;
+    H = canvas.height = p.offsetHeight;
   }
 
-  function drawBuilding(x, targetH, color, progress) {
-    const h = targetH * Math.min(progress, 1);
-    const floors = Math.floor(h / 20);
-    // Main body
-    ctx.fillStyle = color;
-    ctx.fillRect(x, H - h, 40, h);
-    // Windows
-    ctx.fillStyle = 'rgba(0,212,255,0.4)';
-    for (let f = 0; f < floors; f++) {
-      for (let w = 0; w < 2; w++) {
-        const wy = H - h + f * 20 + 4;
-        const wx = x + 4 + w * 18;
-        if (Math.random() > 0.3) {
-          ctx.fillStyle = Math.random() > 0.7 ? 'rgba(255,184,0,0.6)' : 'rgba(0,212,255,0.5)';
-          ctx.fillRect(wx, wy, 8, 10);
-        }
-      }
-    }
-    // Crane on top
-    if (progress < 1.2) {
-      ctx.strokeStyle = '#FFB800';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(x + 20, H - h);
-      ctx.lineTo(x + 20, H - h - 30);
-      ctx.lineTo(x + 55, H - h - 30);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(x + 20, H - h - 30);
-      ctx.lineTo(x + 5, H - h - 20);
-      ctx.stroke();
-      // Hanging rope
-      const ropeX = x + 55 - (t % 50) * 0.8;
-      ctx.beginPath();
-      ctx.moveTo(ropeX, H - h - 30);
-      ctx.lineTo(ropeX, H - h - 10 + Math.sin(t * 0.05) * 5);
-      ctx.stroke();
-    }
-  }
-
-  function animate() {
-    t++;
+  function drawBuilding() {
     ctx.clearRect(0, 0, W, H);
 
-    // Grid lines
-    ctx.strokeStyle = 'rgba(0,212,255,0.05)';
+    const floors = Math.min(12, Math.floor(t / 60) + 2);
+    const maxFloors = 12;
+    const bw = W * 0.55;
+    const bx = (W - bw) / 2;
+    const floorH = (H * 0.7) / maxFloors;
+    const baseY = H * 0.88;
+
+    // Grid background
+    ctx.strokeStyle = 'rgba(201,168,76,0.04)';
     ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 30) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
     for (let y = 0; y < H; y += 30) {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
     }
 
-    const phase = t / 120;
-    drawBuilding(20, 140, 'rgba(0,212,255,0.15)', phase);
-    drawBuilding(80, 200, 'rgba(123,95,255,0.15)', phase - 0.3);
-    drawBuilding(150, 160, 'rgba(0,212,255,0.12)', phase - 0.6);
-    drawBuilding(220, 220, 'rgba(255,184,0,0.10)', phase - 0.9);
+    // Ground
+    ctx.fillStyle = 'rgba(201,168,76,0.15)';
+    ctx.fillRect(bx - 20, baseY, bw + 40, 3);
 
-    // Ground line
-    ctx.strokeStyle = 'rgba(0,212,255,0.20)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(W, H); ctx.stroke();
+    // Floors
+    for (let f = 0; f < floors; f++) {
+      const fy = baseY - (f + 1) * floorH;
+      const alpha = 0.06 + (f / floors) * 0.06;
+      ctx.fillStyle = `rgba(201,168,76,${alpha})`;
+      ctx.fillRect(bx, fy, bw, floorH - 2);
+      ctx.strokeStyle = 'rgba(201,168,76,0.2)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bx, fy, bw, floorH - 2);
 
-    // Floating particles
-    for (let i = 0; i < 8; i++) {
-      const px = (t * 0.5 + i * 40) % W;
-      const py = H * 0.3 + Math.sin(t * 0.02 + i) * 40;
-      ctx.beginPath();
-      ctx.arc(px, py, 2, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(0,212,255,0.3)';
-      ctx.fill();
+      // Windows
+      const cols = 4;
+      const ww = bw / (cols + 1) * 0.5;
+      const wh = floorH * 0.45;
+      for (let c = 0; c < cols; c++) {
+        const wx = bx + (bw / (cols + 1)) * (c + 1) - ww / 2;
+        const wy = fy + (floorH - wh) / 2;
+        const lit = Math.sin(t * 0.02 + f * 0.4 + c * 0.7) > 0.2;
+        ctx.fillStyle = lit ? 'rgba(232,201,122,0.4)' : 'rgba(201,168,76,0.05)';
+        ctx.fillRect(wx, wy, ww, wh);
+        ctx.strokeStyle = 'rgba(201,168,76,0.3)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(wx, wy, ww, wh);
+      }
     }
 
-    requestAnimationFrame(animate);
+    // Crane (top floor being built)
+    if (floors < maxFloors) {
+      const craneY = baseY - floors * floorH - 30;
+      ctx.strokeStyle = 'rgba(201,168,76,0.5)';
+      ctx.lineWidth = 2;
+      // Vertical
+      ctx.beginPath();
+      ctx.moveTo(bx + bw * 0.8, baseY - floors * floorH);
+      ctx.lineTo(bx + bw * 0.8, craneY - 40);
+      ctx.stroke();
+      // Horizontal arm
+      ctx.beginPath();
+      ctx.moveTo(bx + bw * 0.2, craneY - 40);
+      ctx.lineTo(bx + bw * 1.1, craneY - 40);
+      ctx.stroke();
+      // Cable
+      const cableX = bx + bw * 0.3 + Math.sin(t * 0.03) * 15;
+      ctx.beginPath();
+      ctx.moveTo(bx + bw * 0.35, craneY - 40);
+      ctx.lineTo(cableX, craneY);
+      ctx.stroke();
+      // Block
+      ctx.fillStyle = 'rgba(201,168,76,0.3)';
+      ctx.fillRect(cableX - 10, craneY, 20, 14);
+    }
+
+    // Progress text
+    ctx.fillStyle = 'rgba(201,168,76,0.45)';
+    ctx.font = '11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Этаж ${floors} / ${maxFloors}`, W / 2, H * 0.95);
+
+    t++;
+    requestAnimationFrame(drawBuilding);
   }
 
-  resize(); animate();
-  window.addEventListener('resize', resize);
+  const ro = new ResizeObserver(resize);
+  ro.observe(canvas.parentElement || document.body);
+  resize();
+  drawBuilding();
 })();
 
-// ══ NAVBAR ══
-const navbar = document.getElementById('navbar');
-const navToggle = document.getElementById('navToggle');
+/* ══════════════════════════════════════
+   NAVBAR
+══════════════════════════════════════ */
+(function initNavbar() {
+  const navbar = document.getElementById('navbar');
+  const toggle = document.getElementById('navToggle');
+  const links = document.getElementById('navLinks');
+  if (!navbar) return;
 
-window.addEventListener('scroll', () => {
-  navbar.classList.toggle('scrolled', window.scrollY > 60);
-}, { passive: true });
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 40);
+  }, { passive: true });
 
-navToggle?.addEventListener('click', () => {
-  const open = navbar.classList.toggle('open');
-  navToggle.setAttribute('aria-expanded', String(open));
-});
-document.querySelectorAll('.nav-links a').forEach(a =>
-  a.addEventListener('click', () => navbar.classList.remove('open'))
-);
-
-// ══ REVEAL ON SCROLL ══
-const revealObserver = new IntersectionObserver((entries) => {
-  entries.forEach((e, i) => {
-    if (e.isIntersecting) {
-      setTimeout(() => e.target.classList.add('visible'), i * 60);
-      revealObserver.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
-document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
-
-// ══ COUNTER ANIMATION ══
-function animateCounter(el) {
-  const target = parseInt(el.dataset.target) || 0;
-  const prefix = el.dataset.prefix || '';
-  const suffix = el.dataset.suffix || '';
-  let current = 0;
-  const step = Math.max(1, Math.floor(target / 60));
-  const timer = setInterval(() => {
-    current = Math.min(current + step, target);
-    el.textContent = prefix + current.toLocaleString('ru') + suffix;
-    if (current >= target) clearInterval(timer);
-  }, 30);
-}
-
-const counterObserver = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      animateCounter(e.target);
-      counterObserver.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.5 });
-document.querySelectorAll('.stat-num[data-target]').forEach(el => counterObserver.observe(el));
-
-// ══ FILTER BAR ══
-document.querySelectorAll('.filter').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const filter = btn.dataset.filter;
-    document.querySelectorAll('.project').forEach(card => {
-      const match = filter === 'all' || (card.dataset.category || '').includes(filter);
-      card.style.transition = 'opacity .35s, transform .35s';
-      card.style.opacity = match ? '1' : '0.25';
-      card.style.transform = match ? '' : 'scale(0.96)';
-      card.style.pointerEvents = match ? '' : 'none';
+  if (toggle && links) {
+    toggle.addEventListener('click', () => {
+      const open = links.classList.toggle('open');
+      toggle.classList.toggle('open', open);
     });
-  });
-});
+    links.addEventListener('click', e => {
+      if (e.target.tagName === 'A') {
+        links.classList.remove('open');
+        toggle.classList.remove('open');
+      }
+    });
+  }
+})();
 
-// ══ LIGHTBOX ══
-function openLightbox(src) {
+/* ══════════════════════════════════════
+   SCROLL REVEAL
+══════════════════════════════════════ */
+(function initReveal() {
+  const els = document.querySelectorAll('.reveal');
+  if (!('IntersectionObserver' in window)) {
+    els.forEach(el => el.classList.add('visible'));
+    return;
+  }
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), i * 60);
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  els.forEach(el => obs.observe(el));
+})();
+
+/* ══════════════════════════════════════
+   COUNTER ANIMATION
+══════════════════════════════════════ */
+(function initCounters() {
+  const counters = document.querySelectorAll('.counter');
+  if (!('IntersectionObserver' in window)) return;
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      obs.unobserve(entry.target);
+      const el = entry.target;
+      const target = parseInt(el.dataset.target, 10);
+      const dur = 1600;
+      const step = dur / 60;
+      let cur = 0;
+      const iv = setInterval(() => {
+        cur += target / (dur / step);
+        if (cur >= target) { el.textContent = target; clearInterval(iv); }
+        else el.textContent = Math.floor(cur);
+      }, step);
+    });
+  }, { threshold: 0.4 });
+  counters.forEach(c => obs.observe(c));
+})();
+
+/* ══════════════════════════════════════
+   LIGHTBOX
+══════════════════════════════════════ */
+(function initLightbox() {
   const lb = document.getElementById('lightbox');
   const img = document.getElementById('lightbox-img');
-  img.src = src;
-  lb.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-window.openLightbox = openLightbox;
+  const close = document.getElementById('lightbox-close');
+  if (!lb) return;
 
-document.getElementById('lightbox-close')?.addEventListener('click', () => {
-  document.getElementById('lightbox').classList.remove('open');
-  document.body.style.overflow = '';
-});
-document.getElementById('lightbox')?.addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) {
-    e.currentTarget.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-});
-
-// ══ MORTGAGE CALCULATOR ══
-function fmt(n) { return Math.round(n).toLocaleString('ru') + ' ₽'; }
-function calcUpdate() {
-  const price = parseInt(document.getElementById('r-price').value);
-  const down  = parseInt(document.getElementById('r-down').value);
-  const term  = parseInt(document.getElementById('r-term').value);
-  const rest  = Math.max(0, price - down);
-  const monthly = rest / term;
-  document.getElementById('v-price').textContent = fmt(price);
-  document.getElementById('v-down').textContent  = fmt(down);
-  document.getElementById('v-term').textContent  = term + (term === 1 ? ' месяц' : term < 5 ? ' месяца' : ' месяцев');
-  const el = document.getElementById('calc-monthly');
-  el.style.transform = 'scale(1.08)';
-  el.textContent = fmt(monthly);
-  setTimeout(() => el.style.transform = '', 300);
-  document.getElementById('cb-price').textContent = fmt(price);
-  document.getElementById('cb-down').textContent  = fmt(down);
-  document.getElementById('cb-rest').textContent  = fmt(rest);
-  document.getElementById('cb-term').textContent  = term + ' мес.';
-}
-['r-price','r-down','r-term'].forEach(id => {
-  document.getElementById(id)?.addEventListener('input', calcUpdate);
-});
-calcUpdate();
-
-// ══ MONEY WIDGET ══
-const moneyDrawer = document.querySelector('.money-drawer-v2');
-const moneyMini   = document.querySelector('.money-mini-v2');
-const moneyClose  = document.querySelector('.money-close-v2');
-const moneyBg     = document.querySelector('.money-drawer-bg-v2');
-
-function openMoneyDrawer() {
-  moneyDrawer.classList.add('open');
-  moneyDrawer.setAttribute('aria-hidden','false');
-  document.body.style.overflow = 'hidden';
-}
-function closeMoneyDrawer() {
-  moneyDrawer.classList.remove('open');
-  moneyDrawer.setAttribute('aria-hidden','true');
-  document.body.style.overflow = '';
-}
-moneyMini?.addEventListener('click', openMoneyDrawer);
-moneyClose?.addEventListener('click', closeMoneyDrawer);
-moneyBg?.addEventListener('click', closeMoneyDrawer);
-
-const PROJECTS_DATA = [
-  { name: 'ЖК «Новый Горизонт»', min: 100000, price: 'от 60 000 ₽/м²', img: 'images/horizon-5.jpeg', url: 'new-horizon.html' },
-  { name: 'АК «Алые Паруса»',    min: 100000, price: 'от 50 000 ₽/м²', img: 'images/alye-photo-5.jpg',  url: 'alye-parusa.html' },
-  { name: 'ЖК «Московский»',     min: 200000, price: 'от 70 000 ₽/м²', img: 'images/moscow-photo-2.jpg', url: 'moskovskiy.html' },
-];
-
-document.querySelectorAll('.money-chips-v2 button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.money-chips-v2 button').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelector('.money-input-v2').value = btn.dataset.money;
+  document.querySelectorAll('.gallery-item').forEach(item => {
+    item.addEventListener('click', () => {
+      img.src = item.dataset.src || item.querySelector('img').src;
+      lb.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
   });
-});
 
-document.querySelector('.money-run-v2')?.addEventListener('click', () => {
-  const val = parseInt(document.querySelector('.money-input-v2').value) || 0;
-  const results = PROJECTS_DATA.filter(p => val >= p.min);
-  const summary = document.querySelector('.money-summary-v2');
-  const resultsEl = document.querySelector('.money-results-v2');
-  summary.textContent = val > 0 ? `При взносе ${val.toLocaleString('ru')} ₽ доступно: ${results.length} ЖК` : '';
-  resultsEl.innerHTML = results.map(p => `
-    <div class="money-result-card" onclick="window.location.href='${p.url}'">
-      <img src="${p.img}" alt="${p.name}">
-      <div class="money-result-info">
-        <h4>${p.name}</h4>
-        <span>Взнос от ${p.min.toLocaleString('ru')} ₽</span>
-      </div>
-      <span class="money-result-price">${p.price}</span>
-    </div>`).join('') || '<p style="color:var(--text3);font-size:.82rem;text-align:center;padding:16px">Увеличьте сумму взноса</p>';
-});
-
-// ══ CONFETTI ══
-function launchConfetti() {
-  const container = document.getElementById('confetti-container');
-  const colors = ['#00D4FF','#FFB800','#7B5FFF','#00E887','#FF4D6A','#FF8C00','#4DE8FF'];
-  for (let i = 0; i < 80; i++) {
-    const piece = document.createElement('div');
-    piece.className = 'confetti-piece';
-    piece.style.cssText = `
-      left:${Math.random()*100}%;
-      background:${colors[Math.floor(Math.random()*colors.length)]};
-      animation-duration:${1.5 + Math.random()*2}s;
-      animation-delay:${Math.random()*0.6}s;
-      transform:rotate(${Math.random()*360}deg);
-      width:${6 + Math.random()*6}px;
-      height:${8 + Math.random()*8}px;
-    `;
-    container.appendChild(piece);
-    piece.addEventListener('animationend', () => piece.remove());
+  function closeLb() {
+    lb.classList.remove('open');
+    document.body.style.overflow = '';
+    setTimeout(() => { img.src = ''; }, 300);
   }
-}
 
-// ══ GAME ══
+  close.addEventListener('click', closeLb);
+  lb.addEventListener('click', e => { if (e.target === lb) closeLb(); });
+})();
+
+/* ══════════════════════════════════════
+   FILTER BAR
+══════════════════════════════════════ */
+(function initFilter() {
+  const bar = document.querySelector('.filter-bar');
+  const grid = document.getElementById('projectsGrid');
+  if (!bar || !grid) return;
+
+  bar.addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    bar.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filter = btn.dataset.filter;
+    grid.querySelectorAll('.project-card:not(.project-card-more)').forEach(card => {
+      const tags = card.dataset.tags || '';
+      const show = filter === 'all' || tags.includes(filter);
+      card.style.opacity = show ? '1' : '0';
+      card.style.transform = show ? '' : 'scale(0.95)';
+      card.style.pointerEvents = show ? '' : 'none';
+      card.style.transition = 'opacity 0.4s, transform 0.4s';
+    });
+  });
+})();
+
+/* ══════════════════════════════════════
+   MORTGAGE CALCULATOR
+══════════════════════════════════════ */
+(function initCalculator() {
+  const priceEl = document.getElementById('priceSlider');
+  const downEl = document.getElementById('downSlider');
+  const termEl = document.getElementById('termSlider');
+  if (!priceEl || !downEl || !termEl) return;
+
+  function fmt(n) {
+    return n.toLocaleString('ru-RU') + ' ₽';
+  }
+
+  function calc() {
+    const price = parseInt(priceEl.value, 10);
+    const down = parseInt(downEl.value, 10);
+    const term = parseInt(termEl.value, 10);
+    const rest = Math.max(price - down, 0);
+    const monthly = term > 0 ? Math.ceil(rest / term) : rest;
+
+    document.getElementById('priceVal').textContent = fmt(price);
+    document.getElementById('downVal').textContent = fmt(down);
+    document.getElementById('termVal').textContent = term + ' мес.';
+    document.getElementById('monthlyVal').textContent = fmt(monthly);
+    document.getElementById('tPrice').textContent = fmt(price);
+    document.getElementById('tDown').textContent = fmt(down);
+    document.getElementById('tRest').textContent = fmt(rest);
+    document.getElementById('tTerm').textContent = term + ' мес.';
+    document.getElementById('tOver').textContent = '0 ₽';
+
+    // Update slider track fill
+    [priceEl, downEl, termEl].forEach(sl => {
+      const min = parseFloat(sl.min);
+      const max = parseFloat(sl.max);
+      const val = parseFloat(sl.value);
+      const pct = ((val - min) / (max - min)) * 100;
+      sl.style.background = `linear-gradient(to right, #C9A84C ${pct}%, #2A2A2A ${pct}%)`;
+    });
+  }
+
+  [priceEl, downEl, termEl].forEach(el => el.addEventListener('input', calc));
+  calc();
+})();
+
+/* ══════════════════════════════════════
+   FLOOR PLAN SELECTOR
+══════════════════════════════════════ */
+(function initFloorPlans() {
+  const tabsEl = document.getElementById('fpTabs');
+  const typesEl = document.getElementById('fpTypes');
+  if (!tabsEl || !typesEl) return;
+
+  const data = {
+    horizon: {
+      studio: { img: 'images/horizon-new-layout-11.jpg', area: '35 м²', price: 'от 4 800 000 ₽', monthly: 'от 80 000 ₽' },
+      '1k':   { img: 'images/horizon-new-layout-13.jpg', area: '50 м²', price: 'от 6 500 000 ₽', monthly: 'от 108 000 ₽' },
+      '2k':   { img: 'images/horizon-new-layout-15.jpg', area: '65 м²', price: 'от 8 200 000 ₽', monthly: 'от 137 000 ₽' },
+    },
+    alye: {
+      studio: { img: 'images/alye-layout-11.jpg', area: '42 м²', price: 'от 5 500 000 ₽', monthly: 'от 92 000 ₽' },
+      '1k':   { img: 'images/alye-layout-14.jpg', area: '55 м²', price: 'от 7 000 000 ₽', monthly: 'от 117 000 ₽' },
+      '2k':   { img: 'images/alye-layout-18.jpg', area: '70 м²', price: 'от 9 500 000 ₽', monthly: 'от 158 000 ₽' },
+    },
+    moscow: {
+      studio: { img: 'images/moscow-layout-25.jpg', area: '50 м²', price: 'от 6 200 000 ₽', monthly: 'от 103 000 ₽' },
+      '1k':   { img: 'images/moscow-layout-26.jpg', area: '60 м²', price: 'от 7 800 000 ₽', monthly: 'от 130 000 ₽' },
+      '2k':   { img: 'images/moscow-layout-28.jpg', area: '75 м²', price: 'от 10 200 000 ₽', monthly: 'от 170 000 ₽' },
+    },
+  };
+
+  let currentProject = 'horizon';
+  let currentType = 'studio';
+
+  function update() {
+    const d = data[currentProject][currentType];
+    if (!d) return;
+    const img = document.getElementById('fpImage');
+    const area = document.getElementById('fpArea');
+    const price = document.getElementById('fpPrice');
+    const monthly = document.getElementById('fpMonthly');
+    if (img) { img.style.opacity = '0'; setTimeout(() => { img.src = d.img; img.style.opacity = '1'; }, 150); }
+    if (area) area.textContent = d.area;
+    if (price) price.textContent = d.price;
+    if (monthly) monthly.textContent = d.monthly;
+  }
+
+  tabsEl.addEventListener('click', e => {
+    const btn = e.target.closest('.fp-tab');
+    if (!btn) return;
+    tabsEl.querySelectorAll('.fp-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentProject = btn.dataset.project;
+    update();
+  });
+
+  typesEl.addEventListener('click', e => {
+    const btn = e.target.closest('.fp-type');
+    if (!btn) return;
+    typesEl.querySelectorAll('.fp-type').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentType = btn.dataset.type;
+    update();
+  });
+})();
+
+/* ══════════════════════════════════════
+   MONEY WIDGET
+══════════════════════════════════════ */
+(function initMoneyWidget() {
+  const btn = document.getElementById('moneyWidgetBtn');
+  const drawer = document.getElementById('moneyDrawer');
+  const closeBtn = document.getElementById('closeMoneyDrawer');
+  const findBtn = document.getElementById('findByBudget');
+  const input = document.getElementById('budgetInput');
+  const results = document.getElementById('moneyResults');
+  if (!btn || !drawer) return;
+
+  const projects = [
+    { name: 'ЖК Новый Горизонт — Студия', price: 4800000, link: 'new-horizon.html' },
+    { name: 'ЖК Новый Горизонт — 1К', price: 6500000, link: 'new-horizon.html' },
+    { name: 'ЖК Новый Горизонт — 2К', price: 8200000, link: 'new-horizon.html' },
+    { name: 'ЖК Алые Паруса — Студия', price: 5500000, link: 'alye-parusa.html' },
+    { name: 'ЖК Алые Паруса — 1К', price: 7000000, link: 'alye-parusa.html' },
+    { name: 'ЖК Алые Паруса — 2К', price: 9500000, link: 'alye-parusa.html' },
+    { name: 'ЖК Московский — Студия', price: 6200000, link: 'moskovskiy.html' },
+    { name: 'ЖК Московский — 1К', price: 7800000, link: 'moskovskiy.html' },
+    { name: 'ЖК Московский — 2К', price: 10200000, link: 'moskovskiy.html' },
+  ];
+
+  btn.addEventListener('click', () => drawer.classList.toggle('open'));
+  closeBtn.addEventListener('click', () => drawer.classList.remove('open'));
+  document.addEventListener('click', e => {
+    if (!drawer.contains(e.target) && e.target !== btn) drawer.classList.remove('open');
+  });
+
+  findBtn.addEventListener('click', () => {
+    const budget = parseFloat(input.value);
+    if (!budget || budget <= 0) {
+      results.innerHTML = '<span style="color:rgba(245,240,232,0.4)">Введите сумму бюджета</span>';
+      return;
+    }
+    const found = projects.filter(p => p.price <= budget);
+    if (!found.length) {
+      results.innerHTML = '<span style="color:rgba(245,240,232,0.4)">Нет подходящих квартир. Попробуйте увеличить бюджет.</span>';
+      return;
+    }
+    results.innerHTML = found.map(p =>
+      `<div class="money-result-item">
+        <span class="money-result-name">${p.name}</span>
+        <span>от ${p.price.toLocaleString('ru-RU')} ₽ · <a href="${p.link}" style="color:var(--gold)">Подробнее →</a></span>
+      </div>`
+    ).join('');
+  });
+
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') findBtn.click(); });
+})();
+
+/* ══════════════════════════════════════
+   GAME — Строитель (Stacking)
+══════════════════════════════════════ */
 (function initGame() {
-  const modal       = document.getElementById('gameModal');
-  const modalBg     = document.getElementById('gameModalBg');
-  const closeBtn    = document.getElementById('gameClose');
-  const startBtn    = document.getElementById('gameStartBtn');
-  const canvas      = document.getElementById('game-canvas');
-  const prizeBanner = document.getElementById('gamePrize');
-  const hudScore    = document.getElementById('hud-score');
-  const hudBest     = document.getElementById('hud-best');
-  const hudLevel    = document.getElementById('hud-level');
+  const openBtns = [
+    document.getElementById('openGame'),
+    document.getElementById('heroOpenGame'),
+  ];
+  const modal = document.getElementById('gameModal');
+  const closeBtn = document.getElementById('closeGame');
+  const canvas = document.getElementById('gameCanvas');
+  if (!canvas || !modal) return;
 
-  if (!modal || !canvas) return;
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  const W = canvas.width;
+  const H = canvas.height;
+
+  // UI refs
+  const scoreEl = document.getElementById('gScore');
+  const bestEl = document.getElementById('gBest');
+  const floorEl = document.getElementById('gFloor');
+  const overlay = document.getElementById('gameOverlay');
+  const goIcon = document.getElementById('goIcon');
+  const goTitle = document.getElementById('goTitle');
+  const goSub = document.getElementById('goSub');
+  const goStats = document.getElementById('goStats');
+  const goBtn = document.getElementById('goBtn');
+  const goWa = document.getElementById('goWa');
+  const effectEl = document.getElementById('gameEffect');
+
+  const BLOCK_H = 22;
+  const BASE_Y = H - 30;
+  const CAMERA_THRESH = 6;
+
+  const COLORS = [
+    ['#C9A84C', '#E8C97A'],
+    ['#4A90D9', '#7EB8F7'],
+    ['#9B59B6', '#C39BD3'],
+    ['#27AE60', '#58D68D'],
+    ['#E74C3C', '#F1948A'],
+  ];
 
   let state = 'idle'; // idle | playing | over | win
-  let blocks = [], movingBlock = null, score = 0, best = 0, animId = null;
+  let score = 0;
+  let best = parseInt(localStorage.getItem('ve_game_best') || '0', 10);
+  let floor = 0;
+  let cameraY = 0;
+  let targetCameraY = 0;
+  let blocks = [];
+  let moving = null;
+  let fallingPieces = [];
+  let perfectStreak = 0;
+  let raf = null;
+  let effectTimeout = null;
 
-  const COLORS = ['#00D4FF','#7B5FFF','#00E887','#FFB800','#FF4D6A','#4DE8FF','#FF8C00'];
-  const BLOCK_H = 22, CAMERA_SPEED = 1;
-  let cameraY = 0, targetCameraY = 0;
+  bestEl.textContent = best;
+
+  function resetGame() {
+    score = 0; floor = 0; cameraY = 0; targetCameraY = 0;
+    blocks = []; fallingPieces = []; moving = null; perfectStreak = 0;
+    scoreEl.textContent = 0; floorEl.textContent = 0;
+
+    // Base block
+    blocks.push({ x: W / 2 - 90, y: BASE_Y, w: 180, h: BLOCK_H, colorIdx: 0 });
+    spawnMoving();
+  }
+
+  function spawnMoving() {
+    const speed = Math.min(1.5 + floor * 0.18, 5.0);
+    const colorIdx = floor % COLORS.length;
+    const lastW = blocks[blocks.length - 1].w;
+    const w = Math.max(lastW, 40);
+    moving = {
+      x: -w,
+      y: BASE_Y - (floor + 1) * BLOCK_H,
+      w,
+      h: BLOCK_H,
+      speed,
+      dir: 1,
+      colorIdx,
+    };
+  }
+
+  function showEffect(text) {
+    if (!effectEl) return;
+    effectEl.textContent = text;
+    effectEl.classList.add('show');
+    clearTimeout(effectTimeout);
+    effectTimeout = setTimeout(() => effectEl.classList.remove('show'), 900);
+  }
+
+  function placeBlock() {
+    if (!moving || state !== 'playing') return;
+    const last = blocks[blocks.length - 1];
+    const overlapX = Math.max(0, Math.min(moving.x + moving.w, last.x + last.w) - Math.max(moving.x, last.x));
+    if (overlapX < 10) {
+      // Game over
+      fallingPieces.push({
+        x: moving.x, y: moving.y, w: moving.w, h: BLOCK_H,
+        vy: 2, vx: moving.dir * 1.5, rot: 0, rotV: 0.05,
+        colorIdx: moving.colorIdx,
+      });
+      state = 'over';
+      if (score > best) { best = score; localStorage.setItem('ve_game_best', best); bestEl.textContent = best; }
+      setTimeout(showGameOver, 1200);
+      return;
+    }
+
+    const isPerfect = Math.abs(overlapX - last.w) < 3 || Math.abs(overlapX - moving.w) < 3;
+    let newX, newW;
+    if (isPerfect) {
+      newX = last.x; newW = last.w;
+      perfectStreak++;
+      if (perfectStreak >= 3) { showEffect('КОМБО! 🔥'); }
+      else { showEffect('✨ ИДЕАЛЬНО!'); }
+    } else {
+      newX = Math.max(moving.x, last.x);
+      newW = overlapX;
+      perfectStreak = 0;
+      // Falling trimmed piece
+      const trimX = moving.x < last.x ? moving.x : moving.x + overlapX;
+      const trimW = moving.w - overlapX;
+      if (trimW > 0) {
+        fallingPieces.push({
+          x: trimX, y: moving.y, w: trimW, h: BLOCK_H,
+          vy: 1.5, vx: (trimX < newX ? -1 : 1) * 1.5, rot: 0, rotV: (Math.random() - 0.5) * 0.1,
+          colorIdx: moving.colorIdx,
+        });
+      }
+    }
+
+    blocks.push({ x: newX, y: moving.y, w: newW, h: BLOCK_H, colorIdx: moving.colorIdx });
+    floor++;
+    score += isPerfect ? 15 : 10;
+    scoreEl.textContent = score;
+    floorEl.textContent = floor;
+
+    // Move camera up
+    if (floor > CAMERA_THRESH) {
+      targetCameraY = (floor - CAMERA_THRESH) * BLOCK_H;
+    }
+
+    if (floor >= 10) {
+      state = 'win';
+      if (score > best) { best = score; localStorage.setItem('ve_game_best', best); bestEl.textContent = best; }
+      setTimeout(showWin, 600);
+    } else {
+      spawnMoving();
+    }
+  }
+
+  function showGameOver() {
+    overlay.classList.remove('hidden');
+    goIcon.textContent = '💥';
+    goTitle.textContent = 'Игра окончена';
+    goSub.textContent = `Этажей построено: ${floor}`;
+    goStats.textContent = `Счёт: ${score} · Рекорд: ${best}`;
+    goStats.style.display = 'block';
+    goBtn.textContent = 'Ещё раз';
+    goWa.style.display = 'none';
+  }
+
+  function showWin() {
+    overlay.classList.remove('hidden');
+    goIcon.textContent = '🎉';
+    goTitle.textContent = '10 этажей!';
+    goSub.textContent = 'Получите бонус при обращении сегодня!';
+    goStats.textContent = `Счёт: ${score} · Рекорд: ${best}`;
+    goStats.style.display = 'block';
+    goBtn.textContent = 'Играть снова';
+    goWa.style.display = 'flex';
+    spawnConfetti();
+  }
+
+  goBtn.addEventListener('click', () => {
+    overlay.classList.add('hidden');
+    resetGame();
+    state = 'playing';
+    if (!raf) gameLoop();
+  });
+
+  function drawBlock(x, y, w, h, colorIdx, alpha) {
+    const [c1, c2] = COLORS[colorIdx % COLORS.length];
+    const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+    grad.addColorStop(0, c1);
+    grad.addColorStop(1, c2);
+    ctx.save();
+    ctx.globalAlpha = alpha || 1;
+    ctx.shadowColor = c1;
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x, y, w, h, 4) : ctx.rect(x, y, w, h);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillRect(x + 2, y + 2, w - 4, 4);
+    ctx.restore();
+  }
+
+  function gameLoop() {
+    ctx.clearRect(0, 0, W, H);
+
+    // BG
+    ctx.fillStyle = '#0C0C0C';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(201,168,76,0.04)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 20) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    }
+    for (let y = 0; y < H; y += 20) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // Camera easing
+    cameraY += (targetCameraY - cameraY) * 0.08;
+
+    ctx.save();
+    ctx.translate(0, cameraY);
+
+    // Placed blocks
+    blocks.forEach(b => drawBlock(b.x, b.y - cameraY * 0, b.w, b.h, b.colorIdx));
+
+    // Moving block
+    if (moving && state === 'playing') {
+      moving.x += moving.speed * moving.dir;
+      if (moving.x + moving.w >= W + 10) moving.dir = -1;
+      if (moving.x <= -10) moving.dir = 1;
+      drawBlock(moving.x, moving.y, moving.w, moving.h, moving.colorIdx, 0.85);
+    }
+
+    ctx.restore();
+
+    // Falling pieces
+    fallingPieces = fallingPieces.filter(fp => {
+      fp.x += fp.vx;
+      fp.y += fp.vy;
+      fp.vy += 0.18;
+      fp.rot += fp.rotV;
+      if (fp.y - cameraY > H + 60) return false;
+      ctx.save();
+      ctx.translate(fp.x + fp.w / 2, fp.y - cameraY + fp.h / 2);
+      ctx.rotate(fp.rot);
+      drawBlock(-fp.w / 2, -fp.h / 2, fp.w, fp.h, fp.colorIdx, 0.7);
+      ctx.restore();
+      return true;
+    });
+
+    // Ground line
+    ctx.strokeStyle = 'rgba(201,168,76,0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, BASE_Y + BLOCK_H + 5 + cameraY);
+    ctx.lineTo(W, BASE_Y + BLOCK_H + 5 + cameraY);
+    ctx.stroke();
+
+    if (state === 'playing' || state === 'over') {
+      raf = requestAnimationFrame(gameLoop);
+    } else {
+      raf = null;
+    }
+  }
+
+  // Input
+  canvas.addEventListener('click', placeBlock);
+  canvas.addEventListener('touchend', e => { e.preventDefault(); placeBlock(); }, { passive: false });
+
+  function onKey(e) {
+    if (!modal.classList.contains('open')) return;
+    if (e.code === 'Space') { e.preventDefault(); placeBlock(); }
+    if (e.code === 'Escape') closeModal();
+  }
+  document.addEventListener('keydown', onKey);
 
   function openModal() {
     modal.classList.add('open');
     document.body.style.overflow = 'hidden';
-    prizeBanner.classList.remove('show');
-    if (state === 'idle') drawIdle();
+    overlay.classList.remove('hidden');
+    goIcon.textContent = '🏗️';
+    goTitle.textContent = 'Строитель';
+    goSub.textContent = 'Нажмите Начать, чтобы играть';
+    goStats.style.display = 'none';
+    goBtn.textContent = 'Начать';
+    goWa.style.display = 'none';
+    resetGame();
+    ctx.fillStyle = '#0C0C0C';
+    ctx.fillRect(0, 0, W, H);
   }
+
   function closeModal() {
     modal.classList.remove('open');
     document.body.style.overflow = '';
-    if (animId) { cancelAnimationFrame(animId); animId = null; }
+    state = 'idle';
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
   }
 
-  document.getElementById('openGame')?.addEventListener('click', openModal);
-  document.getElementById('openGameHero')?.addEventListener('click', openModal);
-  closeBtn?.addEventListener('click', closeModal);
-  modalBg?.addEventListener('click', closeModal);
-
-  function drawIdle() {
-    ctx.clearRect(0, 0, W, H);
-    // Animated background
-    const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#07091A');
-    grad.addColorStop(1, '#0D1228');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Grid
-    ctx.strokeStyle = 'rgba(0,212,255,0.06)';
-    ctx.lineWidth = 1;
-    for (let y = 0; y < H; y += 30) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-    }
-    for (let x = 0; x < W; x += 30) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-    }
-
-    // Sample building
-    ctx.fillStyle = 'rgba(0,212,255,0.08)';
-    ctx.fillRect(W/2 - 30, H - 100, 60, 100);
-
-    // Text
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 24px Cinzel, serif';
-    ctx.fillStyle = '#00D4FF';
-    ctx.fillText('🏗️ Стройка', W/2, H/2 - 20);
-    ctx.font = '14px Inter, sans-serif';
-    ctx.fillStyle = 'rgba(232,240,255,.55)';
-    ctx.fillText('Нажми «Начать игру» и стопи блоки!', W/2, H/2 + 10);
-    ctx.fillText('Цель: построить 10 этажей', W/2, H/2 + 32);
-  }
-
-  function initGame() {
-    state = 'playing';
-    score = 0; cameraY = 0; targetCameraY = 0;
-    prizeBanner.classList.remove('show');
-    startBtn.textContent = '🔄 Начать заново';
-
-    blocks = [{
-      x: W/2 - 60, y: H - BLOCK_H, w: 120, color: COLORS[0], fixed: true
-    }];
-
-    spawnBlock();
-    updateHUD();
-    if (animId) cancelAnimationFrame(animId);
-    loop();
-  }
-
-  function spawnBlock() {
-    const color = COLORS[blocks.length % COLORS.length];
-    const topBlock = blocks[blocks.length - 1];
-    const maxW = topBlock.w + 20;
-    const w = Math.min(maxW, 120);
-    const dir = blocks.length % 2 === 0 ? 1 : -1;
-    movingBlock = {
-      x: dir > 0 ? -w : W,
-      y: topBlock.y - BLOCK_H,
-      w, color,
-      dir,
-      speed: 2.5 + blocks.length * 0.12
-    };
-  }
-
-  function placeBlock() {
-    if (!movingBlock || state !== 'playing') return;
-    const top = blocks[blocks.length - 1];
-
-    // Overlap calculation
-    const overlapLeft  = Math.max(movingBlock.x, top.x);
-    const overlapRight = Math.min(movingBlock.x + movingBlock.w, top.x + top.w);
-    const overlap = overlapRight - overlapLeft;
-
-    if (overlap <= 0) {
-      // Miss — game over
-      gameOver();
-      return;
-    }
-
-    // Place block with trimmed width
-    const placed = {
-      x: overlapLeft, y: movingBlock.y,
-      w: overlap, color: movingBlock.color, fixed: true
-    };
-    blocks.push(placed);
-    score += Math.floor(overlap);
-    updateHUD();
-
-    // Perfect bonus
-    if (Math.abs(overlap - top.w) < 4) {
-      placed.x = top.x; placed.w = top.w; // snap perfect
-      showPerfect(placed.x + placed.w/2, placed.y);
-    }
-
-    // Camera pan up
-    targetCameraY = Math.max(0, (blocks.length - 10) * BLOCK_H);
-
-    if (blocks.length - 1 >= 10) {
-      winGame();
-      return;
-    }
-    movingBlock = null;
-    spawnBlock();
-  }
-
-  function showPerfect(x, y) {
-    const fx = x, fy = y - cameraY;
-    const perfObj = { x: fx, y: fy, alpha: 1, t: 0 };
-    const draw = () => {
-      if (perfObj.alpha <= 0) return;
-      ctx.save();
-      ctx.globalAlpha = perfObj.alpha;
-      ctx.font = 'bold 16px Inter, sans-serif';
-      ctx.fillStyle = '#00E887';
-      ctx.textAlign = 'center';
-      ctx.fillText('✨ PERFECT!', perfObj.x, perfObj.y - perfObj.t);
-      ctx.restore();
-      perfObj.t += 1.5; perfObj.alpha -= 0.03;
-      requestAnimationFrame(draw);
-    };
-    requestAnimationFrame(draw);
-  }
-
-  function gameOver() {
-    state = 'over';
-    if (score > best) best = score;
-    updateHUD();
-    startBtn.textContent = '🔄 Играть снова';
-    // Draw game over overlay
-    setTimeout(() => {
-      ctx.fillStyle = 'rgba(0,0,0,.6)';
-      ctx.fillRect(0, 0, W, H);
-      ctx.textAlign = 'center';
-      ctx.font = 'bold 22px Cinzel, serif';
-      ctx.fillStyle = '#FF4D6A';
-      ctx.fillText('Игра окончена!', W/2, H/2 - 16);
-      ctx.font = '14px Inter, sans-serif';
-      ctx.fillStyle = 'rgba(232,240,255,.7)';
-      ctx.fillText(`Этажей: ${blocks.length - 1}  |  Рекорд: ${best}`, W/2, H/2 + 12);
-    }, 100);
-  }
-
-  function winGame() {
-    state = 'win';
-    if (score > best) best = score;
-    updateHUD();
-    startBtn.textContent = '🔄 Играть снова';
-    prizeBanner.classList.add('show');
-    launchConfetti();
-  }
-
-  function updateHUD() {
-    hudScore.textContent = score;
-    hudBest.textContent = best;
-    hudLevel.textContent = Math.max(0, blocks.length - 1);
-  }
-
-  function loop() {
-    animId = requestAnimationFrame(loop);
-    ctx.clearRect(0, 0, W, H);
-
-    // Smooth camera
-    cameraY += (targetCameraY - cameraY) * CAMERA_SPEED * 0.1;
-
-    // BG
-    const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#07091A'); grad.addColorStop(1, '#0D1228');
-    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
-
-    // Grid
-    ctx.strokeStyle = 'rgba(0,212,255,0.05)'; ctx.lineWidth = 1;
-    for (let y = 0; y < H; y += BLOCK_H) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-    }
-
-    // Placed blocks
-    blocks.forEach(b => {
-      const sy = b.y - cameraY;
-      const grad2 = ctx.createLinearGradient(b.x, sy, b.x, sy + BLOCK_H);
-      grad2.addColorStop(0, b.color);
-      grad2.addColorStop(1, b.color + '88');
-      ctx.fillStyle = grad2;
-      ctx.beginPath();
-      ctx.roundRect(b.x + 1, sy + 1, b.w - 2, BLOCK_H - 2, 4);
-      ctx.fill();
-      // Glow
-      ctx.shadowColor = b.color; ctx.shadowBlur = 8;
-      ctx.strokeStyle = b.color + 'AA'; ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(b.x + 1, sy + 1, b.w - 2, BLOCK_H - 2, 4);
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-    });
-
-    // Moving block
-    if (movingBlock && state === 'playing') {
-      movingBlock.x += movingBlock.dir * movingBlock.speed;
-      if (movingBlock.x + movingBlock.w > W + 20) movingBlock.dir = -1;
-      if (movingBlock.x < -20) movingBlock.dir = 1;
-
-      const sy = movingBlock.y - cameraY;
-      ctx.fillStyle = movingBlock.color + 'CC';
-      ctx.beginPath();
-      ctx.roundRect(movingBlock.x + 1, sy + 1, movingBlock.w - 2, BLOCK_H - 2, 4);
-      ctx.fill();
-      // Glow
-      ctx.shadowColor = movingBlock.color; ctx.shadowBlur = 12;
-      ctx.strokeStyle = movingBlock.color; ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(movingBlock.x + 1, sy + 1, movingBlock.w - 2, BLOCK_H - 2, 4);
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      // Guide line from top block
-      const top = blocks[blocks.length - 1];
-      ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
-      ctx.beginPath();
-      ctx.moveTo(top.x, top.y - cameraY);
-      ctx.lineTo(top.x, sy + BLOCK_H);
-      ctx.moveTo(top.x + top.w, top.y - cameraY);
-      ctx.lineTo(top.x + top.w, sy + BLOCK_H);
-      ctx.stroke(); ctx.setLineDash([]);
-    }
-
-    // Score overlay
-    ctx.textAlign = 'left';
-    ctx.font = '11px Inter, sans-serif';
-    ctx.fillStyle = 'rgba(232,240,255,.3)';
-    ctx.fillText(`Цель: 10 этажей`, 10, 18);
-  }
-
-  function handleAction() {
-    if (state === 'playing') placeBlock();
-  }
-
-  startBtn?.addEventListener('click', initGame);
-  canvas.addEventListener('click', handleAction);
-  canvas.addEventListener('touchend', (e) => { e.preventDefault(); handleAction(); }, { passive: false });
-  document.addEventListener('keydown', (e) => {
-    if (modal.classList.contains('open') && (e.code === 'Space' || e.code === 'Enter')) {
-      e.preventDefault(); handleAction();
-    }
-  });
-
-  drawIdle();
+  openBtns.forEach(b => { if (b) b.addEventListener('click', openModal); });
+  closeBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 })();
 
-// ══ KEYBOARD ESCAPE ══
-document.addEventListener('keydown', (e) => {
+/* ══════════════════════════════════════
+   CONFETTI
+══════════════════════════════════════ */
+function spawnConfetti() {
+  const container = document.getElementById('confetti-container');
+  if (!container) return;
+  const colors = ['#C9A84C', '#E8C97A', '#F5F0E8', '#4A90D9', '#27AE60'];
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = `
+      left: ${Math.random() * 100}%;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      width: ${Math.random() * 8 + 4}px;
+      height: ${Math.random() * 8 + 4}px;
+      animation-duration: ${Math.random() * 2 + 2}s;
+      animation-delay: ${Math.random() * 0.8}s;
+    `;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
+
+/* ══════════════════════════════════════
+   KEYBOARD GLOBAL
+══════════════════════════════════════ */
+document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    document.getElementById('lightbox').classList.remove('open');
-    document.getElementById('gameModal').classList.remove('open');
-    document.querySelector('.money-drawer-v2').classList.remove('open');
+    document.getElementById('lightbox')?.classList.remove('open');
     document.body.style.overflow = '';
   }
 });

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <link rel="icon" type="image/png" href="favicon.png?v=20260611v2">
+  <link rel="icon" type="image/png" href="favicon.png?v=20260611v3">
   <meta name="google-site-verification" content="ah5EGE-GIdOqNANY60iLD1R32ajjtTGSFp-BNrKD7Gc" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,14 +9,21 @@
   <title>VetraEstate — Новостройки в Дагестане</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="style.css?v=20260611v2" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20260611v3" />
 </head>
 <body>
 
-<!-- PAGE LOADER -->
+<!-- PRELOADER -->
 <div id="page-loader">
-  <div class="loader-logo">VetraEstate</div>
-  <div class="loader-bar"><div class="loader-fill"></div></div>
+  <div class="loader-content">
+    <div class="loader-logo">
+      <span class="loader-v">V</span><span class="loader-name">etraEstate</span>
+    </div>
+    <div class="loader-tagline">Недвижимость премиум-класса · Дагестан</div>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+    <div class="loader-pct" id="loaderPct">0%</div>
+  </div>
 </div>
 
 <!-- CONFETTI -->
@@ -24,535 +31,602 @@
 
 <!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox">
-  <button class="lightbox-close" id="lightbox-close">×</button>
-  <img class="lightbox-img" id="lightbox-img" src="" alt="">
+  <button class="lightbox-close" id="lightbox-close">&times;</button>
+  <img class="lightbox-img" id="lightbox-img" src="" alt="Фото">
+</div>
+
+<!-- GAME MODAL -->
+<div class="modal-overlay" id="gameModal">
+  <div class="game-modal">
+    <button class="modal-close" id="closeGame">&times;</button>
+    <div class="game-header">
+      <h2 class="game-title">🏗️ Строитель</h2>
+      <p class="game-sub">Сложи 10 этажей — получи бонус</p>
+    </div>
+    <div class="game-hud">
+      <div class="hud-item"><span class="hud-label">Счёт</span><span class="hud-val" id="gScore">0</span></div>
+      <div class="hud-item"><span class="hud-label">Рекорд</span><span class="hud-val" id="gBest">0</span></div>
+      <div class="hud-item"><span class="hud-label">Этаж</span><span class="hud-val" id="gFloor">0</span></div>
+      <div class="hud-item"><span class="hud-label">Цель</span><span class="hud-val">10</span></div>
+    </div>
+    <div class="game-canvas-wrap">
+      <canvas id="gameCanvas" width="360" height="480"></canvas>
+      <div class="game-effect" id="gameEffect"></div>
+      <div class="game-overlay" id="gameOverlay">
+        <div class="go-content">
+          <div class="go-icon" id="goIcon">🏗️</div>
+          <div class="go-title" id="goTitle">Строитель</div>
+          <div class="go-sub" id="goSub">Нажмите Начать, чтобы играть</div>
+          <div class="go-stats" id="goStats"></div>
+          <button class="go-btn" id="goBtn">Начать</button>
+          <a class="go-wa" id="goWa" href="https://wa.me/79894702263?text=Я%20выиграл%20в%20игре%20Строитель!%20Хочу%20получить%20бонус" target="_blank" rel="noopener">
+            🎁 Получить бонус в WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="game-controls-hint">Пробел / Клик / Тап — поставить блок</div>
+  </div>
+</div>
+
+<!-- MONEY WIDGET -->
+<button class="money-widget-btn" id="moneyWidgetBtn" title="Подобрать по бюджету">💰</button>
+<div class="money-drawer" id="moneyDrawer">
+  <div class="money-drawer-header">
+    <span>Подбор по бюджету</span>
+    <button id="closeMoneyDrawer">&times;</button>
+  </div>
+  <div class="money-drawer-body">
+    <label>Ваш бюджет (₽)</label>
+    <input type="number" id="budgetInput" placeholder="например 5000000" step="100000" min="0">
+    <button class="money-find-btn" id="findByBudget">Найти квартиры</button>
+    <div class="money-results" id="moneyResults"></div>
+  </div>
 </div>
 
 <!-- NAVBAR -->
 <header class="navbar" id="navbar">
   <a class="brand" href="#top" aria-label="VetraEstate">
     <span class="brand-mark">V</span>
-    <span>VetraEstate</span>
+    <span class="brand-text">VetraEstate</span>
   </a>
-  <button class="nav-toggle" id="navToggle" aria-label="Меню"><span></span><span></span></button>
-  <nav class="nav-links">
+  <button class="nav-toggle" id="navToggle" aria-label="Меню">
+    <span></span><span></span><span></span>
+  </button>
+  <nav class="nav-links" id="navLinks">
     <a href="#about">О нас</a>
     <a href="#projects">Объекты</a>
     <a href="#calculator">Рассрочка</a>
+    <a href="#floorplans">Планировки</a>
     <a href="#benefits">Преимущества</a>
-    <a href="#steps">Как купить</a>
     <a href="#contact">Контакты</a>
   </nav>
-  <button class="nav-game-btn" id="openGame" aria-label="Играть">🏗️ Стройка</button>
-  <a class="nav-wa" href="https://wa.me/79894702263" target="_blank" rel="noopener">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-    WhatsApp
-  </a>
+  <div class="nav-actions">
+    <button class="nav-game-btn" id="openGame">🏗️ Игра</button>
+    <a class="nav-wa" href="https://wa.me/79894702263" target="_blank" rel="noopener">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      WhatsApp
+    </a>
+  </div>
 </header>
 
-<main id="top">
-
 <!-- HERO -->
-<section class="hero">
-  <canvas id="hero-canvas"></canvas>
-  <div class="hero-gradient"></div>
-  <!-- Animated SVG Skyline -->
-  <svg class="hero-skyline" viewBox="0 0 1440 220" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <defs>
-      <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#00D4FF" stop-opacity="0.25"/>
-        <stop offset="100%" stop-color="#00D4FF" stop-opacity="0.05"/>
-      </linearGradient>
-    </defs>
-    <!-- Buildings animated from bottom -->
-    <g fill="url(#skyGrad)" stroke="#00D4FF" stroke-width="0.5" stroke-opacity="0.3">
-      <rect x="20" y="140" width="40" height="80" rx="2" style="animation:build-up 1s .2s both"><animate attributeName="y" from="220" to="140" dur="1s" begin="0.2s" fill="freeze"/></rect>
-      <rect x="70" y="100" width="30" height="120" rx="2"><animate attributeName="y" from="220" to="100" dur="1s" begin="0.4s" fill="freeze"/><animate attributeName="height" from="0" to="120" dur="1s" begin="0.4s" fill="freeze"/></rect>
-      <rect x="110" y="80" width="50" height="140" rx="2"><animate attributeName="y" from="220" to="80" dur="1.1s" begin="0.1s" fill="freeze"/><animate attributeName="height" from="0" to="140" dur="1.1s" begin="0.1s" fill="freeze"/></rect>
-      <rect x="170" y="120" width="35" height="100" rx="2"><animate attributeName="y" from="220" to="120" dur=".9s" begin="0.3s" fill="freeze"/><animate attributeName="height" from="0" to="100" dur=".9s" begin="0.3s" fill="freeze"/></rect>
-      <rect x="215" y="60" width="45" height="160" rx="2"><animate attributeName="y" from="220" to="60" dur="1.2s" begin="0.5s" fill="freeze"/><animate attributeName="height" from="0" to="160" dur="1.2s" begin="0.5s" fill="freeze"/></rect>
-      <rect x="270" y="90" width="38" height="130" rx="2"><animate attributeName="y" from="220" to="90" dur="1s" begin="0.2s" fill="freeze"/><animate attributeName="height" from="0" to="130" dur="1s" begin="0.2s" fill="freeze"/></rect>
-      <rect x="318" y="50" width="55" height="170" rx="2"><animate attributeName="y" from="220" to="50" dur="1.3s" begin="0.6s" fill="freeze"/><animate attributeName="height" from="0" to="170" dur="1.3s" begin="0.6s" fill="freeze"/></rect>
-      <rect x="383" y="110" width="30" height="110" rx="2"><animate attributeName="y" from="220" to="110" dur="1s" begin="0.3s" fill="freeze"/><animate attributeName="height" from="0" to="110" dur="1s" begin="0.3s" fill="freeze"/></rect>
-      <rect x="423" y="70" width="42" height="150" rx="2"><animate attributeName="y" from="220" to="70" dur="1.1s" begin="0.4s" fill="freeze"/><animate attributeName="height" from="0" to="150" dur="1.1s" begin="0.4s" fill="freeze"/></rect>
-      <rect x="475" y="30" width="60" height="190" rx="2"><animate attributeName="y" from="220" to="30" dur="1.4s" begin="0.7s" fill="freeze"/><animate attributeName="height" from="0" to="190" dur="1.4s" begin="0.7s" fill="freeze"/></rect>
-      <rect x="545" y="90" width="35" height="130" rx="2"><animate attributeName="y" from="220" to="90" dur="1s" begin="0.3s" fill="freeze"/><animate attributeName="height" from="0" to="130" dur="1s" begin="0.3s" fill="freeze"/></rect>
-      <rect x="590" y="60" width="48" height="160" rx="2"><animate attributeName="y" from="220" to="60" dur="1.2s" begin="0.5s" fill="freeze"/><animate attributeName="height" from="0" to="160" dur="1.2s" begin="0.5s" fill="freeze"/></rect>
-      <rect x="648" y="100" width="32" height="120" rx="2"><animate attributeName="y" from="220" to="100" dur=".95s" begin="0.4s" fill="freeze"/><animate attributeName="height" from="0" to="120" dur=".95s" begin="0.4s" fill="freeze"/></rect>
-      <rect x="690" y="40" width="55" height="180" rx="2"><animate attributeName="y" from="220" to="40" dur="1.35s" begin="0.6s" fill="freeze"/><animate attributeName="height" from="0" to="180" dur="1.35s" begin="0.6s" fill="freeze"/></rect>
-      <rect x="755" y="75" width="40" height="145" rx="2"><animate attributeName="y" from="220" to="75" dur="1.1s" begin="0.35s" fill="freeze"/><animate attributeName="height" from="0" to="145" dur="1.1s" begin="0.35s" fill="freeze"/></rect>
-      <rect x="805" y="55" width="50" height="165" rx="2"><animate attributeName="y" from="220" to="55" dur="1.25s" begin="0.55s" fill="freeze"/><animate attributeName="height" from="0" to="165" dur="1.25s" begin="0.55s" fill="freeze"/></rect>
-      <rect x="865" y="95" width="36" height="125" rx="2"><animate attributeName="y" from="220" to="95" dur="1s" begin="0.2s" fill="freeze"/><animate attributeName="height" from="0" to="125" dur="1s" begin="0.2s" fill="freeze"/></rect>
-      <rect x="911" y="45" width="58" height="175" rx="2"><animate attributeName="y" from="220" to="45" dur="1.4s" begin="0.65s" fill="freeze"/><animate attributeName="height" from="0" to="175" dur="1.4s" begin="0.65s" fill="freeze"/></rect>
-      <rect x="979" y="80" width="38" height="140" rx="2"><animate attributeName="y" from="220" to="80" dur="1.1s" begin="0.4s" fill="freeze"/><animate attributeName="height" from="0" to="140" dur="1.1s" begin="0.4s" fill="freeze"/></rect>
-      <rect x="1027" y="115" width="30" height="105" rx="2"><animate attributeName="y" from="220" to="115" dur=".9s" begin="0.25s" fill="freeze"/><animate attributeName="height" from="0" to="105" dur=".9s" begin="0.25s" fill="freeze"/></rect>
-      <rect x="1067" y="65" width="45" height="155" rx="2"><animate attributeName="y" from="220" to="65" dur="1.2s" begin="0.5s" fill="freeze"/><animate attributeName="height" from="0" to="155" dur="1.2s" begin="0.5s" fill="freeze"/></rect>
-      <rect x="1122" y="85" width="40" height="135" rx="2"><animate attributeName="y" from="220" to="85" dur="1.05s" begin="0.3s" fill="freeze"/><animate attributeName="height" from="0" to="135" dur="1.05s" begin="0.3s" fill="freeze"/></rect>
-      <rect x="1172" y="35" width="62" height="185" rx="2"><animate attributeName="y" from="220" to="35" dur="1.45s" begin="0.7s" fill="freeze"/><animate attributeName="height" from="0" to="185" dur="1.45s" begin="0.7s" fill="freeze"/></rect>
-      <rect x="1244" y="105" width="34" height="115" rx="2"><animate attributeName="y" from="220" to="105" dur=".95s" begin="0.2s" fill="freeze"/><animate attributeName="height" from="0" to="115" dur=".95s" begin="0.2s" fill="freeze"/></rect>
-      <rect x="1288" y="70" width="44" height="150" rx="2"><animate attributeName="y" from="220" to="70" dur="1.15s" begin="0.45s" fill="freeze"/><animate attributeName="height" from="0" to="150" dur="1.15s" begin="0.45s" fill="freeze"/></rect>
-      <rect x="1342" y="90" width="38" height="130" rx="2"><animate attributeName="y" from="220" to="90" dur="1s" begin="0.35s" fill="freeze"/><animate attributeName="height" from="0" to="130" dur="1s" begin="0.35s" fill="freeze"/></rect>
-      <rect x="1390" y="120" width="50" height="100" rx="2"><animate attributeName="y" from="220" to="120" dur=".9s" begin="0.15s" fill="freeze"/><animate attributeName="height" from="0" to="100" dur=".9s" begin="0.15s" fill="freeze"/></rect>
-    </g>
+<section class="hero" id="top">
+  <canvas id="heroCanvas"></canvas>
+  <div class="hero-grain"></div>
+  <div class="hero-overlay"></div>
+  <svg class="hero-skyline" viewBox="0 0 1440 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,200 L0,160 L40,160 L40,140 L60,140 L60,120 L80,120 L80,100 L100,100 L100,80 L110,80 L110,60 L120,60 L120,80 L130,80 L130,50 L140,50 L140,30 L150,30 L150,50 L160,50 L160,80 L170,80 L170,60 L180,60 L180,40 L190,40 L190,20 L195,20 L195,15 L200,15 L200,20 L205,20 L205,40 L210,40 L210,60 L220,60 L220,80 L240,80 L240,100 L260,100 L260,85 L270,85 L270,65 L280,65 L280,45 L290,45 L290,65 L300,65 L300,85 L320,85 L320,100 L340,100 L340,120 L360,120 L360,100 L380,100 L380,80 L390,80 L390,55 L400,55 L400,35 L410,35 L410,55 L420,55 L420,80 L440,80 L440,100 L460,100 L460,120 L480,120 L480,100 L500,100 L500,75 L510,75 L510,50 L520,50 L520,30 L525,30 L525,25 L530,25 L530,30 L535,30 L535,50 L540,50 L540,75 L560,75 L560,100 L580,100 L580,85 L590,85 L590,65 L600,65 L600,85 L620,85 L620,100 L640,100 L640,120 L660,120 L660,100 L680,100 L680,75 L690,75 L690,50 L700,50 L700,30 L710,30 L710,50 L720,50 L720,75 L740,75 L740,100 L760,100 L760,85 L770,85 L770,60 L780,60 L780,40 L790,40 L790,20 L795,20 L795,15 L800,15 L800,20 L805,20 L805,40 L810,40 L810,60 L820,60 L820,85 L840,85 L840,100 L860,100 L860,120 L880,120 L880,100 L900,100 L900,80 L910,80 L910,55 L920,55 L920,80 L940,80 L940,100 L960,100 L960,120 L980,120 L980,100 L1000,100 L1000,75 L1010,75 L1010,50 L1020,50 L1020,30 L1030,30 L1030,50 L1040,50 L1040,75 L1060,75 L1060,100 L1080,100 L1080,80 L1090,80 L1090,60 L1100,60 L1100,40 L1110,40 L1110,60 L1120,60 L1120,80 L1140,80 L1140,100 L1160,100 L1160,120 L1180,120 L1180,100 L1200,100 L1200,75 L1210,75 L1210,50 L1220,50 L1220,30 L1225,30 L1225,25 L1230,25 L1230,30 L1235,30 L1235,50 L1240,50 L1240,75 L1260,75 L1260,100 L1280,100 L1280,120 L1300,120 L1300,140 L1320,140 L1320,160 L1380,160 L1380,170 L1440,170 L1440,200 Z" fill="rgba(201,168,76,0.09)"/>
+    <path d="M0,200 L0,175 L60,175 L60,160 L100,160 L100,145 L130,145 L130,130 L160,130 L160,115 L180,115 L180,100 L200,100 L200,82 L215,82 L215,68 L228,68 L228,82 L245,82 L245,100 L270,100 L270,115 L300,115 L300,130 L330,130 L330,115 L360,115 L360,95 L382,95 L382,78 L400,78 L400,62 L418,62 L418,78 L438,78 L438,95 L465,95 L465,115 L495,115 L495,130 L525,130 L525,115 L555,115 L555,95 L577,95 L577,75 L597,75 L597,58 L615,58 L615,48 L627,48 L627,58 L645,58 L645,75 L665,75 L665,95 L692,95 L692,115 L722,115 L722,130 L752,130 L752,115 L782,115 L782,95 L804,95 L804,75 L824,75 L824,58 L842,58 L842,48 L854,48 L854,58 L872,58 L872,75 L892,75 L892,95 L919,95 L919,115 L949,115 L949,130 L979,130 L979,115 L1009,115 L1009,95 L1031,95 L1031,75 L1051,75 L1051,58 L1069,58 L1069,48 L1081,48 L1081,58 L1099,58 L1099,75 L1119,75 L1119,95 L1146,95 L1146,115 L1176,115 L1176,130 L1206,130 L1206,115 L1236,115 L1236,95 L1261,95 L1261,115 L1291,115 L1291,130 L1321,130 L1321,145 L1356,145 L1356,160 L1396,160 L1396,175 L1440,175 L1440,200 Z" fill="rgba(201,168,76,0.05)"/>
   </svg>
-
   <div class="hero-content">
-    <div class="eyebrow">Новостройки&nbsp;·&nbsp;Дагестан&nbsp;·&nbsp;2027–2028</div>
-    <h1>Квартиры у&nbsp;моря<br>и&nbsp;в&nbsp;<em>сердце</em>&nbsp;города</h1>
-    <p class="hero-subtitle">
-      ЖК «Новый Горизонт», АК «Алые Паруса» и другие современные комплексы —
-      подбираем лучшие варианты для жизни и инвестиций без комиссии.
-    </p>
-    <div class="hero-actions">
-      <a class="btn btn-cyan" href="#projects">Смотреть объекты</a>
-      <a class="btn btn-outline" href="https://wa.me/79894702263?text=Здравствуйте!%20Хочу%20подобрать%20квартиру" target="_blank" rel="noopener">Написать в WhatsApp</a>
-      <button class="btn btn-gold" id="openGameHero">🏗️ Играть в Стройку</button>
+    <div class="hero-badge reveal">Дагестан · Каспийск · Махачкала</div>
+    <h1 class="hero-title reveal">
+      <span class="hero-title-line">Живите</span>
+      <span class="hero-title-line">с видом</span>
+      <span class="hero-title-line hero-title-gold">на Каспий</span>
+    </h1>
+    <p class="hero-sub reveal">Новостройки премиум-класса. Рассрочка 0% на 60 месяцев.<br>Квартиры от застройщика в лучших районах Дагестана.</p>
+    <div class="hero-ctas reveal">
+      <a class="btn-primary" href="#projects">Смотреть объекты</a>
+      <a class="btn-outline" href="#calculator">Рассчитать рассрочку</a>
+      <button class="btn-game" id="heroOpenGame">🏗️ Играть</button>
     </div>
-    <div class="hero-stats">
-      <div><strong>от 100 000 ₽</strong><span>Первый взнос</span></div>
-      <div><strong>до 60 мес.</strong><span>Рассрочка</span></div>
-      <div><strong>0%</strong><span>Без переплат</span></div>
+    <div class="hero-stats reveal">
+      <div class="h-stat">
+        <span class="h-stat-val">от 100к</span>
+        <span class="h-stat-label">₽ в месяц</span>
+      </div>
+      <div class="h-stat-div"></div>
+      <div class="h-stat">
+        <span class="h-stat-val">60</span>
+        <span class="h-stat-label">месяцев</span>
+      </div>
+      <div class="h-stat-div"></div>
+      <div class="h-stat">
+        <span class="h-stat-val">0%</span>
+        <span class="h-stat-label">переплат</span>
+      </div>
     </div>
-  </div>
-
-  <div class="hero-float-card">
-    <div class="live-dot">Live</div>
-    <span class="fc-label">Быстрый подбор</span>
-    <strong>Жить · сдавать · инвестировать</strong>
-    <p>Отправим актуальные планировки, этажи и расчёт платежа.</p>
-    <button class="fc-btn" onclick="document.querySelector('.money-mini-v2').click()">Подобрать сейчас</button>
   </div>
 </section>
 
 <!-- TICKER -->
-<div class="ticker" aria-label="Новости">
-  <div class="ticker-track" id="ticker-track">
-    <span class="ticker-item">Новостройки в Дагестане</span>
-    <span class="ticker-item">ЖК «Новый Горизонт» — от 60 000 ₽/м²</span>
-    <span class="ticker-item">АК «Алые Паруса» — у моря</span>
-    <span class="ticker-item">Рассрочка 0% до 60 месяцев</span>
-    <span class="ticker-item">Первый взнос от 100 000 ₽</span>
-    <span class="ticker-item">ЖК «Московский» — в центре города</span>
-    <span class="ticker-item">Бесплатная консультация</span>
-    <span class="ticker-item">Сдача 2027–2028</span>
-    <span class="ticker-item">Бартер на авто</span>
-    <span class="ticker-item">Новостройки в Дагестане</span>
-    <span class="ticker-item">ЖК «Новый Горизонт» — от 60 000 ₽/м²</span>
-    <span class="ticker-item">АК «Алые Паруса» — у моря</span>
-    <span class="ticker-item">Рассрочка 0% до 60 месяцев</span>
-    <span class="ticker-item">Первый взнос от 100 000 ₽</span>
-    <span class="ticker-item">ЖК «Московский» — в центре города</span>
-    <span class="ticker-item">Бесплатная консультация</span>
-    <span class="ticker-item">Сдача 2027–2028</span>
-    <span class="ticker-item">Бартер на авто</span>
+<div class="ticker">
+  <div class="ticker-track">
+    <span>РАССРОЧКА 0%</span><span class="ticker-dot">✦</span>
+    <span>НОВОСТРОЙКИ В ДАГЕСТАНЕ</span><span class="ticker-dot">✦</span>
+    <span>ЖК НОВЫЙ ГОРИЗОНТ</span><span class="ticker-dot">✦</span>
+    <span>ЖК АЛЫЕ ПАРУСА</span><span class="ticker-dot">✦</span>
+    <span>ЖК МОСКОВСКИЙ</span><span class="ticker-dot">✦</span>
+    <span>КВАРТИРЫ ОТ ЗАСТРОЙЩИКА</span><span class="ticker-dot">✦</span>
+    <span>ВЫГОДНЫЕ ИНВЕСТИЦИИ</span><span class="ticker-dot">✦</span>
+    <span>РАССРОЧКА 0%</span><span class="ticker-dot">✦</span>
+    <span>НОВОСТРОЙКИ В ДАГЕСТАНЕ</span><span class="ticker-dot">✦</span>
+    <span>ЖК НОВЫЙ ГОРИЗОНТ</span><span class="ticker-dot">✦</span>
+    <span>ЖК АЛЫЕ ПАРУСА</span><span class="ticker-dot">✦</span>
+    <span>ЖК МОСКОВСКИЙ</span><span class="ticker-dot">✦</span>
+    <span>КВАРТИРЫ ОТ ЗАСТРОЙЩИКА</span><span class="ticker-dot">✦</span>
+    <span>ВЫГОДНЫЕ ИНВЕСТИЦИИ</span><span class="ticker-dot">✦</span>
   </div>
 </div>
 
-<!-- STATS -->
-<div class="stats-strip">
-  <div class="stat-card reveal scale-in">
-    <span class="stat-num" data-target="3">0</span>
-    <span class="stat-label">ЖК в продаже</span>
+<!-- STATS STRIP -->
+<section class="stats-strip">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-card reveal">
+        <div class="stat-icon">🏙️</div>
+        <div class="stat-num"><span class="counter" data-target="3">0</span></div>
+        <div class="stat-label">Жилых комплекса</div>
+      </div>
+      <div class="stat-card reveal">
+        <div class="stat-icon">🏠</div>
+        <div class="stat-num"><span class="counter" data-target="500">0</span>+</div>
+        <div class="stat-label">Квартир продано</div>
+      </div>
+      <div class="stat-card reveal">
+        <div class="stat-icon">📅</div>
+        <div class="stat-num"><span class="counter" data-target="60">0</span></div>
+        <div class="stat-label">Месяцев рассрочки</div>
+      </div>
+      <div class="stat-card reveal">
+        <div class="stat-icon">💰</div>
+        <div class="stat-num">0%</div>
+        <div class="stat-label">Переплат</div>
+      </div>
+    </div>
   </div>
-  <div class="stat-card reveal scale-in">
-    <span class="stat-num" data-target="500" data-suffix="+">0</span>
-    <span class="stat-label">Квартир продано</span>
-  </div>
-  <div class="stat-card reveal scale-in">
-    <span class="stat-num" data-target="60" data-suffix=" мес">0</span>
-    <span class="stat-label">Максимальная рассрочка</span>
-  </div>
-  <div class="stat-card reveal scale-in">
-    <span class="stat-num" data-target="0" data-prefix="" data-suffix="%">0</span>
-    <span class="stat-label">Переплата</span>
-  </div>
-</div>
+</section>
 
 <!-- ABOUT -->
-<section class="section" id="about">
-  <div class="section-head reveal">
-    <div>
-      <span class="section-label">О нас</span>
-      <h2>Отдел продаж новостроек в Дагестане</h2>
-    </div>
-    <p>Помогаем выбрать лучшие квартиры без комиссии и скрытых переплат.</p>
-  </div>
-  <div class="about-wrap reveal">
-    <div class="about-anim-side">
-      <canvas id="about-canvas"></canvas>
-    </div>
-    <div class="about-content-side">
-      <p><strong>VetraEstate</strong> помогает выбрать лучшие квартиры и апартаменты от проверенных застройщиков без комиссии и скрытых переплат.</p>
-      <div class="about-points">
-        <div><span class="chk">✓</span>Проверенные застройщики с хорошей историей</div>
-        <div><span class="chk">✓</span>Проверяем документацию объектов</div>
-        <div><span class="chk">✓</span>Лучшие цены на рынке от застройщика</div>
-        <div><span class="chk">✓</span>Беспроцентные варианты рассрочки</div>
-        <div><span class="chk">✓</span>Полное сопровождение от подбора до покупки</div>
-        <div><span class="chk">✓</span>Помогаем выбрать для жизни и инвестиций</div>
+<section class="about" id="about">
+  <div class="container about-grid">
+    <div class="about-visual reveal">
+      <canvas id="aboutCanvas"></canvas>
+      <div class="about-img-wrap">
+        <img src="images/about-vetraestate.jpg" alt="VetraEstate команда" loading="lazy">
       </div>
-      <div class="about-note">Вам не нужно самостоятельно проверять документы — мы уже отбираем надёжные объекты и предлагаем лучшие варианты.</div>
+    </div>
+    <div class="about-text reveal">
+      <div class="section-label">О КОМПАНИИ</div>
+      <h2 class="section-title">VetraEstate — ваш надёжный партнёр в недвижимости</h2>
+      <p class="about-desc">Мы специализируемся на продаже новостроек в Дагестане. Работаем напрямую с застройщиками, предлагаем честные цены и рассрочку без процентов. Наша миссия — сделать покупку квартиры простой и выгодной.</p>
+      <ul class="about-list">
+        <li><span class="check">✓</span> Рассрочка 0% до 60 месяцев</li>
+        <li><span class="check">✓</span> Прямые договора с застройщиками</li>
+        <li><span class="check">✓</span> Полное юридическое сопровождение</li>
+        <li><span class="check">✓</span> Помощь в оформлении ипотеки</li>
+        <li><span class="check">✓</span> Подбор квартиры под ваш бюджет</li>
+      </ul>
+      <div class="about-note">
+        <span class="about-note-icon">✦</span>
+        Работаем в Каспийске и Махачкале. Более 500 семей уже выбрали свой дом с нами.
+      </div>
     </div>
   </div>
 </section>
 
 <!-- PROJECTS -->
-<section class="section" id="projects">
-  <div class="section-head reveal">
-    <div>
-      <span class="section-label">Объекты</span>
-      <h2>Популярные предложения</h2>
+<section class="projects" id="projects">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">ОБЪЕКТЫ</div>
+      <h2 class="section-title">Наши жилые комплексы</h2>
     </div>
-    <p>Актуальные цены, планировки и условия покупки.</p>
-  </div>
-  <div class="filter-bar reveal">
-    <button class="filter active" data-filter="all">Все</button>
-    <button class="filter" data-filter="home">Для жизни</button>
-    <button class="filter" data-filter="invest">Инвестиции</button>
-    <button class="filter" data-filter="sea">У моря</button>
-  </div>
-  <div class="projects-grid">
-
-    <article class="project reveal" data-category="home invest" onclick="window.location.href='new-horizon.html'" style="cursor:pointer">
-      <div class="project-img">
-        <img src="images/horizon-5.jpeg" alt="ЖК Новый Горизонт" loading="lazy">
-        <div class="project-badge">Редукторный район</div>
-      </div>
-      <div class="project-body">
-        <div class="project-top">
-          <div><h3>ЖК «Новый Горизонт»</h3><p>ул. Луговая, 12</p></div>
-          <span class="price">от 60 000 ₽/м²</span>
-        </div>
-        <div class="specs"><span>31 корпус</span><span>14 этажей</span><span>Рассрочка 60 мес.</span><span>Платёж от 50 000 ₽</span></div>
-        <ul class="clean-list">
-          <li>Французские балконы и панорамные окна</li>
-          <li>Лифты с генераторами без отключений</li>
-          <li>Школа, садик, поликлиника, фитнес и ТЦ</li>
-        </ul>
-        <div class="mini-gallery">
-          <img src="images/horizon-2.jpeg" alt="фасад" loading="lazy" onclick="event.stopPropagation();openLightbox(this.src)">
-          <img src="images/horizon-3.jpeg" alt="двор" loading="lazy" onclick="event.stopPropagation();openLightbox(this.src)">
-          <img src="images/horizon-4.jpeg" alt="коммерция" loading="lazy" onclick="event.stopPropagation();openLightbox(this.src)">
-        </div>
-        <a class="project-link" href="new-horizon.html" onclick="event.stopPropagation()">Открыть объект</a>
-      </div>
-    </article>
-
-    <article class="project reveal" data-category="sea invest" onclick="window.location.href='alye-parusa.html'" style="cursor:pointer">
-      <div class="project-img">
-        <img src="images/alye-photo-5.jpg" alt="АК Алые Паруса" loading="lazy">
-        <div class="project-badge">Премиум у моря</div>
-      </div>
-      <div class="project-body">
-        <div class="project-top">
-          <div><h3>АК «Алые Паруса»</h3><p>Турали-7, у аэропорта</p></div>
-          <span class="price">от 50 000 ₽/м²</span>
-        </div>
-        <div class="specs"><span>Премиум</span><span>Сдача 2028</span><span>Полный пакет</span><span>Бартер на авто</span></div>
-        <ul class="clean-list">
-          <li>Шикарный вид на море, пляж 5 минут</li>
-          <li>Бассейн, охрана 24/7, парковка</li>
-          <li>Рядом строится крупнейший аквапарк</li>
-        </ul>
-        <div class="mini-gallery">
-          <img src="images/alye-photo-2.jpg" alt="вид" loading="lazy" onclick="event.stopPropagation();openLightbox(this.src)">
-          <img src="images/alye-photo-3.jpg" alt="море" loading="lazy" onclick="event.stopPropagation();openLightbox(this.src)">
-          <img src="images/alye-photo-6.jpg" alt="фасад" loading="lazy" onclick="event.stopPropagation();openLightbox(this.src)">
-        </div>
-        <a class="project-link" href="alye-parusa.html" onclick="event.stopPropagation()">Открыть объект</a>
-      </div>
-    </article>
-
-    <article class="project reveal" data-category="home invest" onclick="window.location.href='moskovskiy.html'" style="cursor:pointer">
-      <div class="project-img">
-        <img src="images/moscow-photo-2.jpg" alt="ЖК Московский" loading="lazy">
-        <div class="project-badge">ЖК · ул. Даганова</div>
-      </div>
-      <div class="project-body">
-        <div class="project-top">
-          <div><h3>ЖК «Московский»</h3><p>Махачкала, ул. Даганова</p></div>
-          <span class="price">от 70 000 ₽/м²</span>
-        </div>
-        <div class="specs"><span>Город в городе</span><span>Школа и стадион</span><span>1К / 2К</span><span>Платёж от 50 000 ₽</span></div>
-        <ul class="clean-list">
-          <li>Масштабный ЖК с собственной инфраструктурой</li>
-          <li>Дворы, детские площадки, прогулочные зоны</li>
-          <li>Для жизни и инвестиций</li>
-        </ul>
-        <div class="mini-gallery">
-          <img src="images/moscow-photo-1.jpg" alt="фасад" loading="lazy" onclick="event.stopPropagation();openLightbox(this.src)">
-          <img src="images/moscow-photo-5.jpg" alt="двор" loading="lazy" onclick="event.stopPropagation();openLightbox(this.src)">
-          <img src="images/moscow-photo-8.jpg" alt="вид" loading="lazy" onclick="event.stopPropagation();openLightbox(this.src)">
-        </div>
-        <a class="project-link" href="moskovskiy.html" onclick="event.stopPropagation()">Открыть объект</a>
-      </div>
-    </article>
-
-    <article class="project reveal" data-category="home invest sea">
-      <div class="project-img" style="background:linear-gradient(135deg,#1A2340,#0D1228);display:flex;align-items:center;justify-content:center;font-size:3rem">🏙️</div>
-      <div class="project-body">
-        <div class="project-top">
-          <div><h3>Другие новостройки</h3><p>Море · горы · центр · районы</p></div>
-          <span class="price">от 100 000 ₽</span>
-        </div>
-        <div class="specs"><span>2027–2028</span><span>Без процентов</span><span>Бартер</span><span>Горящие варианты</span></div>
-        <ul class="clean-list">
-          <li>Монолитно-кирпичные дома, современные планировки</li>
-          <li>Закрытые дворы, охрана, видеонаблюдение</li>
-          <li>Для жизни, аренды или перепродажи</li>
-        </ul>
-        <a class="project-link" href="https://wa.me/79894702263?text=Хочу%20подобрать%20квартиру" target="_blank" rel="noopener">Подобрать вариант</a>
-      </div>
-    </article>
-
+    <div class="filter-bar reveal">
+      <button class="filter-btn active" data-filter="all">Все</button>
+      <button class="filter-btn" data-filter="home">Для жизни</button>
+      <button class="filter-btn" data-filter="invest">Инвестиции</button>
+      <button class="filter-btn" data-filter="sea">Вид на море</button>
+    </div>
+    <div class="projects-grid" id="projectsGrid">
+      <article class="project-card reveal" data-tags="home sea">
+        <a href="new-horizon.html">
+          <div class="project-img-wrap">
+            <img src="images/horizon-5.jpeg" alt="ЖК Новый Горизонт" loading="lazy">
+            <div class="project-img-overlay"></div>
+            <span class="project-badge">Продажи открыты</span>
+          </div>
+          <div class="project-body">
+            <div class="project-tags-row"><span>Для жизни</span><span>Вид на море</span></div>
+            <h3 class="project-name">ЖК Новый Горизонт</h3>
+            <p class="project-loc">📍 Каспийск, ул. Орджоникидзе</p>
+            <div class="project-info">
+              <div><span>от 4 800 000 ₽</span><small>Цена</small></div>
+              <div><span>от 35 м²</span><small>Площадь</small></div>
+              <div><span>2025</span><small>Сдача</small></div>
+            </div>
+          </div>
+        </a>
+      </article>
+      <article class="project-card reveal" data-tags="sea invest">
+        <a href="alye-parusa.html">
+          <div class="project-img-wrap">
+            <img src="images/alye-photo-5.jpg" alt="ЖК Алые Паруса" loading="lazy">
+            <div class="project-img-overlay"></div>
+            <span class="project-badge project-badge-gold">Хит продаж</span>
+          </div>
+          <div class="project-body">
+            <div class="project-tags-row"><span>Вид на море</span><span>Инвестиции</span></div>
+            <h3 class="project-name">ЖК Алые Паруса</h3>
+            <p class="project-loc">📍 Каспийск, набережная</p>
+            <div class="project-info">
+              <div><span>от 5 500 000 ₽</span><small>Цена</small></div>
+              <div><span>от 42 м²</span><small>Площадь</small></div>
+              <div><span>2026</span><small>Сдача</small></div>
+            </div>
+          </div>
+        </a>
+      </article>
+      <article class="project-card reveal" data-tags="home invest">
+        <a href="moskovskiy.html">
+          <div class="project-img-wrap">
+            <img src="images/moscow-photo-2.jpg" alt="ЖК Московский" loading="lazy">
+            <div class="project-img-overlay"></div>
+            <span class="project-badge">Новинка</span>
+          </div>
+          <div class="project-body">
+            <div class="project-tags-row"><span>Для жизни</span><span>Инвестиции</span></div>
+            <h3 class="project-name">ЖК Московский</h3>
+            <p class="project-loc">📍 Махачкала, пр. Петра I</p>
+            <div class="project-info">
+              <div><span>от 6 200 000 ₽</span><small>Цена</small></div>
+              <div><span>от 50 м²</span><small>Площадь</small></div>
+              <div><span>2026</span><small>Сдача</small></div>
+            </div>
+          </div>
+        </a>
+      </article>
+      <article class="project-card project-card-more reveal">
+        <a href="#contact">
+          <div class="project-more-inner">
+            <span class="project-more-icon">+</span>
+            <span class="project-more-label">Смотреть все объекты</span>
+          </div>
+        </a>
+      </article>
+    </div>
   </div>
 </section>
 
 <!-- GALLERY -->
-<section class="gallery-outer" id="gallery">
-  <div class="gallery-inner">
-    <div class="gallery-head reveal">
-      <span class="section-label">Галерея</span>
-      <h2>Виды комплекса и генплан</h2>
-      <p>Рендеры фасадов, благоустройства и схема территории. Нажмите для увеличения.</p>
+<section class="gallery-section" id="gallery">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">ГАЛЕРЕЯ</div>
+      <h2 class="section-title">Фотографии объектов</h2>
     </div>
-    <div class="gallery-grid reveal">
-      <div class="gallery-item wide" onclick="openLightbox('images/horizon-1.jpeg')">
-        <img src="images/horizon-1.jpeg" alt="ЖК Новый Горизонт — общий вид" loading="lazy">
-        <div class="gallery-overlay">🔍</div>
+    <div class="gallery-grid">
+      <div class="gallery-item reveal" data-src="images/horizon-1.jpeg"><img src="images/horizon-1.jpeg" alt="ЖК Горизонт" loading="lazy"><div class="gallery-overlay"><span>🔍</span></div></div>
+      <div class="gallery-item reveal" data-src="images/horizon-2.jpeg"><img src="images/horizon-2.jpeg" alt="ЖК Горизонт" loading="lazy"><div class="gallery-overlay"><span>🔍</span></div></div>
+      <div class="gallery-item reveal" data-src="images/horizon-3.jpeg"><img src="images/horizon-3.jpeg" alt="ЖК Горизонт" loading="lazy"><div class="gallery-overlay"><span>🔍</span></div></div>
+      <div class="gallery-item reveal" data-src="images/horizon-4.jpeg"><img src="images/horizon-4.jpeg" alt="ЖК Горизонт" loading="lazy"><div class="gallery-overlay"><span>🔍</span></div></div>
+      <div class="gallery-item reveal" data-src="images/horizon-6.jpeg"><img src="images/horizon-6.jpeg" alt="ЖК Горизонт" loading="lazy"><div class="gallery-overlay"><span>🔍</span></div></div>
+      <div class="gallery-item reveal" data-src="images/horizon-masterplan.jpeg"><img src="images/horizon-masterplan.jpeg" alt="Мастерплан" loading="lazy"><div class="gallery-overlay"><span>🔍</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CALCULATOR -->
+<section class="calculator" id="calculator">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">РАССРОЧКА</div>
+      <h2 class="section-title">Рассчитайте ежемесячный платёж</h2>
+    </div>
+    <div class="calc-wrap reveal">
+      <div class="calc-sliders">
+        <div class="slider-group">
+          <div class="slider-header">
+            <label for="priceSlider">Стоимость квартиры</label>
+            <span class="slider-val" id="priceVal">7 500 000 ₽</span>
+          </div>
+          <input type="range" id="priceSlider" min="3000000" max="15000000" step="100000" value="7500000" class="range-slider">
+          <div class="slider-minmax"><span>3 000 000 ₽</span><span>15 000 000 ₽</span></div>
+        </div>
+        <div class="slider-group">
+          <div class="slider-header">
+            <label for="downSlider">Первоначальный взнос</label>
+            <span class="slider-val" id="downVal">1 500 000 ₽</span>
+          </div>
+          <input type="range" id="downSlider" min="100000" max="5000000" step="50000" value="1500000" class="range-slider">
+          <div class="slider-minmax"><span>100 000 ₽</span><span>5 000 000 ₽</span></div>
+        </div>
+        <div class="slider-group">
+          <div class="slider-header">
+            <label for="termSlider">Срок рассрочки</label>
+            <span class="slider-val" id="termVal">36 мес.</span>
+          </div>
+          <input type="range" id="termSlider" min="6" max="60" step="6" value="36" class="range-slider">
+          <div class="slider-minmax"><span>6 мес.</span><span>60 мес.</span></div>
+        </div>
       </div>
-      <div class="gallery-item" onclick="openLightbox('images/horizon-2.jpeg')">
-        <img src="images/horizon-2.jpeg" alt="ЖК Новый Горизонт — улица" loading="lazy">
-        <div class="gallery-overlay">🔍</div>
-      </div>
-      <div class="gallery-item" onclick="openLightbox('images/horizon-3.jpeg')">
-        <img src="images/horizon-3.jpeg" alt="ЖК Новый Горизонт — вечер" loading="lazy">
-        <div class="gallery-overlay">🔍</div>
-      </div>
-      <div class="gallery-item" onclick="openLightbox('images/horizon-4.jpeg')">
-        <img src="images/horizon-4.jpeg" alt="ЖК Новый Горизонт — коммерция" loading="lazy">
-        <div class="gallery-overlay">🔍</div>
-      </div>
-      <div class="gallery-item" onclick="openLightbox('images/horizon-6.jpeg')">
-        <img src="images/horizon-6.jpeg" alt="ЖК Новый Горизонт — вход" loading="lazy">
-        <div class="gallery-overlay">🔍</div>
-      </div>
-      <div class="gallery-item masterplan" onclick="openLightbox('images/horizon-masterplan.jpeg')">
-        <img src="images/horizon-masterplan.jpeg" alt="ЖК Новый Горизонт — генплан" loading="lazy">
-        <div class="gallery-overlay">🔍</div>
+      <div class="calc-result">
+        <div class="calc-monthly">
+          <div class="calc-monthly-label">Ежемесячный платёж</div>
+          <div class="calc-monthly-val" id="monthlyVal">166 667 ₽</div>
+          <div class="calc-monthly-sub">0% переплат · Рассрочка от застройщика</div>
+        </div>
+        <table class="calc-table">
+          <tbody>
+            <tr><td>Стоимость</td><td id="tPrice">7 500 000 ₽</td></tr>
+            <tr><td>Взнос</td><td id="tDown">1 500 000 ₽</td></tr>
+            <tr><td>Остаток</td><td id="tRest">6 000 000 ₽</td></tr>
+            <tr><td>Срок</td><td id="tTerm">36 мес.</td></tr>
+            <tr class="overpay-row"><td>Переплата</td><td id="tOver" class="overpay-zero">0 ₽</td></tr>
+          </tbody>
+        </table>
+        <a class="btn-primary btn-full" href="https://wa.me/79894702263?text=Хочу%20рассчитать%20рассрочку" target="_blank" rel="noopener">
+          Обсудить в WhatsApp
+        </a>
       </div>
     </div>
   </div>
 </section>
 
-<!-- MORTGAGE CALCULATOR -->
-<section class="calculator-section" id="calculator">
-  <div class="calculator-inner">
-    <div>
-      <div class="calc-head">
-        <span class="section-label">Калькулятор</span>
-        <h2>Рассчитайте рассрочку</h2>
-      </div>
-      <div class="calc-form">
-        <div class="calc-field">
-          <label>Стоимость квартиры</label>
-          <input type="range" id="r-price" min="3000000" max="15000000" step="100000" value="6000000">
-          <span class="calc-value" id="v-price">6 000 000 ₽</span>
-        </div>
-        <div class="calc-field">
-          <label>Первоначальный взнос</label>
-          <input type="range" id="r-down" min="100000" max="5000000" step="50000" value="500000">
-          <span class="calc-value" id="v-down">500 000 ₽</span>
-        </div>
-        <div class="calc-field">
-          <label>Срок рассрочки</label>
-          <input type="range" id="r-term" min="6" max="60" step="6" value="24">
-          <span class="calc-value" id="v-term">24 месяца</span>
-        </div>
-      </div>
+<!-- FLOOR PLANS -->
+<section class="floorplans" id="floorplans">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">ПЛАНИРОВКИ</div>
+      <h2 class="section-title">Выберите свою квартиру</h2>
     </div>
-    <div class="calc-result reveal from-right">
-      <span class="calc-result-label">Ежемесячный платёж</span>
-      <span class="calc-result-num" id="calc-monthly">229 167 ₽</span>
-      <span class="calc-result-sub">0% — без переплат, без банка</span>
-      <div class="calc-breakdown">
-        <div class="calc-breakdown-row"><span>Стоимость квартиры</span><span id="cb-price">6 000 000 ₽</span></div>
-        <div class="calc-breakdown-row"><span>Первоначальный взнос</span><span id="cb-down">500 000 ₽</span></div>
-        <div class="calc-breakdown-row"><span>Остаток рассрочки</span><span id="cb-rest">5 500 000 ₽</span></div>
-        <div class="calc-breakdown-row"><span>Срок</span><span id="cb-term">24 мес.</span></div>
-        <div class="calc-breakdown-row"><span>Переплата</span><span style="color:var(--green)">0 ₽</span></div>
+    <div class="fp-tabs reveal" id="fpTabs">
+      <button class="fp-tab active" data-project="horizon">Новый Горизонт</button>
+      <button class="fp-tab" data-project="alye">Алые Паруса</button>
+      <button class="fp-tab" data-project="moscow">Московский</button>
+    </div>
+    <div class="fp-body reveal">
+      <div class="fp-types" id="fpTypes">
+        <button class="fp-type active" data-type="studio">Студия</button>
+        <button class="fp-type" data-type="1k">1К</button>
+        <button class="fp-type" data-type="2k">2К</button>
       </div>
-      <a class="btn btn-cyan" style="width:100%;justify-content:center" href="https://wa.me/79894702263?text=Хочу%20получить%20расчёт%20рассрочки" target="_blank" rel="noopener">Получить расчёт в WhatsApp</a>
+      <div class="fp-display">
+        <div class="fp-image-wrap">
+          <img id="fpImage" src="images/horizon-new-layout-11.jpg" alt="Планировка квартиры">
+        </div>
+        <div class="fp-info">
+          <div class="fp-info-grid">
+            <div class="fp-info-item">
+              <span class="fp-info-label">Площадь</span>
+              <span class="fp-info-val" id="fpArea">35 м²</span>
+            </div>
+            <div class="fp-info-item">
+              <span class="fp-info-label">Стоимость</span>
+              <span class="fp-info-val" id="fpPrice">от 4 800 000 ₽</span>
+            </div>
+            <div class="fp-info-item">
+              <span class="fp-info-label">Платёж/мес</span>
+              <span class="fp-info-val" id="fpMonthly">от 80 000 ₽</span>
+            </div>
+          </div>
+          <p class="fp-note">Рассрочка 0% · Без переплат · 60 месяцев</p>
+          <a class="btn-primary" href="https://wa.me/79894702263?text=Хочу%20узнать%20о%20планировке" target="_blank" rel="noopener">
+            Узнать подробнее
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- BENEFITS -->
-<section class="section" id="benefits">
-  <div class="section-head reveal">
-    <div><span class="section-label">Преимущества</span><h2>Почему выбирают нас</h2></div>
-  </div>
-  <div class="benefits-grid">
-    <div class="benefit-card reveal"><span class="benefit-num">01</span><h3>Цены от застройщика</h3><p>Актуальные условия, рассрочка и варианты при полной оплате без наценки.</p></div>
-    <div class="benefit-card reveal"><span class="benefit-num">02</span><h3>Полный пакет документов</h3><p>Подбираем объекты с проверенной документацией — без рисков и сюрпризов.</p></div>
-    <div class="benefit-card reveal"><span class="benefit-num">03</span><h3>Подбор под цель</h3><p>Для жизни, сдачи в аренду, инвестиций или перепродажи.</p></div>
-    <div class="benefit-card reveal"><span class="benefit-num">04</span><h3>Бесплатная консультация</h3><p>Покажем цены, планировки, этажи и расчёт рассрочки без обязательств.</p></div>
+<section class="benefits" id="benefits">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">ПРЕИМУЩЕСТВА</div>
+      <h2 class="section-title">Почему выбирают нас</h2>
+    </div>
+    <div class="benefits-grid">
+      <div class="benefit-card reveal">
+        <div class="benefit-num">01</div>
+        <h3>Рассрочка 0%</h3>
+        <p>Покупайте квартиру в рассрочку на 60 месяцев без процентов и переплат. Только цена объекта.</p>
+      </div>
+      <div class="benefit-card reveal">
+        <div class="benefit-num">02</div>
+        <h3>Прямо от застройщика</h3>
+        <p>Работаем без посредников. Юридически чистые сделки, договор напрямую с застройщиком.</p>
+      </div>
+      <div class="benefit-card reveal">
+        <div class="benefit-num">03</div>
+        <h3>Инвестиционная ценность</h3>
+        <p>Недвижимость Дагестана растёт в цене. Выгодное вложение для сохранения и приумножения капитала.</p>
+      </div>
+      <div class="benefit-card reveal">
+        <div class="benefit-num">04</div>
+        <h3>Поддержка на каждом шаге</h3>
+        <p>Помогаем с выбором планировки, оформлением документов и получением ипотеки.</p>
+      </div>
+    </div>
   </div>
 </section>
 
 <!-- STEPS -->
-<section class="steps-outer" id="steps">
-  <div class="steps-inner">
-    <div class="steps-head reveal">
-      <div><span class="section-label">Процесс</span><h2>Как проходит покупка</h2></div>
+<section class="steps" id="steps">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">КАК КУПИТЬ</div>
+      <h2 class="section-title">4 простых шага к вашей квартире</h2>
     </div>
-    <div class="timeline">
-      <div class="timeline-item reveal"><div class="tl-num">1</div><h3>Вы пишете в WhatsApp</h3><p>Указываете бюджет, цель покупки и желаемый район.</p></div>
-      <div class="timeline-item reveal"><div class="tl-num">2</div><h3>Получаете подборку</h3><p>Отправляем подходящие ЖК, планировки, цены и платежи.</p></div>
-      <div class="timeline-item reveal"><div class="tl-num">3</div><h3>Выбираем лучший вариант</h3><p>Сравниваем локацию, срок сдачи, этаж и условия.</p></div>
-      <div class="timeline-item reveal"><div class="tl-num">4</div><h3>Оформляем сделку</h3><p>Помогаем с документами, рассрочкой и бронью квартиры.</p></div>
+    <div class="steps-timeline">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <h3>Выберите объект</h3>
+          <p>Просматривайте планировки, сравнивайте цены и выбирайте квартиру, которая подходит именно вам.</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <h3>Свяжитесь с нами</h3>
+          <p>Позвоните или напишите в WhatsApp. Менеджер ответит в течение 15 минут и проконсультирует бесплатно.</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <h3>Оформите договор</h3>
+          <p>Юридически чистый договор, полное сопровождение. Первоначальный взнос и фиксация цены.</p>
+        </div>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">04</div>
+        <div class="step-body">
+          <h3>Получите ключи</h3>
+          <p>Платите по графику рассрочки. В день сдачи дома — получите ключи от своей квартиры.</p>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- REVIEWS -->
-<section class="reviews-section" id="reviews">
-  <div class="section-head reveal">
-    <div><span class="section-label">Отзывы</span><h2>Что говорят клиенты</h2></div>
-  </div>
-  <div class="reviews-grid">
-    <div class="review-card reveal">
-      <div class="review-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
-      <p class="review-text">Очень доволен работой VetraEstate. Быстро подобрали квартиру в ЖК «Новый Горизонт», оформили рассрочку без лишних бумаг. Всё прозрачно и без переплат.</p>
-      <div class="review-author"><div class="review-avatar">А</div><div><div class="review-name">Алибек М.</div><div class="review-tag">Купил 2К в Новом Горизонте</div></div></div>
+<section class="reviews" id="reviews">
+  <div class="container">
+    <div class="section-header reveal">
+      <div class="section-label">ОТЗЫВЫ</div>
+      <h2 class="section-title">Что говорят наши клиенты</h2>
     </div>
-    <div class="review-card reveal">
-      <div class="review-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
-      <p class="review-text">Брали апартаменты в «Алых Парусах» — вид на море потрясающий. Ребята из VetraEstate помогли с документами и сразу рассказали про аквапарк рядом.</p>
-      <div class="review-author"><div class="review-avatar">З</div><div><div class="review-name">Зарема К.</div><div class="review-tag">Апартаменты у моря</div></div></div>
-    </div>
-    <div class="review-card reveal">
-      <div class="review-stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
-      <p class="review-text">Выбирали квартиру для инвестиций. Менеджер подобрал три варианта, объяснил доходность. Остановились на «Московском» — цена хорошая и центр рядом.</p>
-      <div class="review-author"><div class="review-avatar">М</div><div><div class="review-name">Магомед Р.</div><div class="review-tag">Инвестиционная квартира</div></div></div>
+    <div class="reviews-grid">
+      <div class="review-card reveal">
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">«Купил студию в ЖК Новый Горизонт. Рассрочка без процентов — это реально удобно. Менеджер помог с документами. Рекомендую!»</p>
+        <div class="review-author">
+          <div class="review-avatar">М</div>
+          <div>
+            <div class="review-name">Магомед А.</div>
+            <div class="review-role">ЖК Новый Горизонт</div>
+          </div>
+        </div>
+      </div>
+      <div class="review-card reveal">
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">«Купила 2-комнатную в Алых Парусах с видом на Каспий. Всё прошло быстро и прозрачно. Цены реальные, никаких скрытых платежей.»</p>
+        <div class="review-author">
+          <div class="review-avatar">З</div>
+          <div>
+            <div class="review-name">Зарема Г.</div>
+            <div class="review-role">ЖК Алые Паруса</div>
+          </div>
+        </div>
+      </div>
+      <div class="review-card reveal">
+        <div class="review-stars">★★★★★</div>
+        <p class="review-text">«Отличная команда. Взял квартиру как инвестицию в ЖК Московский. За год цена уже выросла на 15%. Правильное решение!»</p>
+        <div class="review-author">
+          <div class="review-avatar">Р</div>
+          <div>
+            <div class="review-name">Рустам К.</div>
+            <div class="review-role">ЖК Московский</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <!-- CONTACT -->
-<section class="contact-outer reveal" id="contact">
-  <div class="contact-grid">
-    <div class="contact-content">
-      <span class="section-label">Связь</span>
-      <h2>Подберём квартиру под ваш бюджет</h2>
-      <p>Напишите нам — отправим свободные квартиры, цены, планировки и расчёт ежемесячного платежа.</p>
-      <div class="contact-actions">
-        <a class="btn btn-cyan" href="https://wa.me/79894702263?text=Здравствуйте!%20Хочу%20подобрать%20квартиру" target="_blank" rel="noopener">Написать в WhatsApp</a>
-        <a class="btn btn-outline" href="tel:+79894702263">Позвонить</a>
+<section class="contact" id="contact">
+  <div class="container">
+    <div class="contact-inner reveal">
+      <div class="contact-left">
+        <div class="section-label">КОНТАКТЫ</div>
+        <h2 class="section-title">Готовы помочь вам<br>найти идеальный дом</h2>
+        <p class="contact-sub">Оставьте заявку — мы свяжемся в течение 15 минут и подберём квартиру под ваш бюджет.</p>
+        <div class="contact-ctas">
+          <a class="btn-primary" href="https://wa.me/79894702263?text=Хочу%20узнать%20о%20квартирах" target="_blank" rel="noopener">
+            Написать в WhatsApp
+          </a>
+          <a class="btn-outline" href="tel:+79894702263">
+            +7 989 470-22-63
+          </a>
+        </div>
       </div>
-      <div class="contact-phone">+7 989 470-22-63</div>
-    </div>
-    <div class="contact-info-box">
-      <div class="info-rows">
-        <div class="info-row"><span class="info-row-label">Первый взнос</span><span class="info-row-val">от 100 000 ₽</span></div>
-        <div class="info-row"><span class="info-row-label">Рассрочка</span><span class="info-row-val">до 60 месяцев</span></div>
-        <div class="info-row"><span class="info-row-label">Переплата</span><span class="info-row-val" style="color:var(--green)">0%</span></div>
-        <div class="info-row"><span class="info-row-label">Консультация</span><span class="info-row-val" style="color:var(--green)">Бесплатно</span></div>
-        <div class="info-row"><span class="info-row-label">Режим работы</span><span class="info-row-val">Пн–Вс 9:00–21:00</span></div>
+      <div class="contact-info">
+        <div class="contact-info-item">
+          <span class="ci-icon">📞</span>
+          <div>
+            <div class="ci-label">Телефон</div>
+            <a class="ci-val" href="tel:+79894702263">+7 989 470-22-63</a>
+          </div>
+        </div>
+        <div class="contact-info-item">
+          <span class="ci-icon">💬</span>
+          <div>
+            <div class="ci-label">WhatsApp</div>
+            <a class="ci-val" href="https://wa.me/79894702263" target="_blank" rel="noopener">wa.me/79894702263</a>
+          </div>
+        </div>
+        <div class="contact-info-item">
+          <span class="ci-icon">📍</span>
+          <div>
+            <div class="ci-label">Адрес</div>
+            <div class="ci-val">Дагестан, Каспийск &amp; Махачкала</div>
+          </div>
+        </div>
+        <div class="contact-info-item">
+          <span class="ci-icon">🕐</span>
+          <div>
+            <div class="ci-label">Режим работы</div>
+            <div class="ci-val">Пн–Вс: 9:00 – 21:00</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-</main>
-
 <!-- FOOTER -->
 <footer class="footer">
-  <span class="footer-brand">VetraEstate</span>
-  <p class="footer-text">Новостройки в Дагестане · Жизнь · Аренда · Инвестиции</p>
-  <nav class="footer-links">
-    <a href="#about">О нас</a>
-    <a href="#projects">Объекты</a>
-    <a href="#contact">Контакты</a>
-  </nav>
-</footer>
-
-<!-- MOBILE BOTTOM -->
-<div class="mobile-bottom">
-  <a href="tel:+79894702263">📞 Позвонить</a>
-  <a href="https://wa.me/79894702263" target="_blank" rel="noopener">💬 WhatsApp</a>
-</div>
-
-<!-- MONEY WIDGET -->
-<div class="money-widget-v2">
-  <button class="money-mini-v2" type="button" aria-label="Подобрать ЖК по бюджету">
-    <span class="money-mini-icon-v2">💰</span>
-    <span><strong>Мои деньги</strong><em>подберём ЖК по сумме</em></span>
-    <span class="money-mini-pulse"></span>
-  </button>
-</div>
-<div class="money-drawer-v2" aria-hidden="true">
-  <div class="money-drawer-bg-v2"></div>
-  <div class="money-drawer-panel-v2" role="dialog" aria-modal="true">
-    <div class="money-panel-header-v2">
-      <div class="money-panel-header-icon">💰</div>
-      <div class="money-panel-header-text">
-        <small>Быстрый подбор</small>
-        <h2>Мои деньги</h2>
-        <p>Введите первоначальный взнос — покажем ЖК</p>
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <span class="brand-mark">V</span>
+        <span class="footer-brand-name">VetraEstate</span>
       </div>
-      <button class="money-close-v2" type="button" aria-label="Закрыть">×</button>
-    </div>
-    <div class="money-body-v2">
-      <div class="money-input-row-v2">
-        <div class="money-input-wrap-v2">
-          <input class="money-input-v2" type="number" inputmode="numeric" min="0" step="10000" placeholder="500 000">
-        </div>
-        <button class="money-run-v2" type="button">Найти</button>
-      </div>
-      <div class="money-chips-v2">
-        <button type="button" data-money="150000">150 тыс.</button>
-        <button type="button" data-money="200000">200 тыс.</button>
-        <button type="button" data-money="500000">500 тыс.</button>
-        <button type="button" data-money="1000000">1 млн</button>
-        <button type="button" data-money="3000000">3 млн</button>
-      </div>
-      <div class="money-summary-v2"></div>
-      <div class="money-results-v2"></div>
-    </div>
-    <a class="money-whatsapp-v2" href="https://wa.me/79894702263" target="_blank" rel="noopener">Отправить подборку в WhatsApp</a>
-  </div>
-</div>
-
-<!-- GAME MODAL -->
-<div class="game-modal" id="gameModal" role="dialog" aria-modal="true" aria-label="Строительная игра">
-  <div class="game-modal-bg" id="gameModalBg"></div>
-  <div class="game-panel">
-    <div class="game-panel-top">
-      <div class="game-panel-title"><span>🏗️</span> Стройка — Башня</div>
-      <button class="game-close" id="gameClose">×</button>
-    </div>
-    <div class="game-hud">
-      <div class="hud-item"><span class="hud-label">Счёт</span><span class="hud-value score-val" id="hud-score">0</span></div>
-      <div class="hud-item"><span class="hud-label">Рекорд</span><span class="hud-value best-val" id="hud-best">0</span></div>
-      <div class="hud-item"><span class="hud-label">Этаж</span><span class="hud-value level-val" id="hud-level">0</span></div>
-      <div class="hud-item"><span class="hud-label">Цель</span><span class="hud-value" style="color:var(--green)">10</span></div>
-    </div>
-    <canvas id="game-canvas" width="480" height="320"></canvas>
-    <div class="game-prize-banner" id="gamePrize">
-      <h3>🎉 Поздравляем! 10 этажей!</h3>
-      <p>Вы построили башню! Получите скидку на консультацию при обращении сегодня.</p>
-      <a class="game-prize-btn" href="https://wa.me/79894702263?text=Сыграл%20в%20Стройку%20на%20сайте!%20Хочу%20получить%20бонус." target="_blank" rel="noopener">
-        🎁 Получить бонус в WhatsApp
+      <nav class="footer-links">
+        <a href="new-horizon.html">Новый Горизонт</a>
+        <a href="alye-parusa.html">Алые Паруса</a>
+        <a href="moskovskiy.html">Московский</a>
+        <a href="#calculator">Рассрочка</a>
+        <a href="#contact">Контакты</a>
+      </nav>
+      <a class="footer-wa" href="https://wa.me/79894702263" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        +7 989 470-22-63
       </a>
     </div>
-    <div class="game-controls">
-      <p class="game-instruction">Нажми <kbd>Пробел</kbd> или <kbd>Тап</kbd> чтобы положить блок</p>
-      <button class="game-start-btn" id="gameStartBtn">▶ Начать игру</button>
+    <div class="footer-bottom">
+      <span>© 2025 VetraEstate. Все права защищены.</span>
+      <span>Недвижимость в Дагестане</span>
     </div>
   </div>
-</div>
+</footer>
 
-<script src="script.js?v=20260611v2"></script>
+<script src="script.js?v=20260611v3"></script>
 </body>
 </html>
