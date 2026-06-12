@@ -1,796 +1,936 @@
-'use strict';
+const revealItems = document.querySelectorAll(".reveal");
 
-/* ══════════════════════════════════════
-   PRELOADER
-══════════════════════════════════════ */
-window.addEventListener('load', function() {
-  var pl = document.getElementById('preloader');
-  if (!pl) {
-    document.body.classList.add('hero-in');
-    return;
-  }
-  setTimeout(function() {
-    pl.classList.add('hidden');
-    document.body.classList.add('hero-in');
-    setTimeout(function() { pl.style.display = 'none'; }, 700);
-  }, 1600);
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add("visible");
+    }
+  });
+}, { threshold: 0.12 });
+
+revealItems.forEach((item) => revealObserver.observe(item));
+
+const filters = document.querySelectorAll(".filter");
+const projects = document.querySelectorAll(".project");
+
+filters.forEach((filter) => {
+  filter.addEventListener("click", () => {
+    filters.forEach((f) => f.classList.remove("active"));
+    filter.classList.add("active");
+
+    const selected = filter.dataset.filter;
+
+    projects.forEach((project) => {
+      const categories = project.dataset.category;
+      const shouldShow = selected === "all" || categories.includes(selected);
+      project.classList.toggle("hidden", !shouldShow);
+    });
+  });
 });
 
-/* ══════════════════════════════════════
-   NAVBAR
-══════════════════════════════════════ */
-(function() {
-  var nav = document.getElementById('navbar');
-  var burger = document.getElementById('navBurger');
-  var mobile = document.getElementById('navMobile');
+const navToggle = document.querySelector(".nav-toggle");
+const navLinks = document.querySelector(".nav-links");
 
-  window.addEventListener('scroll', function() {
-    if (window.scrollY > 60) {
-      nav.classList.add('scrolled');
-    } else {
-      nav.classList.remove('scrolled');
-    }
+navToggle.addEventListener("click", () => {
+  navLinks.classList.toggle("open");
+});
+
+navLinks.querySelectorAll("a").forEach((link) => {
+  link.addEventListener("click", () => navLinks.classList.remove("open"));
+});
+
+
+
+
+// Layout-linked smart installment calculators
+function formatRub(value) {
+  const n = Math.max(Math.round(Number(value) || 0), 0);
+  return n.toLocaleString("ru-RU") + " ₽";
+}
+
+function getSmartPrice(area, down, minDown, maxPrice, fullPrice) {
+  const fullPaymentTotal = area * fullPrice;
+
+  if (down <= minDown) return maxPrice;
+  if (down >= fullPaymentTotal) return fullPrice;
+
+  const progress = (down - minDown) / Math.max(fullPaymentTotal - minDown, 1);
+  const price = maxPrice - progress * (maxPrice - fullPrice);
+
+  return Math.round(price / 1000) * 1000;
+}
+
+function setAnimatedText(el, text) {
+  if (!el) return;
+  if (el.textContent !== text) {
+    el.textContent = text;
+    el.classList.remove("number-pop");
+    void el.offsetWidth;
+    el.classList.add("number-pop");
+    setTimeout(() => el.classList.remove("number-pop"), 260);
+  }
+}
+
+function updateCalc(calcBox) {
+  const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
+  let down = Number(calcBox.querySelector(".calc-down")?.value || 0);
+  const term = Math.max(Number(calcBox.querySelector(".calc-term")?.value || 1), 1);
+
+  const maxPrice = Number(calcBox.dataset.currentMaxprice || calcBox.dataset.defaultPrice || 0);
+  const fullPrice = Number(calcBox.dataset.currentFullprice || calcBox.dataset.defaultFullprice || 0);
+  const minDown = Number(calcBox.dataset.currentMindown || 0);
+
+  const smartPrice = getSmartPrice(area, down, minDown, maxPrice, fullPrice);
+  const priceInput = calcBox.querySelector(".calc-price");
+  if (priceInput) priceInput.value = smartPrice;
+
+  const total = area * smartPrice;
+  if (down > total) {
+    down = total;
+    const downInput = calcBox.querySelector(".calc-down");
+    if (downInput) downInput.value = Math.round(down);
+  }
+
+  const rest = Math.max(total - down, 0);
+  const monthly = rest / term;
+  const fullTotal = area * fullPrice;
+
+  setAnimatedText(calcBox.querySelector(".calc-total"), formatRub(total));
+  setAnimatedText(calcBox.querySelector(".calc-rest"), formatRub(rest));
+  setAnimatedText(calcBox.querySelector(".calc-monthly"), formatRub(monthly) + "/мес");
+  setAnimatedText(calcBox.querySelector(".calc-full"), formatRub(fullTotal));
+
+  const project = calcBox.querySelector(".calc-project")?.textContent.trim() || "";
+  const plan = calcBox.querySelector(".calc-plan-title")?.textContent.trim() || "";
+  const msg = `Здравствуйте! Хочу отправить расчет с сайта VetraEstate.
+Объект: ${project}
+Планировка: ${plan}
+Площадь: ${area} м²
+Цена за м²: ${formatRub(smartPrice)}
+Первый взнос: ${formatRub(down)}
+Срок рассрочки: ${term} мес.
+Стоимость квартиры: ${formatRub(total)}
+Остаток: ${formatRub(rest)}
+Ежемесячный платеж: ${formatRub(monthly)}/мес.`;
+  const sendBtn = calcBox.querySelector(".calc-send-wa");
+  if (sendBtn) sendBtn.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
+
+}
+
+function selectPlan(card, shouldScroll = true) {
+  const section = card.closest(".calculator-section");
+  const calcBox = section.querySelector(".calc-box");
+  if (!calcBox) return;
+
+  section.querySelectorAll(".plan-calc-card").forEach((c) => c.classList.remove("active"));
+  card.classList.add("active");
+
+  const project = card.dataset.project;
+  const type = card.dataset.type;
+  const area = card.dataset.area;
+  const price = card.dataset.price;
+  const fullprice = card.dataset.fullprice;
+  const down = card.dataset.down;
+  const minDown = card.dataset.mindown || down;
+  const term = card.dataset.term;
+
+  calcBox.dataset.currentMaxprice = price;
+  calcBox.dataset.currentFullprice = fullprice;
+  calcBox.dataset.currentMindown = minDown;
+
+  calcBox.querySelector(".calc-project").textContent = project;
+  calcBox.querySelector(".calc-plan-title").textContent = `${type} • ${area} м²`;
+  calcBox.querySelector(".calc-area").value = area;
+  calcBox.querySelector(".calc-down").value = down;
+  calcBox.querySelector(".calc-term").value = term;
+
+  updateCalc(calcBox);
+
+  if (shouldScroll) {
+    calcBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
+
+document.querySelectorAll(".calculator-section").forEach((section) => {
+  const firstCard = section.querySelector(".plan-calc-card");
+  const calcBox = section.querySelector(".calc-box");
+
+  section.querySelectorAll(".plan-calc-card").forEach((card) => {
+    card.addEventListener("click", () => selectPlan(card, true));
   });
 
-  if (burger && mobile) {
-    burger.addEventListener('click', function() {
-      mobile.classList.toggle('open');
-    });
-    mobile.querySelectorAll('.nm-link').forEach(function(link) {
-      link.addEventListener('click', function() {
-        mobile.classList.remove('open');
-      });
+  if (calcBox) {
+    calcBox.querySelectorAll("input").forEach((input) => {
+      input.addEventListener("input", () => updateCalc(calcBox));
     });
   }
-})();
 
-/* ══════════════════════════════════════
-   HERO CANVAS — Ночной город у моря
-   (генеративный скайлайн, тёплые окна,
-   луна, звёзды, отражения, параллакс)
-══════════════════════════════════════ */
-(function() {
-  var canvas = document.getElementById('heroCanvas');
-  if (!canvas) return;
-  var ctx = canvas.getContext('2d');
-  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Initial selection without jumping down the page
+  if (firstCard) selectPlan(firstCard, false);
+});
 
-  var W, H, horizonY, layers, stars, reflections;
-  var mx = 0, my = 0, smx = 0, smy = 0;
 
-  // Слои скайлайна: от дальнего к ближнему
-  var LAYER_CONF = [
-    { depth: 0.15, drift: 4,  maxH: 0.34, minH: 0.16, body: '#0D1526', win: [120, 140, 180], winAlpha: 0.35, density: 0.9 },
-    { depth: 0.35, drift: 9,  maxH: 0.46, minH: 0.22, body: '#0A111F', win: [217, 179, 106], winAlpha: 0.5,  density: 0.75 },
-    { depth: 0.7,  drift: 16, maxH: 0.6,  minH: 0.3,  body: '#070C17', win: [255, 200, 120], winAlpha: 0.85, density: 0.6 }
-  ];
+// Premium layout modal
+document.querySelectorAll(".layouts-grid").forEach((grid) => {
+  const imgs = Array.from(grid.querySelectorAll(".zoomable-layout"));
+  if (!imgs.length) return;
 
-  function rand(a, b) { return a + Math.random() * (b - a); }
+  const modal = document.querySelector(".layout-modal");
+  if (!modal) return;
 
-  // Слой пререндерится в офскрин-канвас, мерцающие окна рисуются поверх
-  function buildLayer(conf) {
-    var spanW = Math.ceil(W * 1.6);
-    var off = document.createElement('canvas');
-    off.width = spanW;
-    off.height = H;
-    var octx = off.getContext('2d');
-    var twinkles = [];
+  const modalImg = modal.querySelector("img");
+  const closeBtn = modal.querySelector(".layout-modal-close");
+  const prevBtn = modal.querySelector(".layout-prev");
+  const nextBtn = modal.querySelector(".layout-next");
+  let index = 0;
 
-    var x = -rand(0, 60);
-    while (x < spanW) {
-      var bw = rand(34, 96);
-      var bh = H * rand(conf.minH, conf.maxH);
-      var top = horizonY - bh;
-
-      octx.fillStyle = conf.body;
-      octx.fillRect(x, top, bw, bh + 2);
-
-      // Иногда — парапет или шпиль
-      var r = Math.random();
-      if (r < 0.25) {
-        octx.fillRect(x + bw * 0.3, top - 8, bw * 0.4, 8);
-      } else if (r < 0.4) {
-        octx.fillRect(x + bw / 2 - 1, top - rand(10, 26), 2, 26);
-      }
-
-      // Сетка окон
-      var ww = 3, wh = 5, gx = 9, gy = 12;
-      var cols = Math.floor((bw - 10) / gx);
-      var rows = Math.floor((bh - 14) / gy);
-      for (var c = 0; c < cols; c++) {
-        for (var rr = 0; rr < rows; rr++) {
-          if (Math.random() > conf.density * 0.45) continue;
-          var wx = x + 6 + c * gx;
-          var wy = top + 8 + rr * gy;
-          var a = conf.winAlpha * rand(0.35, 1);
-          octx.fillStyle = 'rgba(' + conf.win[0] + ',' + conf.win[1] + ',' + conf.win[2] + ',' + a.toFixed(2) + ')';
-          octx.fillRect(wx, wy, ww, wh);
-          if (Math.random() < 0.06 && twinkles.length < 70) {
-            twinkles.push({ x: wx, y: wy, phase: rand(0, Math.PI * 2), speed: rand(0.3, 1.2) });
-          }
-        }
-      }
-      x += bw + rand(4, 26);
-    }
-    return { canvas: off, spanW: spanW, conf: conf, twinkles: twinkles };
+  function openModal(i) {
+    index = i;
+    modalImg.src = imgs[index].src;
+    modalImg.alt = imgs[index].alt || "Планировка";
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
   }
 
-  function build() {
-    W = canvas.width = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
-    horizonY = H * 0.82;
-    layers = LAYER_CONF.map(buildLayer);
-
-    stars = [];
-    for (var i = 0; i < 110; i++) {
-      stars.push({
-        x: Math.random() * W,
-        y: Math.random() * horizonY * 0.7,
-        size: rand(0.4, 1.4),
-        phase: rand(0, Math.PI * 2),
-        speed: rand(0.5, 1.5)
-      });
-    }
-
-    reflections = [];
-    for (var j = 0; j < 46; j++) {
-      reflections.push({
-        x: Math.random() * W,
-        y: horizonY + rand(4, Math.max(6, H - horizonY - 6)),
-        len: rand(14, 70),
-        gold: Math.random() < 0.6,
-        phase: rand(0, Math.PI * 2),
-        speed: rand(0.4, 1.4)
-      });
-    }
+  function closeModal() {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
   }
-  build();
-  window.addEventListener('resize', build);
 
-  window.addEventListener('mousemove', function(e) {
-    mx = (e.clientX / window.innerWidth - 0.5) * 2;
-    my = (e.clientY / window.innerHeight - 0.5) * 2;
+  function move(step) {
+    index = (index + step + imgs.length) % imgs.length;
+    modalImg.src = imgs[index].src;
+    modalImg.alt = imgs[index].alt || "Планировка";
+  }
+
+  imgs.forEach((img, i) => img.addEventListener("click", () => openModal(i)));
+  closeBtn?.addEventListener("click", closeModal);
+  prevBtn?.addEventListener("click", () => move(-1));
+  nextBtn?.addEventListener("click", () => move(1));
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
   });
+  document.addEventListener("keydown", (e) => {
+    if (!modal.classList.contains("open")) return;
+    if (e.key === "Escape") closeModal();
+    if (e.key === "ArrowLeft") move(-1);
+    if (e.key === "ArrowRight") move(1);
+  });
+});
 
-  var t = 0;
-  function draw() {
-    t += reduceMotion ? 0 : 0.016;
-    smx += (mx - smx) * 0.04;
-    smy += (my - smy) * 0.04;
+// Range slider sync and golden price highlight
+document.querySelectorAll(".calc-box").forEach((calcBox) => {
+  const downInput = calcBox.querySelector(".calc-down");
+  const range = calcBox.querySelector(".calc-down-range");
+  const priceInput = calcBox.querySelector(".calc-price");
 
-    // Небо
-    var sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, '#04070E');
-    sky.addColorStop(0.55, '#081020');
-    sky.addColorStop(0.82, '#0B1428');
-    sky.addColorStop(1, '#04070E');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, H);
+  function syncRangeFromInputs() {
+    const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
+    const maxPrice = Number(calcBox.dataset.currentMaxprice || calcBox.dataset.defaultPrice || 0);
+    const maxTotal = Math.max(area * maxPrice, 1000000);
 
-    // Луна с ореолом
-    var moonX = W * 0.76 - smx * 18;
-    var moonY = H * 0.2 - smy * 10;
-    var halo = ctx.createRadialGradient(moonX, moonY, 0, moonX, moonY, H * 0.38);
-    halo.addColorStop(0, 'rgba(240,217,166,0.16)');
-    halo.addColorStop(0.35, 'rgba(217,179,106,0.05)');
-    halo.addColorStop(1, 'rgba(217,179,106,0)');
-    ctx.fillStyle = halo;
-    ctx.fillRect(0, 0, W, H);
-    ctx.beginPath();
-    ctx.arc(moonX, moonY, 26, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(240,228,200,0.92)';
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(moonX - 9, moonY - 6, 24, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(8,14,26,0.18)';
-    ctx.fill();
+    if (range) {
+      range.max = Math.round(maxTotal);
+      range.value = Number(downInput?.value || 0);
+    }
 
-    // Звёзды
-    stars.forEach(function(s) {
-      var a = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
-      ctx.fillStyle = 'rgba(230,235,245,' + a.toFixed(2) + ')';
-      ctx.fillRect(s.x, s.y, s.size, s.size);
-    });
-
-    // Скайлайн: 3 слоя параллакса с медленным дрейфом
-    layers.forEach(function(l) {
-      var shift = (t * l.conf.drift + smx * l.conf.depth * 46) % l.spanW;
-      if (shift < 0) shift += l.spanW;
-      ctx.drawImage(l.canvas, -shift, 0);
-      ctx.drawImage(l.canvas, l.spanW - shift, 0);
-      l.twinkles.forEach(function(wn) {
-        var a = 0.5 + 0.5 * Math.sin(t * wn.speed + wn.phase);
-        if (a < 0.35) return;
-        var wx = wn.x - shift;
-        if (wx < -4) wx += l.spanW;
-        ctx.fillStyle = 'rgba(255,214,140,' + (a * l.conf.winAlpha).toFixed(2) + ')';
-        ctx.fillRect(wx, wn.y, 3, 5);
-      });
-    });
-
-    // Море
-    var sea = ctx.createLinearGradient(0, horizonY, 0, H);
-    sea.addColorStop(0, '#0A1322');
-    sea.addColorStop(1, '#03060C');
-    ctx.fillStyle = sea;
-    ctx.fillRect(0, horizonY, W, H - horizonY);
-
-    // Линия горизонта
-    ctx.fillStyle = 'rgba(217,179,106,0.18)';
-    ctx.fillRect(0, horizonY, W, 1);
-
-    // Лунная дорожка
-    var trail = ctx.createLinearGradient(0, horizonY, 0, H);
-    trail.addColorStop(0, 'rgba(240,217,166,0.14)');
-    trail.addColorStop(1, 'rgba(240,217,166,0)');
-    ctx.fillStyle = trail;
-    var tw = 60 + 16 * Math.sin(t * 0.7);
-    ctx.fillRect(moonX - tw / 2, horizonY, tw, H - horizonY);
-
-    // Отражения огней на воде
-    reflections.forEach(function(rf) {
-      var a = 0.05 + 0.1 * (0.5 + 0.5 * Math.sin(t * rf.speed + rf.phase));
-      ctx.fillStyle = rf.gold
-        ? 'rgba(217,179,106,' + a.toFixed(3) + ')'
-        : 'rgba(110,160,200,' + (a * 0.8).toFixed(3) + ')';
-      ctx.fillRect(rf.x - rf.len / 2, rf.y, rf.len, 1);
-    });
-
-    // Виньетка под контент
-    var vgrd = ctx.createRadialGradient(W / 2, H * 0.45, H * 0.1, W / 2, H * 0.45, H * 0.9);
-    vgrd.addColorStop(0, 'rgba(4,7,14,0.35)');
-    vgrd.addColorStop(0.55, 'rgba(4,7,14,0)');
-    vgrd.addColorStop(1, 'rgba(4,7,14,0.5)');
-    ctx.fillStyle = vgrd;
-    ctx.fillRect(0, 0, W, H);
-
-    var bottom = ctx.createLinearGradient(0, H * 0.8, 0, H);
-    bottom.addColorStop(0, 'rgba(6,10,20,0)');
-    bottom.addColorStop(1, 'rgba(6,10,20,0.96)');
-    ctx.fillStyle = bottom;
-    ctx.fillRect(0, 0, W, H);
-
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
-
-/* ══════════════════════════════════════
-   SCROLL REVEAL
-══════════════════════════════════════ */
-(function() {
-  var els = document.querySelectorAll('.reveal');
-  if (!('IntersectionObserver' in window)) {
-    els.forEach(function(el) { el.classList.add('visible'); });
-    return;
-  }
-  var io = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        var delay = entry.target.dataset.delay || 0;
-        setTimeout(function() {
-          entry.target.classList.add('visible');
-        }, parseInt(delay));
-        io.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.12 });
-  els.forEach(function(el) { io.observe(el); });
-})();
-
-/* ══════════════════════════════════════
-   STATS COUNTER
-══════════════════════════════════════ */
-(function() {
-  var nums = document.querySelectorAll('.stat-num');
-  if (!nums.length) return;
-  var started = false;
-
-  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
-
-  function runCounters() {
-    if (started) return;
-    started = true;
-    nums.forEach(function(el) {
-      var target = parseInt(el.dataset.target, 10);
-      var duration = 2000;
-      var start = null;
-      function step(ts) {
-        if (!start) start = ts;
-        var progress = Math.min((ts - start) / duration, 1);
-        el.textContent = Math.round(easeOut(progress) * target);
-        if (progress < 1) requestAnimationFrame(step);
-        else el.textContent = target;
-      }
-      requestAnimationFrame(step);
-    });
+    if (priceInput) {
+      const currentPrice = Number(priceInput.value || 0);
+      const fullPrice = Number(calcBox.dataset.currentFullprice || calcBox.dataset.defaultFullprice || 0);
+      priceInput.classList.toggle("good-price", currentPrice <= fullPrice + 5000);
+    }
   }
 
-  var io = new IntersectionObserver(function(entries) {
-    if (entries.some(function(e) { return e.isIntersecting; })) runCounters();
-  }, { threshold: 0.3 });
-  var statsBar = document.querySelector('.stats-bar');
-  if (statsBar) io.observe(statsBar);
-})();
+  if (range && downInput) {
+    range.addEventListener("input", () => {
+      downInput.value = range.value;
+      if (typeof updateCalc === "function") updateCalc(calcBox);
+      syncRangeFromInputs();
+    });
 
-/* ══════════════════════════════════════
-   LAYOUTS / FLOOR PLANS
-══════════════════════════════════════ */
-(function() {
-  var data = {
-    horizon: {
-      1: { img: 'images/horizon-new-layout-11.jpg', title: '1-комнатная квартира', area: '36 м²', floor: '3–17', ceil: '2.9 м', price: 'от 4.2 млн ₽', finish: 'Чистовая', status: 'В продаже' },
-      2: { img: 'images/horizon-new-layout-13.jpg', title: '2-комнатная квартира', area: '58 м²', floor: '3–17', ceil: '2.9 м', price: 'от 6.8 млн ₽', finish: 'Чистовая', status: 'В продаже' },
-      3: { img: 'images/horizon-new-layout-15.jpg', title: '3-комнатная квартира', area: '78 м²', floor: '5–17', ceil: '2.9 м', price: 'от 9.1 млн ₽', finish: 'Чистовая', status: 'Ограниченно' }
-    },
-    alye: {
-      1: { img: 'images/alye-layout-11.jpg', title: '1-комнатная квартира', area: '42 м²', floor: '2–14', ceil: '3.0 м', price: 'от 5.8 млн ₽', finish: 'Под ключ', status: 'В продаже' },
-      2: { img: 'images/alye-layout-14.jpg', title: '2-комнатная квартира', area: '68 м²', floor: '2–14', ceil: '3.0 м', price: 'от 8.9 млн ₽', finish: 'Под ключ', status: 'В продаже' },
-      3: { img: 'images/alye-layout-18.jpg', title: '3-комнатная квартира', area: '95 м²', floor: '3–14', ceil: '3.0 м', price: 'от 12.5 млн ₽', finish: 'Под ключ', status: 'В продаже' }
-    },
-    moscow: {
-      1: { img: 'images/moscow-layout-25.jpg', title: '1-комнатная квартира', area: '32 м²', floor: '2–12', ceil: '2.8 м', price: 'от 3.5 млн ₽', finish: 'Черновая', status: 'В продаже' },
-      2: { img: 'images/moscow-layout-26.jpg', title: '2-комнатная квартира', area: '52 м²', floor: '2–12', ceil: '2.8 м', price: 'от 5.6 млн ₽', finish: 'Черновая', status: 'Ограниченно' },
-      3: { img: 'images/moscow-layout-28.jpg', title: '3-комнатная квартира', area: '72 м²', floor: '2–12', ceil: '2.8 м', price: 'от 7.8 млн ₽', finish: 'Черновая', status: 'Последние' }
+    downInput.addEventListener("input", () => {
+      if (typeof updateCalc === "function") updateCalc(calcBox);
+      syncRangeFromInputs();
+    });
+
+    calcBox.querySelector(".calc-area")?.addEventListener("input", syncRangeFromInputs);
+  }
+
+  setTimeout(syncRangeFromInputs, 100);
+});
+
+// Patch selectPlan to keep range updated after choosing a plan
+if (typeof selectPlan === "function" && !window.__vetraSelectPlanPatched) {
+  window.__vetraSelectPlanPatched = true;
+  const originalSelectPlan = selectPlan;
+  selectPlan = function(card, shouldScroll = true) {
+    originalSelectPlan(card, shouldScroll);
+    const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
+    if (!calcBox) return;
+    const downInput = calcBox.querySelector(".calc-down");
+    const range = calcBox.querySelector(".calc-down-range");
+    if (range && downInput) {
+      const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
+      const maxPrice = Number(calcBox.dataset.currentMaxprice || calcBox.dataset.defaultPrice || 0);
+      range.max = Math.round(Math.max(area * maxPrice, 1000000));
+      range.value = downInput.value;
     }
   };
+}
 
-  var currentProject = 'horizon';
-  var currentType = 1;
 
-  var img = document.getElementById('layoutImg');
-  var specTitle = document.getElementById('specTitle');
-  var specArea = document.getElementById('specArea');
-  var specFloor = document.getElementById('specFloor');
-  var specCeil = document.getElementById('specCeil');
-  var specPrice = document.getElementById('specPrice');
-  var specFinish = document.getElementById('specFinish');
-  var specStatus = document.getElementById('specStatus');
+// Final WhatsApp send calculation updater
+function vetraUpdateSendButton(calcBox) {
+  if (!calcBox) return;
 
-  function updateLayout() {
-    var info = data[currentProject][currentType];
-    if (!info) return;
+  const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
+  const price = Number(calcBox.querySelector(".calc-price")?.value || 0);
+  const down = Number(calcBox.querySelector(".calc-down")?.value || 0);
+  const term = Math.max(Number(calcBox.querySelector(".calc-term")?.value || 1), 1);
 
-    img.classList.add('fading');
-    setTimeout(function() {
-      img.src = info.img;
-      img.onload = function() { img.classList.remove('fading'); };
-      img.onerror = function() { img.classList.remove('fading'); };
-    }, 200);
+  const total = area * price;
+  const rest = Math.max(total - down, 0);
+  const monthly = rest / term;
 
-    specTitle.textContent = info.title;
-    specArea.textContent = info.area;
-    specFloor.textContent = info.floor;
-    specCeil.textContent = info.ceil;
-    specPrice.textContent = info.price;
-    specFinish.textContent = info.finish;
-    specStatus.textContent = info.status;
-  }
+  const project = calcBox.querySelector(".calc-project")?.textContent.trim() || "";
+  const plan = calcBox.querySelector(".calc-plan-title")?.textContent.trim() || "";
 
-  var projectBtns = document.querySelectorAll('.lp-btn');
-  projectBtns.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      projectBtns.forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      currentProject = btn.dataset.project;
-      updateLayout();
-    });
-  });
+  const msg = `Здравствуйте! Хочу отправить расчет с сайта VetraEstate.
 
-  var typeBtns = document.querySelectorAll('.lt-btn');
-  typeBtns.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      typeBtns.forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      currentType = parseInt(btn.dataset.type, 10);
-      updateLayout();
-    });
-  });
+Объект: ${project}
+Планировка: ${plan}
+Площадь: ${area} м²
+Цена за м²: ${formatRub(price)}
+Первый взнос: ${formatRub(down)}
+Срок рассрочки: ${term} мес.
 
-  // Init
-  updateLayout();
-})();
+Стоимость квартиры: ${formatRub(total)}
+Остаток после взноса: ${formatRub(rest)}
+Ежемесячный платеж: ${formatRub(monthly)}/мес.`;
 
-/* ══════════════════════════════════════
-   MORTGAGE CALCULATOR
-══════════════════════════════════════ */
-(function() {
-  var sliderPrice = document.getElementById('calcPrice');
-  var sliderDown  = document.getElementById('calcDown');
-  var sliderTerm  = document.getElementById('calcTerm');
-  var sliderRate  = document.getElementById('calcRate');
+  const btn = calcBox.querySelector(".calc-send-wa");
+  if (btn) btn.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
+}
 
-  if (!sliderPrice) return;
-
-  var valPrice   = document.getElementById('calcPriceVal');
-  var valDown    = document.getElementById('calcDownVal');
-  var valTerm    = document.getElementById('calcTermVal');
-  var valRate    = document.getElementById('calcRateVal');
-  var elMonthly  = document.getElementById('calcMonthly');
-  var elLoan     = document.getElementById('crLoan');
-  var elOverpay  = document.getElementById('crOverpay');
-  var elTotal    = document.getElementById('crTotal');
-
-  function fmt(n) {
-    return Math.round(n).toLocaleString('ru-RU') + ' ₽';
-  }
-
-  function updateProgress(el) {
-    var min = parseFloat(el.min);
-    var max = parseFloat(el.max);
-    var val = parseFloat(el.value);
-    var pct = ((val - min) / (max - min) * 100).toFixed(1) + '%';
-    el.style.setProperty('--progress', pct);
-  }
-
-  function calculate() {
-    var price  = parseFloat(sliderPrice.value);
-    var downPct = parseFloat(sliderDown.value);
-    var term   = parseInt(sliderTerm.value, 10);
-    var rate   = parseFloat(sliderRate.value);
-
-    var downAmt = price * downPct / 100;
-    var loan    = price - downAmt;
-    var months  = term * 12;
-    var r       = rate / 100 / 12;
-
-    var monthly;
-    if (r === 0) {
-      monthly = loan / months;
-    } else {
-      monthly = loan * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
-    }
-
-    var totalPaid = monthly * months;
-    var overpay   = totalPaid - loan;
-
-    // Update labels
-    valPrice.textContent  = Math.round(price).toLocaleString('ru-RU') + ' ₽';
-    valDown.textContent   = Math.round(downAmt).toLocaleString('ru-RU') + ' ₽ (' + downPct + '%)';
-    valTerm.textContent   = term + ' ' + (term === 1 ? 'год' : term < 5 ? 'года' : 'лет');
-    valRate.textContent   = rate.toFixed(1) + '%';
-
-    // Update results
-    elMonthly.textContent = fmt(monthly);
-    elLoan.textContent    = fmt(loan);
-    elOverpay.textContent = fmt(overpay);
-    elTotal.textContent   = fmt(totalPaid);
-
-    // Update slider fill
-    updateProgress(sliderPrice);
-    updateProgress(sliderDown);
-    updateProgress(sliderTerm);
-    updateProgress(sliderRate);
-  }
-
-  sliderPrice.addEventListener('input', calculate);
-  sliderDown.addEventListener('input', calculate);
-  sliderTerm.addEventListener('input', calculate);
-  sliderRate.addEventListener('input', calculate);
-
-  calculate();
-})();
-
-/* ══════════════════════════════════════
-   ABOUT CANVAS — Building Animation
-══════════════════════════════════════ */
-(function() {
-  var canvas = document.getElementById('aboutCanvas');
-  if (!canvas) return;
-  var ctx = canvas.getContext('2d');
-  var W, H;
-
-  function resize() {
-    W = canvas.width = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  var t = 0;
-  function draw() {
-    t += 0.008;
-    ctx.clearRect(0, 0, W, H);
-
-    // Subtle grid lines
-    ctx.strokeStyle = 'rgba(217,179,106,0.04)';
-    ctx.lineWidth = 1;
-    for (var x = 0; x < W; x += 80) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-    }
-    for (var y = 0; y < H; y += 80) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-    }
-
-    // Pulsing dots at intersections
-    for (var gx = 0; gx <= W; gx += 80) {
-      for (var gy = 0; gy <= H; gy += 80) {
-        var pulse = 0.5 + 0.5 * Math.sin(t + gx * 0.05 + gy * 0.03);
-        ctx.beginPath();
-        ctx.arc(gx, gy, 1.5 * pulse, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(217,179,106,' + (0.15 * pulse) + ')';
-        ctx.fill();
-      }
-    }
-
-    // Flowing line
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(217,179,106,0.12)';
-    ctx.lineWidth = 1;
-    for (var i = 0; i <= W; i += 4) {
-      var yw = H * 0.5 + 30 * Math.sin(i * 0.015 + t) + 15 * Math.sin(i * 0.03 - t * 1.3);
-      if (i === 0) ctx.moveTo(i, yw);
-      else ctx.lineTo(i, yw);
-    }
-    ctx.stroke();
-
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
-
-/* ══════════════════════════════════════
-   CONTACT FORM
-══════════════════════════════════════ */
-(function() {
-  var form  = document.getElementById('contactForm');
-  var toast = document.getElementById('toast');
-  if (!form) return;
-
-  form.addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    var name  = document.getElementById('fName');
-    var phone = document.getElementById('fPhone');
-    var ok = true;
-
-    [name, phone].forEach(function(el) {
-      el.style.borderColor = '';
-      if (!el.value.trim()) {
-        el.style.borderColor = '#ef4444';
-        ok = false;
-      }
-    });
-    if (!ok) return;
-
-    var btn = form.querySelector('button[type=submit]');
-    btn.textContent = 'Отправляем...';
-    btn.disabled = true;
-
-    setTimeout(function() {
-      btn.textContent = 'Отправить заявку';
-      btn.disabled = false;
-      form.reset();
-      // Show toast
-      toast.classList.add('show');
-      setTimeout(function() { toast.classList.remove('show'); }, 4000);
-    }, 1200);
-  });
-})();
-
-/* ══════════════════════════════════════
-   HERO — Пробуквенное появление заголовка
-══════════════════════════════════════ */
-(function() {
-  var delay = 0.35;
-  var charStep = 0.045;
-
-  document.querySelectorAll('.hero-title [data-split]').forEach(function(el) {
-    var text = el.textContent;
-    el.setAttribute('aria-label', text);
-    el.textContent = '';
-    Array.prototype.forEach.call(text, function(ch) {
-      var s = document.createElement('span');
-      s.className = 'ht-char';
-      s.setAttribute('aria-hidden', 'true');
-      s.textContent = ch;
-      s.style.setProperty('--d', delay.toFixed(2) + 's');
-      delay += charStep;
-      el.appendChild(s);
-    });
-  });
-
-  // Остальные элементы hero выходят следом
-  var after = delay + 0.15;
-  document.querySelectorAll('.hero-stagger').forEach(function(el, i) {
-    el.style.setProperty('--d', (el.classList.contains('hero-tag') ? 0.1 : after + i * 0.12).toFixed(2) + 's');
-  });
-})();
-
-/* ══════════════════════════════════════
-   HERO — Параллакс-выход при скролле
-══════════════════════════════════════ */
-(function() {
-  var content = document.getElementById('heroContent');
-  var hero = document.getElementById('hero');
-  if (!content || !hero) return;
-  var ticking = false;
-
-  function update() {
-    ticking = false;
-    var y = window.scrollY;
-    var h = hero.offsetHeight || 1;
-    if (y > h) return;
-    content.style.transform = 'translateY(' + (y * 0.35) + 'px)';
-    content.style.opacity = Math.max(0, 1 - y / (h * 0.55));
-  }
-  window.addEventListener('scroll', function() {
-    if (!ticking) { ticking = true; requestAnimationFrame(update); }
-  }, { passive: true });
-})();
-
-/* ══════════════════════════════════════
-   SCROLL PROGRESS BAR
-══════════════════════════════════════ */
-(function() {
-  var bar = document.createElement('div');
-  bar.className = 'scroll-progress';
-  document.body.appendChild(bar);
-  var ticking = false;
-
-  function update() {
-    ticking = false;
-    var max = document.documentElement.scrollHeight - window.innerHeight;
-    bar.style.transform = 'scaleX(' + (max > 0 ? window.scrollY / max : 0) + ')';
-  }
-  window.addEventListener('scroll', function() {
-    if (!ticking) { ticking = true; requestAnimationFrame(update); }
-  }, { passive: true });
+document.querySelectorAll(".calc-box").forEach((calcBox) => {
+  const update = () => setTimeout(() => vetraUpdateSendButton(calcBox), 30);
+  calcBox.querySelectorAll("input").forEach((input) => input.addEventListener("input", update));
   update();
-})();
+});
 
-/* ══════════════════════════════════════
-   CUSTOM CURSOR
-══════════════════════════════════════ */
-(function() {
-  if (!window.matchMedia || !window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  var dot = document.createElement('div');
-  var ring = document.createElement('div');
-  dot.className = 'cursor-dot';
-  ring.className = 'cursor-ring';
-  document.body.appendChild(dot);
-  document.body.appendChild(ring);
-
-  var x = -100, y = -100, rx = -100, ry = -100, shown = false;
-
-  document.addEventListener('mousemove', function(e) {
-    x = e.clientX; y = e.clientY;
-    if (!shown) { shown = true; document.body.classList.add('has-cursor'); }
-    dot.style.transform = 'translate(' + x + 'px,' + y + 'px) translate(-50%,-50%)';
+document.querySelectorAll(".plan-calc-card").forEach((card) => {
+  card.addEventListener("click", () => {
+    const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
+    setTimeout(() => vetraUpdateSendButton(calcBox), 80);
   });
-  document.addEventListener('mouseleave', function() {
-    shown = false;
-    document.body.classList.remove('has-cursor');
+});
+
+
+// Final reliable send calculation button
+function vetraFinalFormatRub(value) {
+  const n = Math.max(Math.round(Number(value) || 0), 0);
+  return n.toLocaleString("ru-RU") + " ₽";
+}
+
+function vetraFinalSendCalc(calcBox) {
+  if (!calcBox) return;
+
+  const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
+  const price = Number(calcBox.querySelector(".calc-price")?.value || 0);
+  const down = Number(calcBox.querySelector(".calc-down")?.value || 0);
+  const term = Math.max(Number(calcBox.querySelector(".calc-term")?.value || 1), 1);
+
+  const total = area * price;
+  const rest = Math.max(total - down, 0);
+  const monthly = rest / term;
+
+  const project = calcBox.querySelector(".calc-project")?.textContent.trim() || "";
+  const plan = calcBox.querySelector(".calc-plan-title")?.textContent.trim() || "";
+
+  const msg = `Здравствуйте! Хочу отправить расчет с сайта VetraEstate.
+
+Объект: ${project}
+Планировка: ${plan}
+Площадь: ${area} м²
+Цена за м²: ${vetraFinalFormatRub(price)}
+Первый взнос: ${vetraFinalFormatRub(down)}
+Срок рассрочки: ${term} мес.
+
+Стоимость квартиры: ${vetraFinalFormatRub(total)}
+Остаток после взноса: ${vetraFinalFormatRub(rest)}
+Ежемесячный платеж: ${vetraFinalFormatRub(monthly)}/мес.`;
+
+  const btn = calcBox.querySelector(".calc-send-wa");
+  if (btn) btn.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
+}
+
+function vetraBindSendButtons() {
+  document.querySelectorAll(".calc-box").forEach((calcBox) => {
+    const update = () => setTimeout(() => vetraFinalSendCalc(calcBox), 50);
+    calcBox.querySelectorAll("input").forEach((input) => input.addEventListener("input", update));
+    update();
   });
 
-  document.addEventListener('mouseover', function(e) {
-    if (e.target.closest('a, button, .project-card, .cloud-card, input, select, textarea')) {
-      ring.classList.add('is-link');
-    } else {
-      ring.classList.remove('is-link');
+  document.querySelectorAll(".plan-calc-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
+      setTimeout(() => vetraFinalSendCalc(calcBox), 120);
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", vetraBindSendButtons);
+vetraBindSendButtons();
+
+
+// Send current calculator result to WhatsApp
+function formatRubVetra(value) {
+  const n = Math.max(Math.round(Number(value) || 0), 0);
+  return n.toLocaleString("ru-RU") + " ₽";
+}
+
+function sendCurrentCalcToWhatsAppVetra(calcBox) {
+  if (!calcBox) return;
+
+  const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
+  const price = Number(calcBox.querySelector(".calc-price")?.value || 0);
+  const down = Number(calcBox.querySelector(".calc-down")?.value || 0);
+  const term = Math.max(Number(calcBox.querySelector(".calc-term")?.value || 1), 1);
+
+  const total = area * price;
+  const rest = Math.max(total - down, 0);
+  const monthly = rest / term;
+
+  const project = calcBox.querySelector(".calc-project")?.textContent.trim() || "";
+  const plan = calcBox.querySelector(".calc-plan-title")?.textContent.trim() || "";
+
+  const message = `Здравствуйте! Хочу отправить расчет с сайта VetraEstate.
+
+Объект: ${project}
+Планировка: ${plan}
+Площадь: ${area} м²
+Цена за м²: ${formatRubVetra(price)}
+Первый взнос: ${formatRubVetra(down)}
+Срок рассрочки: ${term} мес.
+
+Стоимость квартиры: ${formatRubVetra(total)}
+Остаток после взноса: ${formatRubVetra(rest)}
+Ежемесячный платеж: ${formatRubVetra(monthly)}/мес.`;
+
+  const btn = calcBox.querySelector(".calc-send-wa");
+  if (btn) {
+    btn.href = "https://wa.me/79894702263?text=" + encodeURIComponent(message);
+  }
+}
+
+function bindVetraCalcWhatsAppButtons() {
+  document.querySelectorAll(".calc-box").forEach((calcBox) => {
+    const update = () => setTimeout(() => sendCurrentCalcToWhatsAppVetra(calcBox), 50);
+
+    calcBox.querySelectorAll("input").forEach((input) => {
+      input.addEventListener("input", update);
+      input.addEventListener("change", update);
+    });
+
+    update();
+  });
+
+  document.querySelectorAll(".plan-calc-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
+      setTimeout(() => sendCurrentCalcToWhatsAppVetra(calcBox), 150);
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", bindVetraCalcWhatsAppButtons);
+bindVetraCalcWhatsAppButtons();
+
+
+// Link top layout option cards to calculator
+function vetraScrollToCalculator(calcBox) {
+  if (!calcBox) return;
+  const y = calcBox.getBoundingClientRect().top + window.pageYOffset - 115;
+  window.scrollTo({ top: y, behavior: "smooth" });
+}
+
+function vetraChooseCalculatorPlanByIndex(section, index) {
+  const calculatorSection = document.querySelector(".calculator-section");
+  if (!calculatorSection) return;
+
+  const cards = calculatorSection.querySelectorAll(".plan-calc-card");
+  const card = cards[index] || cards[0];
+  if (!card) return;
+
+  if (typeof selectPlan === "function") {
+    selectPlan(card, false);
+  } else {
+    card.click();
+  }
+
+  document.querySelectorAll(".layout-calc-trigger").forEach((el) => el.classList.remove("active"));
+  const trigger = document.querySelector(`.layout-calc-trigger[data-plan-index="${index}"]`);
+  if (trigger) trigger.classList.add("active");
+
+  const calcBox = calculatorSection.querySelector(".calc-box");
+  setTimeout(() => vetraScrollToCalculator(calcBox), 80);
+}
+
+document.querySelectorAll(".layout-calc-trigger").forEach((trigger) => {
+  const run = () => {
+    const index = Number(trigger.dataset.planIndex || 0);
+    vetraChooseCalculatorPlanByIndex(trigger.closest(".section"), index);
+  };
+
+  trigger.addEventListener("click", run);
+  trigger.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      run();
     }
   });
+});
 
-  (function follow() {
-    rx += (x - rx) * 0.16;
-    ry += (y - ry) * 0.16;
-    ring.style.transform = 'translate(' + rx + 'px,' + ry + 'px) translate(-50%,-50%)';
-    requestAnimationFrame(follow);
-  })();
-})();
-
-/* ══════════════════════════════════════
-   PROJECT CARDS — 3D-наклон + блик
-══════════════════════════════════════ */
-(function() {
-  if (!window.matchMedia || !window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  document.querySelectorAll('.project-card').forEach(function(card) {
-    var glare = document.createElement('div');
-    glare.className = 'card-glare';
-    card.appendChild(glare);
-
-    card.addEventListener('mousemove', function(e) {
-      var rect = card.getBoundingClientRect();
-      var px = (e.clientX - rect.left) / rect.width;
-      var py = (e.clientY - rect.top) / rect.height;
-      var ry = (px - 0.5) * 10;
-      var rx = (0.5 - py) * 8;
-      card.style.transform = 'perspective(900px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg) translateY(-4px)';
-      card.style.setProperty('--gx', (px * 100).toFixed(1) + '%');
-      card.style.setProperty('--gy', (py * 100).toFixed(1) + '%');
-    });
-    card.addEventListener('mouseleave', function() {
-      card.style.transform = '';
-    });
+// Make existing calculator cards scroll to calculator top clearly
+document.querySelectorAll(".plan-calc-card").forEach((card) => {
+  card.addEventListener("click", () => {
+    const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
+    setTimeout(() => vetraScrollToCalculator(calcBox), 100);
   });
-})();
+});
 
-/* ══════════════════════════════════════
-   GALLERY — 3D-облако фотографий
-   (пролёт сквозь карточки при скролле)
-══════════════════════════════════════ */
-(function() {
-  var wrap = document.getElementById('showcaseWrap');
-  var cloud = document.getElementById('cloud');
-  if (!wrap || !cloud) return;
 
-  var cards = Array.prototype.slice.call(cloud.querySelectorAll('.cloud-card'));
-  var head = document.getElementById('showcaseHead');
-  var hint = document.getElementById('showcaseHint');
-  var DEPTH = 2700; // дистанция пролёта камеры
+// FIX: top layout cards select calculator plan and scroll to calculator
+function vetraCalcScrollToBox(calcBox) {
+  if (!calcBox) return;
+  const y = calcBox.getBoundingClientRect().top + window.pageYOffset - 110;
+  window.scrollTo({ top: y, behavior: "smooth" });
+}
 
-  var desktop = window.matchMedia('(min-width: 769px) and (hover: hover)');
-  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  var active = false;
-  var mx = 0, my = 0, smx = 0, smy = 0;
+function vetraSelectCalcPlanByIndex(index) {
+  const calculatorSection = document.querySelector(".calculator-section");
+  if (!calculatorSection) return;
 
-  function setActive(on) {
-    if (active === on) return;
-    active = on;
-    wrap.classList.toggle('wrap-3d', on);
-    cloud.classList.toggle('cloud-3d', on);
-    if (!on) {
-      cloud.style.transform = '';
-      if (head) head.style.opacity = '';
-      cards.forEach(function(c) {
-        c.style.transform = '';
-        c.style.opacity = '';
-        c.style.visibility = '';
+  const cards = Array.from(calculatorSection.querySelectorAll(".plan-calc-card"));
+  const card = cards[index] || cards[0];
+  if (!card) return;
+
+  if (typeof selectPlan === "function") {
+    selectPlan(card, false);
+  } else {
+    card.click();
+  }
+
+  document.querySelectorAll(".layout-calc-trigger").forEach((el) => el.classList.remove("active"));
+  const trigger = document.querySelector(`.layout-calc-trigger[data-plan-index="${index}"]`);
+  if (trigger) trigger.classList.add("active");
+
+  const calcBox = calculatorSection.querySelector(".calc-box");
+  setTimeout(() => vetraCalcScrollToBox(calcBox), 90);
+}
+
+document.querySelectorAll(".layout-calc-trigger").forEach((trigger) => {
+  const run = () => vetraSelectCalcPlanByIndex(Number(trigger.dataset.planIndex || 0));
+  trigger.addEventListener("click", run);
+  trigger.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      run();
+    }
+  });
+});
+
+
+/* ===== Imported calculator logic from “Калькулятор берем” ===== */
+function fmt(n) {
+  return Math.max(Math.round(n || 0), 0).toLocaleString('ru-RU') + ' ₽';
+}
+
+function smartPrice(area, down, minDown, prMax, prFull) {
+  const full = area * prFull;
+  if (down <= minDown) return prMax;
+  if (down >= full)    return prFull;
+  const r = (down - minDown) / Math.max(full - minDown, 1);
+  return Math.round((prMax - r * (prMax - prFull)) / 500) * 500;
+}
+
+function anim(el, text) {
+  if (!el || el.textContent === text) return;
+  el.classList.remove('npop');
+  void el.offsetWidth;
+  el.textContent = text;
+  el.classList.add('npop');
+}
+
+function fillRange(r) {
+  if (!r) return;
+  const p = ((+r.value - +r.min) / Math.max(+r.max - +r.min, 1) * 100).toFixed(1) + '%';
+  r.style.setProperty('--p', p);
+}
+
+function calc(box) {
+  const area  = parseFloat(box.querySelector('.c-area')?.value)  || 0;
+  let   down  = parseFloat(box.querySelector('.c-down')?.value)  || 0;
+  const term  = Math.max(parseInt(box.querySelector('.c-term')?.value) || 1, 1);
+  const prMax = parseFloat(box.dataset.prMax  || 0);
+  const prFul = parseFloat(box.dataset.prFull || 0);
+  const minDn = parseFloat(box.dataset.minDn  || 0);
+
+  const price   = smartPrice(area, down, minDn, prMax, prFul);
+  const prEl    = box.querySelector('.c-price');
+  if (prEl) prEl.value = price;
+
+  const total   = area * price;
+  if (down > total) { down = total; const d = box.querySelector('.c-down'); if (d) d.value = Math.round(down); }
+  const rest    = Math.max(total - down, 0);
+  const monthly = rest / term;
+  const fullAmt = area * prFul;
+  const saving  = total - fullAmt;
+
+  anim(box.querySelector('.c-monthly'), fmt(monthly) + '/мес');
+  anim(box.querySelector('.c-total'),   fmt(total));
+  anim(box.querySelector('.c-rest'),    fmt(rest));
+  const fe = box.querySelector('.c-full');
+  if (fe) { fe.textContent = fmt(fullAmt); fe.classList.toggle('good-val', fullAmt < total * 0.985); }
+
+  const sv = box.querySelector('.savings');
+  if (sv) { sv.textContent = `Экономия при полной оплате: ${fmt(saving)}`; sv.classList.toggle('show', saving > 5000); }
+
+  const rng = box.querySelector('.crange');
+  if (rng) {
+    const mx = Math.ceil(total / 10000) * 10000 || 1000000;
+    rng.max = mx; rng.value = down; fillRange(rng);
+  }
+
+  buildWA(box, area, price, down, term, total, rest, monthly);
+}
+
+function buildWA(box, area, price, down, term, total, rest, monthly) {
+  const btn = box.querySelector('.wa-btn');
+  if (!btn) return;
+  const proj = box.querySelector('.calc-title')?.textContent?.trim() || '';
+  const plan = box.querySelector('.calc-sub')?.textContent?.trim()   || '';
+  btn.href = `https://wa.me/79894702263?text=${encodeURIComponent(
+    `Здравствуйте! Расчёт с сайта VetraEstate:\n\n` +
+    `Объект: ${proj}\nПланировка: ${plan}\n` +
+    `Площадь: ${area} м²\nЦена за м²: ${fmt(price)}\n` +
+    `Первый взнос: ${fmt(down)}\nСрок: ${term} мес.\n\n` +
+    `Стоимость: ${fmt(total)}\nОстаток: ${fmt(rest)}\nПлатёж: ${fmt(monthly)}/мес.`
+  )}`;
+}
+
+function activatePlan(card, scroll) {
+  const sec = card.closest('.calc-section');
+  if (!sec) return;
+  sec.querySelectorAll('.cplan').forEach(c => c.classList.remove('on'));
+  card.classList.add('on');
+
+  const box = sec.querySelector('.calc-box');
+  if (!box) return;
+
+  box.dataset.prMax  = card.dataset.price;
+  box.dataset.prFull = card.dataset.fullprice;
+  box.dataset.minDn  = card.dataset.mindown || card.dataset.down;
+
+  const ttl = box.querySelector('.calc-title');
+  const sub = box.querySelector('.calc-sub');
+  if (ttl) ttl.textContent = card.dataset.project || '';
+  if (sub) sub.textContent = (card.querySelector('strong')?.textContent || '') + ' · ' + (card.dataset.area || '') + ' м²';
+
+  const ai = box.querySelector('.c-area'), ti = box.querySelector('.c-term'), di = box.querySelector('.c-down');
+  if (ai) ai.value = card.dataset.area  || '';
+  if (ti) ti.value = card.dataset.term  || '';
+  if (di) di.value = card.dataset.down  || 0;
+
+  box.querySelectorAll('.tbtn').forEach(b => b.classList.toggle('on', b.dataset.val === card.dataset.term));
+
+  calc(box);
+
+  const sl = box.querySelector('.crange');
+  if (sl) {
+    sl.classList.remove('vibe'); void sl.offsetWidth; sl.classList.add('vibe');
+    setTimeout(() => sl.classList.remove('vibe'), 320);
+    if (navigator.vibrate) navigator.vibrate([18, 6, 12]);
+  }
+
+  if (scroll) setTimeout(() => {
+    window.scrollTo({ top: box.getBoundingClientRect().top + scrollY - 110, behavior: 'smooth' });
+  }, 60);
+}
+
+/* Init plan cards */
+document.querySelectorAll('.cplan').forEach(c => c.addEventListener('click', () => activatePlan(c, true)));
+document.querySelectorAll('.calc-section').forEach(sec => {
+  const first = sec.querySelector('.cplan.on') || sec.querySelector('.cplan');
+  if (first) activatePlan(first, false);
+});
+
+/* Calc inputs */
+document.querySelectorAll('.calc-box').forEach(box => {
+  const ai = box.querySelector('.c-area'), di = box.querySelector('.c-down'), ti = box.querySelector('.c-term');
+  const sl = box.querySelector('.crange');
+  [ai, di, ti].forEach(i => i?.addEventListener('input', () => calc(box)));
+  if (sl && di) {
+    sl.addEventListener('input', () => { di.value = sl.value; fillRange(sl); calc(box); });
+    di.addEventListener('input', () => { sl.value = di.value; fillRange(sl); });
+    fillRange(sl);
+  }
+  box.querySelectorAll('.tbtn').forEach(b => b.addEventListener('click', () => {
+    box.querySelectorAll('.tbtn').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    if (ti) { ti.value = b.dataset.val; calc(box); }
+  }));
+});
+
+/* Plan trigger cards */
+document.querySelectorAll('.ptrig, .layout-calc-trigger').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ptrig').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const idx = +btn.dataset.planIndex || 0;
+    const cards = [...document.querySelectorAll('.cplan')];
+    const t = cards[idx] || cards[0];
+    if (!t) return;
+    activatePlan(t, false);
+    const s = document.querySelector('.calc-section');
+    if (s) setTimeout(() => window.scrollTo({ top: s.getBoundingClientRect().top + scrollY - 96, behavior: 'smooth' }), 60);
+  });
+});
+
+
+
+
+// MY MONEY FEATURE V2 — bottom drawer budget finder
+(function(){
+  const plans = [
+    { project:"ЖК Новый Горизонт", type:"1К", area:47, price:85000, fullPrice:60000, minDown:150000, term:60, page:"new-horizon.html", photo:"images/horizon-new-photo-1.jpg" },
+    { project:"ЖК Новый Горизонт", type:"2К", area:70, price:85000, fullPrice:60000, minDown:200000, term:60, page:"new-horizon.html", photo:"images/horizon-new-photo-4.jpg" },
+    { project:"ЖК Новый Горизонт", type:"2К", area:76, price:85000, fullPrice:60000, minDown:200000, term:60, page:"new-horizon.html", photo:"images/horizon-new-photo-6.jpg" },
+    { project:"АК Алые Паруса", type:"Студия", area:32, price:90000, fullPrice:50000, minDown:150000, term:42, page:"alye-parusa.html", photo:"images/alye-photo-2.jpg" },
+    { project:"АК Алые Паруса", type:"Евро 2К", area:55, price:90000, fullPrice:50000, minDown:150000, term:42, page:"alye-parusa.html", photo:"images/alye-photo-3.jpg" },
+    { project:"ЖК Московский", type:"1К", area:39, price:85000, fullPrice:70000, minDown:500000, term:70, page:"moskovskiy.html", photo:"images/moscow-photo-1.jpg" },
+    { project:"ЖК Московский", type:"1К", area:53, price:85000, fullPrice:70000, minDown:500000, term:70, page:"moskovskiy.html", photo:"images/moscow-photo-2.jpg" },
+    { project:"ЖК Московский", type:"2К", area:77, price:85000, fullPrice:70000, minDown:500000, term:70, page:"moskovskiy.html", photo:"images/moscow-photo-5.jpg" }
+  ];
+
+  const rub = (v) => Math.max(Math.round(Number(v)||0),0).toLocaleString("ru-RU") + " ₽";
+  const $ = (s) => document.querySelector(s);
+
+  function monthly(plan, money) {
+    return Math.max(plan.area * plan.price - money, 0) / plan.term;
+  }
+
+  function open() {
+    $(".money-drawer-v2")?.classList.add("open");
+    $(".money-drawer-v2")?.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    setTimeout(() => $(".money-input-v2")?.focus(), 120);
+  }
+
+  function close() {
+    $(".money-drawer-v2")?.classList.remove("open");
+    $(".money-drawer-v2")?.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  function render() {
+    const input = $(".money-input-v2");
+    const summary = $(".money-summary-v2");
+    const results = $(".money-results-v2");
+    const wa = $(".money-whatsapp-v2");
+    if (!input || !summary || !results || !wa) return;
+
+    const money = Number(input.value || 0);
+    const suitable = plans
+      .filter(p => money >= p.minDown)
+      .map(p => ({ ...p, total: p.area * p.price, monthly: monthly(p, money), userDown: money }))
+      .sort((a,b) => a.monthly - b.monthly);
+
+    if (!money) {
+      summary.innerHTML = "Введите сумму или выберите быстрый вариант.";
+      results.innerHTML = "";
+      wa.classList.remove("show");
+      return;
+    }
+
+    summary.innerHTML = `<strong>У вас: ${rub(money)}</strong><br>Подходящих вариантов: ${suitable.length}`;
+
+    if (!suitable.length) {
+      results.innerHTML = `<div class="money-empty-v2">Пока нет вариантов под эту сумму. Минимальный взнос начинается от ${rub(150000)}. Напишите нам — подберём горящие предложения или альтернативы.</div>`;
+      wa.classList.add("show");
+      wa.href = "https://wa.me/79894702263?text=" + encodeURIComponent(`Здравствуйте! У меня есть ${rub(money)} на первоначальный взнос. Подберите, пожалуйста, варианты.`);
+      return;
+    }
+
+    results.innerHTML = suitable.map(p => `
+      <article class="money-card-v2">
+        <div class="money-card-photo-wrap">
+          <img class="money-card-photo-v2" src="${p.photo}" alt="${p.project}" loading="lazy">
+          <span class="money-card-badge-v2">✓ Подходит</span>
+          <div class="money-card-photo-title">
+            <h3>${p.project}</h3>
+            <p>${p.type} · ${p.area} м²</p>
+          </div>
+        </div>
+        <div class="money-card-body-v2">
+          <div class="money-card-top-v2">
+            <div>
+              <h3>${p.project}</h3>
+              <p>${p.type} • ${p.area} м²</p>
+            </div>
+            <span class="money-card-badge-old">✓ Подходит</span>
+          </div>
+
+          <div class="money-info-v2">
+            <div><small>Цена за м²</small><strong>${rub(p.price)}</strong></div>
+            <div><small>Ваш взнос</small><strong>${rub(p.userDown)}</strong></div>
+            <div><small>Срок</small><strong>${p.term} мес.</strong></div>
+            <div><small>Платёж</small><strong>≈ ${rub(p.monthly)}/мес</strong></div>
+          </div>
+
+          <a href="${p.page}#calculator">Открыть калькулятор</a>
+        </div>
+      </article>
+    `).join("");
+
+    const msg = `Здравствуйте! Хочу отправить подборку по функции «Мои деньги».
+
+У меня есть: ${rub(money)}
+
+Подходящие варианты:
+${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос ${rub(p.userDown)}, срок ${p.term} мес., платёж ≈ ${rub(p.monthly)}/мес.`).join("\n")}`;
+
+    wa.classList.add("show");
+    wa.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
+  }
+
+  function bind() {
+    $(".money-mini-v2")?.addEventListener("click", open);
+    $(".money-close-v2")?.addEventListener("click", close);
+    $(".money-drawer-bg-v2")?.addEventListener("click", close);
+    $(".money-run-v2")?.addEventListener("click", render);
+    $(".money-input-v2")?.addEventListener("input", render);
+    $(".money-input-v2")?.addEventListener("keydown", e => {
+      if (e.key === "Enter") render();
+    });
+    document.querySelectorAll(".money-chips-v2 button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const input = $(".money-input-v2");
+        if (input) input.value = btn.dataset.money;
+        render();
       });
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && $(".money-drawer-v2")?.classList.contains("open")) close();
+    });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
+  else bind();
+})();
+
+/* ═══ HERO SWITCHER: выбор ЖК + день/вечер ═══ */
+(function () {
+  const hero = document.querySelector(".hero");
+  const layers = document.querySelectorAll(".hero-layer");
+  if (!hero || !layers.length) return;
+
+  // вспышка при смене дня/ночи
+  const flash = document.createElement("div");
+  flash.className = "hero-flash";
+  hero.querySelector(".hero-bgs")?.appendChild(flash);
+
+  let project = "horizon";
+  let time = "day";
+
+  function apply(withFlash) {
+    const key = project + "-" + time;
+    const prev = document.querySelector(".hero-layer.is-active");
+    layers.forEach(l => {
+      l.classList.remove("iris", "iris-under");
+      l.classList.toggle("is-active", l.dataset.bg === key);
+    });
+    const next = document.querySelector(".hero-layer.is-active");
+
+    // круговое раскрытие при смене день/вечер
+    if (withFlash && prev && next && prev !== next) {
+      const toggle = document.querySelector(".dn-toggle");
+      if (toggle) {
+        const tr = toggle.getBoundingClientRect();
+        const hr = hero.getBoundingClientRect();
+        next.style.setProperty("--iris-x", (((tr.left + tr.width / 2) - hr.left) / hr.width * 100).toFixed(1) + "%");
+        next.style.setProperty("--iris-y", (((tr.top + tr.height / 2) - hr.top) / hr.height * 100).toFixed(1) + "%");
+      }
+      prev.classList.add("iris-under");
+      next.classList.add("iris");
+      setTimeout(() => {
+        prev.classList.remove("iris-under");
+        next.classList.remove("iris");
+      }, 1350);
+    }
+    document.querySelectorAll(".proj-dot").forEach(b =>
+      b.classList.toggle("is-active", b.dataset.project === project));
+    document.querySelectorAll(".dn-btn").forEach(b =>
+      b.classList.toggle("is-active", b.dataset.time === time));
+    document.querySelector(".dn-toggle")?.classList.toggle("is-night", time === "night");
+    hero.classList.toggle("hero--night", time === "night");
+
+    if (withFlash) {
+      flash.classList.remove("run");
+      void flash.offsetWidth; // перезапуск анимации
+      flash.classList.add("run");
     }
   }
-  function evalActive() {
-    setActive(desktop.matches && !reduceMotion.matches);
-  }
 
-  window.addEventListener('mousemove', function(e) {
-    mx = (e.clientX / window.innerWidth - 0.5) * 2;
-    my = (e.clientY / window.innerHeight - 0.5) * 2;
+  document.querySelectorAll(".proj-dot").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (btn.dataset.project === project) return;
+      project = btn.dataset.project;
+      apply(false);
+    });
   });
 
-  function update() {
-    var rect = wrap.getBoundingClientRect();
-    if (rect.bottom < 0 || rect.top > window.innerHeight) return;
-
-    var total = rect.height - window.innerHeight;
-    var p = Math.min(1, Math.max(0, -rect.top / (total || 1)));
-    var camZ = p * DEPTH;
-    var vw = window.innerWidth;
-    var vh = window.innerHeight;
-
-    smx += (mx - smx) * 0.06;
-    smy += (my - smy) * 0.06;
-    cloud.style.transform = 'rotateY(' + (smx * 3).toFixed(2) + 'deg) rotateX(' + (-smy * 2).toFixed(2) + 'deg)';
-
-    cards.forEach(function(c) {
-      var z = parseFloat(c.dataset.z) + camZ;
-      if (z > 300 || z < -2600) {
-        c.style.visibility = 'hidden';
-        return;
-      }
-      c.style.visibility = 'visible';
-      // Появление из глубины и растворение у камеры
-      var op = Math.min((z + 2600) / 600, 1, 1 - (z - 60) / 200);
-      c.style.opacity = Math.max(0, Math.min(1, op)).toFixed(2);
-      c.style.transform = 'translate(-50%,-50%) translate3d(' +
-        (parseFloat(c.dataset.x) * vw).toFixed(1) + 'px,' +
-        (parseFloat(c.dataset.y) * vh).toFixed(1) + 'px,' +
-        z.toFixed(1) + 'px) rotate(' + c.dataset.r + 'deg)';
+  document.querySelectorAll(".dn-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      stopAutoCycle();
+      if (btn.dataset.time === time) return;
+      time = btn.dataset.time;
+      apply(true);
     });
+  });
 
-    if (head) head.style.opacity = Math.max(0, 1 - p * 5).toFixed(2);
-    if (hint) hint.style.opacity = (p > 0.04 ? Math.max(0, 1 - (p - 0.04) * 8) : 1).toFixed(2);
+  /* ── автоматическая смена дня и ночи ──
+     плавно листает день/вечер, пока посетитель сам
+     не воспользуется переключателем */
+  let autoTimer = null;
+  let heroVisible = true;
+
+  function stopAutoCycle() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
   }
 
-  (function loop() {
-    if (active) update();
-    requestAnimationFrame(loop);
-  })();
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(entries => {
+        heroVisible = entries[0].isIntersecting;
+      }, { threshold: 0.25 }).observe(hero);
+    }
+    autoTimer = setInterval(() => {
+      if (!heroVisible || document.hidden) return;
+      time = time === "day" ? "night" : "day";
+      apply(true);
+    }, 7000);
+    document.querySelectorAll(".proj-dot").forEach(b =>
+      b.addEventListener("click", stopAutoCycle));
+  }
 
-  window.addEventListener('resize', evalActive);
-  evalActive();
+  // предзагрузка всех фонов после загрузки страницы
+  window.addEventListener("load", () => {
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
+    const suffix = mobile ? "-m.jpg" : "-d.jpg";
+    ["horizon-day","horizon-night","moscow-day","moscow-night","alye-day","alye-night"]
+      .forEach(k => { const img = new Image(); img.src = "images/hero-" + k + suffix; });
+  });
 })();
