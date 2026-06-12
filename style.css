@@ -255,29 +255,6 @@ input[type=range]::-moz-range-thumb{
 .af-item strong{display:block;font-size:1rem;font-weight:600;margin-bottom:6px}
 .af-item p{font-size:0.88rem;color:var(--text-muted)}
 
-/* ── GAME ── */
-#game{padding:120px 32px;background:var(--bg-2)}
-.game-wrapper{max-width:500px;margin:0 auto}
-.game-ui{margin-bottom:20px}
-.game-score-panel{display:flex;justify-content:center;gap:40px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 24px}
-.gsp-item{display:flex;flex-direction:column;align-items:center;gap:4px}
-.gsp-k{font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted)}
-.gsp-v{font-family:var(--font-h);font-size:1.3rem;color:var(--gold)}
-.game-area{position:relative;border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border)}
-#gameCanvas{display:block;width:100%;height:auto;background:var(--bg)}
-.game-overlay{
-  position:absolute;inset:0;
-  background:rgba(6,10,20,0.9);
-  display:flex;align-items:center;justify-content:center;
-  transition:opacity 0.3s;
-}
-.game-overlay.hidden{opacity:0;pointer-events:none}
-.go-content{text-align:center;padding:32px;display:flex;flex-direction:column;align-items:center;gap:16px}
-.go-content svg{width:60px;height:60px}
-#gameOverlayTitle{font-family:var(--font-h);font-size:1.5rem;color:var(--text)}
-#gameOverlaySub{font-size:0.88rem;color:var(--text-muted);max-width:260px}
-.game-hint{text-align:center;font-size:0.75rem;color:var(--text-muted);margin-top:12px;letter-spacing:0.05em}
-
 /* ── CONTACTS ── */
 #contacts{padding:120px 32px;background:var(--bg)}
 .contacts-wrapper{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1.4fr;gap:64px;align-items:start}
@@ -350,7 +327,7 @@ input[type=range]::-moz-range-thumb{
   .form-row{grid-template-columns:1fr}
   .footer-container{grid-template-columns:1fr 1fr}
   .footer-bottom{flex-direction:column;gap:8px;text-align:center}
-  #projects,#layouts,#gallery,#calculator,#about,#game,#contacts{padding:80px 20px}
+  #projects,#layouts,#gallery,#calculator,#about,#contacts{padding:80px 20px}
   .stats-bar{padding:40px 20px}
 }
 @media(max-width:480px){
