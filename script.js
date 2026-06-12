@@ -666,7 +666,7 @@ window.addEventListener('load', function() {
   });
 
   document.addEventListener('mouseover', function(e) {
-    if (e.target.closest('a, button, .project-card, .gallery-item, input, select, textarea')) {
+    if (e.target.closest('a, button, .project-card, .cloud-card, input, select, textarea')) {
       ring.classList.add('is-link');
     } else {
       ring.classList.remove('is-link');
@@ -710,27 +710,87 @@ window.addEventListener('load', function() {
 })();
 
 /* ══════════════════════════════════════
-   GALLERY — Параллакс при скролле
+   GALLERY — 3D-облако фотографий
+   (пролёт сквозь карточки при скролле)
 ══════════════════════════════════════ */
 (function() {
-  var items = document.querySelectorAll('.gallery-item');
-  if (!items.length) return;
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  var ticking = false;
+  var wrap = document.getElementById('showcaseWrap');
+  var cloud = document.getElementById('cloud');
+  if (!wrap || !cloud) return;
+
+  var cards = Array.prototype.slice.call(cloud.querySelectorAll('.cloud-card'));
+  var head = document.getElementById('showcaseHead');
+  var hint = document.getElementById('showcaseHint');
+  var DEPTH = 2700; // дистанция пролёта камеры
+
+  var desktop = window.matchMedia('(min-width: 769px) and (hover: hover)');
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var active = false;
+  var mx = 0, my = 0, smx = 0, smy = 0;
+
+  function setActive(on) {
+    if (active === on) return;
+    active = on;
+    wrap.classList.toggle('wrap-3d', on);
+    cloud.classList.toggle('cloud-3d', on);
+    if (!on) {
+      cloud.style.transform = '';
+      if (head) head.style.opacity = '';
+      cards.forEach(function(c) {
+        c.style.transform = '';
+        c.style.opacity = '';
+        c.style.visibility = '';
+      });
+    }
+  }
+  function evalActive() {
+    setActive(desktop.matches && !reduceMotion.matches);
+  }
+
+  window.addEventListener('mousemove', function(e) {
+    mx = (e.clientX / window.innerWidth - 0.5) * 2;
+    my = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
 
   function update() {
-    ticking = false;
+    var rect = wrap.getBoundingClientRect();
+    if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+
+    var total = rect.height - window.innerHeight;
+    var p = Math.min(1, Math.max(0, -rect.top / (total || 1)));
+    var camZ = p * DEPTH;
+    var vw = window.innerWidth;
     var vh = window.innerHeight;
-    items.forEach(function(item, i) {
-      var rect = item.getBoundingClientRect();
-      if (rect.bottom < 0 || rect.top > vh) return;
-      var progress = (rect.top + rect.height / 2 - vh / 2) / vh; // -0.5..0.5
-      var speed = (i % 3 === 0) ? 26 : (i % 3 === 1) ? -18 : 12;
-      item.style.setProperty('--py', (progress * speed).toFixed(1) + 'px');
+
+    smx += (mx - smx) * 0.06;
+    smy += (my - smy) * 0.06;
+    cloud.style.transform = 'rotateY(' + (smx * 3).toFixed(2) + 'deg) rotateX(' + (-smy * 2).toFixed(2) + 'deg)';
+
+    cards.forEach(function(c) {
+      var z = parseFloat(c.dataset.z) + camZ;
+      if (z > 300 || z < -2600) {
+        c.style.visibility = 'hidden';
+        return;
+      }
+      c.style.visibility = 'visible';
+      // Появление из глубины и растворение у камеры
+      var op = Math.min((z + 2600) / 600, 1, 1 - (z - 60) / 200);
+      c.style.opacity = Math.max(0, Math.min(1, op)).toFixed(2);
+      c.style.transform = 'translate(-50%,-50%) translate3d(' +
+        (parseFloat(c.dataset.x) * vw).toFixed(1) + 'px,' +
+        (parseFloat(c.dataset.y) * vh).toFixed(1) + 'px,' +
+        z.toFixed(1) + 'px) rotate(' + c.dataset.r + 'deg)';
     });
+
+    if (head) head.style.opacity = Math.max(0, 1 - p * 5).toFixed(2);
+    if (hint) hint.style.opacity = (p > 0.04 ? Math.max(0, 1 - (p - 0.04) * 8) : 1).toFixed(2);
   }
-  window.addEventListener('scroll', function() {
-    if (!ticking) { ticking = true; requestAnimationFrame(update); }
-  }, { passive: true });
-  update();
+
+  (function loop() {
+    if (active) update();
+    requestAnimationFrame(loop);
+  })();
+
+  window.addEventListener('resize', evalActive);
+  evalActive();
 })();

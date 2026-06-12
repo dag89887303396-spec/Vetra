@@ -200,13 +200,42 @@ h1,h2,h3{font-family:var(--font-h);letter-spacing:0.05em;line-height:1.2}
 .spec-k{display:block;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px}
 .spec-v{display:block;font-size:0.95rem;font-weight:600;color:var(--text)}
 
-/* ── GALLERY ── */
+/* ── GALLERY — 3D-ОБЛАКО ── */
 #gallery{padding:120px 32px;background:var(--bg)}
-.gallery-grid{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.gallery-item{overflow:hidden;border-radius:var(--radius);aspect-ratio:4/3}
-.gallery-item.gi-wide{grid-column:span 2}
-.gallery-item img{width:100%;height:100%;object-fit:cover;transition:transform 0.5s var(--ease)}
-.gallery-item:hover img{transform:scale(1.04)}
+.showcase-sticky{position:relative}
+.showcase-head{padding:0 0 60px}
+.showcase-hint{display:none}
+/* Фолбэк: обычная сетка (мобильные, reduced-motion, без JS) */
+.cloud{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.cloud-card{position:relative;margin:0;overflow:hidden;border-radius:var(--radius-lg);border:1px solid var(--border);aspect-ratio:4/3;background:var(--surface)}
+.cloud-card img{width:100%;height:100%;object-fit:cover}
+.cloud-card figcaption{
+  position:absolute;left:12px;bottom:10px;
+  font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text);
+  background:rgba(6,10,20,0.6);padding:4px 10px;border-radius:3px;backdrop-filter:blur(4px);
+}
+/* 3D-режим: пролёт сквозь облако карточек при скролле */
+.wrap-3d{height:340vh}
+.wrap-3d .showcase-sticky{position:sticky;top:0;height:100vh;overflow:hidden;display:block}
+.wrap-3d .showcase-head{
+  position:absolute;top:10vh;left:0;right:0;z-index:6;
+  padding:0;pointer-events:none;transition:opacity 0.2s linear;
+}
+.wrap-3d .showcase-hint{
+  display:block;position:absolute;bottom:6vh;left:0;right:0;z-index:6;
+  text-align:center;font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--text-muted);pointer-events:none;transition:opacity 0.2s linear;
+}
+.cloud-3d{
+  display:block;position:absolute;inset:0;max-width:none;
+  perspective:1100px;transform-style:preserve-3d;
+}
+.cloud-3d .cloud-card{
+  position:absolute;left:50%;top:50%;
+  width:clamp(200px,24vw,340px);aspect-ratio:4/3;
+  box-shadow:0 24px 70px rgba(0,0,0,0.55);
+  will-change:transform,opacity;backface-visibility:hidden;
+}
 
 /* ── CALCULATOR ── */
 #calculator{padding:120px 32px;background:var(--bg-2)}
@@ -322,8 +351,7 @@ input[type=range]::-moz-range-thumb{
   .nav-links,.nav-cta{display:none}
   .nav-burger{display:flex}
   .projects-grid{grid-template-columns:1fr}
-  .gallery-grid{grid-template-columns:1fr 1fr}
-  .gallery-item.gi-wide{grid-column:span 2}
+  .cloud{grid-template-columns:1fr 1fr}
   .form-row{grid-template-columns:1fr}
   .footer-container{grid-template-columns:1fr 1fr}
   .footer-bottom{flex-direction:column;gap:8px;text-align:center}
@@ -332,8 +360,7 @@ input[type=range]::-moz-range-thumb{
 }
 @media(max-width:480px){
   .hero-actions{flex-direction:column;align-items:center}
-  .gallery-grid{grid-template-columns:1fr}
-  .gallery-item.gi-wide{grid-column:span 1}
+  .cloud{grid-template-columns:1fr}
   .footer-container{grid-template-columns:1fr}
   .layout-projects{flex-direction:column}
   .lp-btn{text-align:left}
@@ -419,10 +446,7 @@ body.hero-in .hero-scroll{animation:fadeUp 0.9s var(--ease-out) forwards,bounceY
 }
 .btn-gold:hover::after{left:130%}
 
-/* ── GALLERY PARALLAX ── */
-.gallery-item{will-change:transform}
-.gallery-item img{transform:translateY(var(--py,0)) scale(1.12)}
-.gallery-item:hover img{transform:translateY(var(--py,0)) scale(1.16)}
+
 
 /* ── SECTION TITLE LINE ── */
 .section-header .section-title{position:relative;display:inline-block;padding-bottom:18px}
