@@ -5,9 +5,13 @@
 ══════════════════════════════════════ */
 window.addEventListener('load', function() {
   var pl = document.getElementById('preloader');
-  if (!pl) return;
+  if (!pl) {
+    document.body.classList.add('hero-in');
+    return;
+  }
   setTimeout(function() {
     pl.classList.add('hidden');
+    document.body.classList.add('hero-in');
     setTimeout(function() { pl.style.display = 'none'; }, 700);
   }, 1600);
 });
@@ -41,121 +45,209 @@ window.addEventListener('load', function() {
 })();
 
 /* ══════════════════════════════════════
-   HERO CANVAS — Aurora Animation
+   HERO CANVAS — Ночной город у моря
+   (генеративный скайлайн, тёплые окна,
+   луна, звёзды, отражения, параллакс)
 ══════════════════════════════════════ */
 (function() {
   var canvas = document.getElementById('heroCanvas');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
-  var W, H;
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function resize() {
-    W = canvas.width = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
+  var W, H, horizonY, layers, stars, reflections;
+  var mx = 0, my = 0, smx = 0, smy = 0;
 
-  var blobs = [];
-  var colors = [
-    [201, 168, 76],
-    [120, 80, 20],
-    [180, 130, 60],
-    [60, 40, 10],
-    [220, 190, 100],
+  // Слои скайлайна: от дальнего к ближнему
+  var LAYER_CONF = [
+    { depth: 0.15, drift: 4,  maxH: 0.34, minH: 0.16, body: '#0D1526', win: [120, 140, 180], winAlpha: 0.35, density: 0.9 },
+    { depth: 0.35, drift: 9,  maxH: 0.46, minH: 0.22, body: '#0A111F', win: [217, 179, 106], winAlpha: 0.5,  density: 0.75 },
+    { depth: 0.7,  drift: 16, maxH: 0.6,  minH: 0.3,  body: '#070C17', win: [255, 200, 120], winAlpha: 0.85, density: 0.6 }
   ];
 
-  for (var i = 0; i < 6; i++) {
-    var c = colors[i % colors.length];
-    blobs.push({
-      x: Math.random(),
-      y: Math.random(),
-      r: 0.25 + Math.random() * 0.35,
-      vx: (Math.random() - 0.5) * 0.0003,
-      vy: (Math.random() - 0.5) * 0.0002,
-      phase: Math.random() * Math.PI * 2,
-      color: c
-    });
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  // Слой пререндерится в офскрин-канвас, мерцающие окна рисуются поверх
+  function buildLayer(conf) {
+    var spanW = Math.ceil(W * 1.6);
+    var off = document.createElement('canvas');
+    off.width = spanW;
+    off.height = H;
+    var octx = off.getContext('2d');
+    var twinkles = [];
+
+    var x = -rand(0, 60);
+    while (x < spanW) {
+      var bw = rand(34, 96);
+      var bh = H * rand(conf.minH, conf.maxH);
+      var top = horizonY - bh;
+
+      octx.fillStyle = conf.body;
+      octx.fillRect(x, top, bw, bh + 2);
+
+      // Иногда — парапет или шпиль
+      var r = Math.random();
+      if (r < 0.25) {
+        octx.fillRect(x + bw * 0.3, top - 8, bw * 0.4, 8);
+      } else if (r < 0.4) {
+        octx.fillRect(x + bw / 2 - 1, top - rand(10, 26), 2, 26);
+      }
+
+      // Сетка окон
+      var ww = 3, wh = 5, gx = 9, gy = 12;
+      var cols = Math.floor((bw - 10) / gx);
+      var rows = Math.floor((bh - 14) / gy);
+      for (var c = 0; c < cols; c++) {
+        for (var rr = 0; rr < rows; rr++) {
+          if (Math.random() > conf.density * 0.45) continue;
+          var wx = x + 6 + c * gx;
+          var wy = top + 8 + rr * gy;
+          var a = conf.winAlpha * rand(0.35, 1);
+          octx.fillStyle = 'rgba(' + conf.win[0] + ',' + conf.win[1] + ',' + conf.win[2] + ',' + a.toFixed(2) + ')';
+          octx.fillRect(wx, wy, ww, wh);
+          if (Math.random() < 0.06 && twinkles.length < 70) {
+            twinkles.push({ x: wx, y: wy, phase: rand(0, Math.PI * 2), speed: rand(0.3, 1.2) });
+          }
+        }
+      }
+      x += bw + rand(4, 26);
+    }
+    return { canvas: off, spanW: spanW, conf: conf, twinkles: twinkles };
   }
 
-  var particles = [];
-  for (var j = 0; j < 60; j++) {
-    particles.push({
-      x: Math.random(),
-      y: Math.random(),
-      size: 0.5 + Math.random() * 1.5,
-      speed: 0.00015 + Math.random() * 0.0003,
-      opacity: 0.2 + Math.random() * 0.6
-    });
+  function build() {
+    W = canvas.width = canvas.offsetWidth;
+    H = canvas.height = canvas.offsetHeight;
+    horizonY = H * 0.82;
+    layers = LAYER_CONF.map(buildLayer);
+
+    stars = [];
+    for (var i = 0; i < 110; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * horizonY * 0.7,
+        size: rand(0.4, 1.4),
+        phase: rand(0, Math.PI * 2),
+        speed: rand(0.5, 1.5)
+      });
+    }
+
+    reflections = [];
+    for (var j = 0; j < 46; j++) {
+      reflections.push({
+        x: Math.random() * W,
+        y: horizonY + rand(4, Math.max(6, H - horizonY - 6)),
+        len: rand(14, 70),
+        gold: Math.random() < 0.6,
+        phase: rand(0, Math.PI * 2),
+        speed: rand(0.4, 1.4)
+      });
+    }
   }
+  build();
+  window.addEventListener('resize', build);
+
+  window.addEventListener('mousemove', function(e) {
+    mx = (e.clientX / window.innerWidth - 0.5) * 2;
+    my = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
 
   var t = 0;
   function draw() {
-    t += 0.005;
-    ctx.clearRect(0, 0, W, H);
+    t += reduceMotion ? 0 : 0.016;
+    smx += (mx - smx) * 0.04;
+    smy += (my - smy) * 0.04;
 
-    // Dark base
-    ctx.fillStyle = '#080808';
+    // Небо
+    var sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#04070E');
+    sky.addColorStop(0.55, '#081020');
+    sky.addColorStop(0.82, '#0B1428');
+    sky.addColorStop(1, '#04070E');
+    ctx.fillStyle = sky;
     ctx.fillRect(0, 0, W, H);
 
-    // Aurora blobs
-    ctx.globalCompositeOperation = 'screen';
-    blobs.forEach(function(b) {
-      b.x += b.vx;
-      b.y += b.vy;
-      if (b.x < -0.2) b.x = 1.2;
-      if (b.x > 1.2) b.x = -0.2;
-      if (b.y < -0.2) b.y = 1.2;
-      if (b.y > 1.2) b.y = -0.2;
+    // Луна с ореолом
+    var moonX = W * 0.76 - smx * 18;
+    var moonY = H * 0.2 - smy * 10;
+    var halo = ctx.createRadialGradient(moonX, moonY, 0, moonX, moonY, H * 0.38);
+    halo.addColorStop(0, 'rgba(240,217,166,0.16)');
+    halo.addColorStop(0.35, 'rgba(217,179,106,0.05)');
+    halo.addColorStop(1, 'rgba(217,179,106,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, W, H);
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, 26, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(240,228,200,0.92)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(moonX - 9, moonY - 6, 24, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(8,14,26,0.18)';
+    ctx.fill();
 
-      var pulse = 0.85 + 0.15 * Math.sin(t + b.phase);
-      var rx = b.r * W * pulse;
-      var ry = b.r * H * 0.6 * pulse;
-      var cx = b.x * W;
-      var cy = b.y * H;
-
-      var grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(rx, ry));
-      var alpha = (0.04 + 0.03 * Math.sin(t * 0.7 + b.phase)).toFixed(3);
-      grd.addColorStop(0, 'rgba(' + b.color[0] + ',' + b.color[1] + ',' + b.color[2] + ',' + alpha + ')');
-      grd.addColorStop(1, 'rgba(' + b.color[0] + ',' + b.color[1] + ',' + b.color[2] + ',0)');
-
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.scale(rx / Math.max(rx, ry), ry / Math.max(rx, ry));
-      ctx.beginPath();
-      ctx.arc(0, 0, Math.max(rx, ry), 0, Math.PI * 2);
-      ctx.fillStyle = grd;
-      ctx.fill();
-      ctx.restore();
-    });
-    ctx.globalCompositeOperation = 'source-over';
-
-    // Particles
-    particles.forEach(function(p) {
-      p.y -= p.speed;
-      if (p.y < -0.01) p.y = 1.01;
-      ctx.beginPath();
-      ctx.arc(p.x * W, p.y * H, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(201,168,76,' + (p.opacity * (0.7 + 0.3 * Math.sin(t * 2 + p.x * 10))) + ')';
-      ctx.fill();
+    // Звёзды
+    stars.forEach(function(s) {
+      var a = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
+      ctx.fillStyle = 'rgba(230,235,245,' + a.toFixed(2) + ')';
+      ctx.fillRect(s.x, s.y, s.size, s.size);
     });
 
-    // Horizontal shimmer line
-    var y = H * 0.6 + 30 * Math.sin(t * 0.5);
-    var shimmer = ctx.createLinearGradient(0, y - 1, W, y + 1);
-    shimmer.addColorStop(0, 'rgba(201,168,76,0)');
-    shimmer.addColorStop(0.3, 'rgba(201,168,76,0.06)');
-    shimmer.addColorStop(0.5, 'rgba(201,168,76,0.12)');
-    shimmer.addColorStop(0.7, 'rgba(201,168,76,0.06)');
-    shimmer.addColorStop(1, 'rgba(201,168,76,0)');
-    ctx.fillStyle = shimmer;
-    ctx.fillRect(0, y - 1, W, 2);
+    // Скайлайн: 3 слоя параллакса с медленным дрейфом
+    layers.forEach(function(l) {
+      var shift = (t * l.conf.drift + smx * l.conf.depth * 46) % l.spanW;
+      if (shift < 0) shift += l.spanW;
+      ctx.drawImage(l.canvas, -shift, 0);
+      ctx.drawImage(l.canvas, l.spanW - shift, 0);
+      l.twinkles.forEach(function(wn) {
+        var a = 0.5 + 0.5 * Math.sin(t * wn.speed + wn.phase);
+        if (a < 0.35) return;
+        var wx = wn.x - shift;
+        if (wx < -4) wx += l.spanW;
+        ctx.fillStyle = 'rgba(255,214,140,' + (a * l.conf.winAlpha).toFixed(2) + ')';
+        ctx.fillRect(wx, wn.y, 3, 5);
+      });
+    });
 
-    // Bottom vignette
-    var vgrd = ctx.createLinearGradient(0, H * 0.7, 0, H);
-    vgrd.addColorStop(0, 'rgba(8,8,8,0)');
-    vgrd.addColorStop(1, 'rgba(8,8,8,0.95)');
+    // Море
+    var sea = ctx.createLinearGradient(0, horizonY, 0, H);
+    sea.addColorStop(0, '#0A1322');
+    sea.addColorStop(1, '#03060C');
+    ctx.fillStyle = sea;
+    ctx.fillRect(0, horizonY, W, H - horizonY);
+
+    // Линия горизонта
+    ctx.fillStyle = 'rgba(217,179,106,0.18)';
+    ctx.fillRect(0, horizonY, W, 1);
+
+    // Лунная дорожка
+    var trail = ctx.createLinearGradient(0, horizonY, 0, H);
+    trail.addColorStop(0, 'rgba(240,217,166,0.14)');
+    trail.addColorStop(1, 'rgba(240,217,166,0)');
+    ctx.fillStyle = trail;
+    var tw = 60 + 16 * Math.sin(t * 0.7);
+    ctx.fillRect(moonX - tw / 2, horizonY, tw, H - horizonY);
+
+    // Отражения огней на воде
+    reflections.forEach(function(rf) {
+      var a = 0.05 + 0.1 * (0.5 + 0.5 * Math.sin(t * rf.speed + rf.phase));
+      ctx.fillStyle = rf.gold
+        ? 'rgba(217,179,106,' + a.toFixed(3) + ')'
+        : 'rgba(110,160,200,' + (a * 0.8).toFixed(3) + ')';
+      ctx.fillRect(rf.x - rf.len / 2, rf.y, rf.len, 1);
+    });
+
+    // Виньетка под контент
+    var vgrd = ctx.createRadialGradient(W / 2, H * 0.45, H * 0.1, W / 2, H * 0.45, H * 0.9);
+    vgrd.addColorStop(0, 'rgba(4,7,14,0.35)');
+    vgrd.addColorStop(0.55, 'rgba(4,7,14,0)');
+    vgrd.addColorStop(1, 'rgba(4,7,14,0.5)');
     ctx.fillStyle = vgrd;
+    ctx.fillRect(0, 0, W, H);
+
+    var bottom = ctx.createLinearGradient(0, H * 0.8, 0, H);
+    bottom.addColorStop(0, 'rgba(6,10,20,0)');
+    bottom.addColorStop(1, 'rgba(6,10,20,0.96)');
+    ctx.fillStyle = bottom;
     ctx.fillRect(0, 0, W, H);
 
     requestAnimationFrame(draw);
@@ -401,7 +493,7 @@ window.addEventListener('load', function() {
     ctx.clearRect(0, 0, W, H);
 
     // Subtle grid lines
-    ctx.strokeStyle = 'rgba(201,168,76,0.04)';
+    ctx.strokeStyle = 'rgba(217,179,106,0.04)';
     ctx.lineWidth = 1;
     for (var x = 0; x < W; x += 80) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
@@ -416,14 +508,14 @@ window.addEventListener('load', function() {
         var pulse = 0.5 + 0.5 * Math.sin(t + gx * 0.05 + gy * 0.03);
         ctx.beginPath();
         ctx.arc(gx, gy, 1.5 * pulse, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(201,168,76,' + (0.15 * pulse) + ')';
+        ctx.fillStyle = 'rgba(217,179,106,' + (0.15 * pulse) + ')';
         ctx.fill();
       }
     }
 
     // Flowing line
     ctx.beginPath();
-    ctx.strokeStyle = 'rgba(201,168,76,0.12)';
+    ctx.strokeStyle = 'rgba(217,179,106,0.12)';
     ctx.lineWidth = 1;
     for (var i = 0; i <= W; i += 4) {
       var yw = H * 0.5 + 30 * Math.sin(i * 0.015 + t) + 15 * Math.sin(i * 0.03 - t * 1.3);
@@ -473,8 +565,8 @@ window.addEventListener('load', function() {
   var animRaf    = null;
 
   var COLORS = [
-    '#C9A84C','#b8962e','#d4b96a','#a07826',
-    '#e2c47a','#8a6820','#f0d898','#c49a30'
+    '#D9B36A','#C2964B','#E5C685','#A8853E',
+    '#F0D9A6','#8F6F33','#F5E3B8','#CCA052'
   ];
 
   function initGame() {
@@ -620,9 +712,9 @@ window.addEventListener('load', function() {
   function drawScene() {
     // Sky gradient
     var sky = ctx.createLinearGradient(0, 0, 0, CH);
-    sky.addColorStop(0, '#060610');
-    sky.addColorStop(0.6, '#0a0a18');
-    sky.addColorStop(1, '#0f0f0a');
+    sky.addColorStop(0, '#050A14');
+    sky.addColorStop(0.6, '#0A1020');
+    sky.addColorStop(1, '#0E1626');
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, CW, CH);
 
@@ -638,9 +730,9 @@ window.addEventListener('load', function() {
     }
 
     // Ground
-    ctx.fillStyle = '#1a1a10';
+    ctx.fillStyle = '#101828';
     ctx.fillRect(0, CH - 40, CW, 40);
-    ctx.fillStyle = 'rgba(201,168,76,0.15)';
+    ctx.fillStyle = 'rgba(217,179,106,0.15)';
     ctx.fillRect(0, CH - 42, CW, 2);
 
     // Draw stacked blocks
@@ -652,7 +744,7 @@ window.addEventListener('load', function() {
 
       // Guide line (subtle)
       var last = stack[stack.length - 1];
-      ctx.strokeStyle = 'rgba(201,168,76,0.08)';
+      ctx.strokeStyle = 'rgba(217,179,106,0.08)';
       ctx.setLineDash([4, 6]);
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -737,4 +829,171 @@ window.addEventListener('load', function() {
       setTimeout(function() { toast.classList.remove('show'); }, 4000);
     }, 1200);
   });
+})();
+
+/* ══════════════════════════════════════
+   HERO — Пробуквенное появление заголовка
+══════════════════════════════════════ */
+(function() {
+  var delay = 0.35;
+  var charStep = 0.045;
+
+  document.querySelectorAll('.hero-title [data-split]').forEach(function(el) {
+    var text = el.textContent;
+    el.setAttribute('aria-label', text);
+    el.textContent = '';
+    Array.prototype.forEach.call(text, function(ch) {
+      var s = document.createElement('span');
+      s.className = 'ht-char';
+      s.setAttribute('aria-hidden', 'true');
+      s.textContent = ch;
+      s.style.setProperty('--d', delay.toFixed(2) + 's');
+      delay += charStep;
+      el.appendChild(s);
+    });
+  });
+
+  // Остальные элементы hero выходят следом
+  var after = delay + 0.15;
+  document.querySelectorAll('.hero-stagger').forEach(function(el, i) {
+    el.style.setProperty('--d', (el.classList.contains('hero-tag') ? 0.1 : after + i * 0.12).toFixed(2) + 's');
+  });
+})();
+
+/* ══════════════════════════════════════
+   HERO — Параллакс-выход при скролле
+══════════════════════════════════════ */
+(function() {
+  var content = document.getElementById('heroContent');
+  var hero = document.getElementById('hero');
+  if (!content || !hero) return;
+  var ticking = false;
+
+  function update() {
+    ticking = false;
+    var y = window.scrollY;
+    var h = hero.offsetHeight || 1;
+    if (y > h) return;
+    content.style.transform = 'translateY(' + (y * 0.35) + 'px)';
+    content.style.opacity = Math.max(0, 1 - y / (h * 0.55));
+  }
+  window.addEventListener('scroll', function() {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+})();
+
+/* ══════════════════════════════════════
+   SCROLL PROGRESS BAR
+══════════════════════════════════════ */
+(function() {
+  var bar = document.createElement('div');
+  bar.className = 'scroll-progress';
+  document.body.appendChild(bar);
+  var ticking = false;
+
+  function update() {
+    ticking = false;
+    var max = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.transform = 'scaleX(' + (max > 0 ? window.scrollY / max : 0) + ')';
+  }
+  window.addEventListener('scroll', function() {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  update();
+})();
+
+/* ══════════════════════════════════════
+   CUSTOM CURSOR
+══════════════════════════════════════ */
+(function() {
+  if (!window.matchMedia || !window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  var dot = document.createElement('div');
+  var ring = document.createElement('div');
+  dot.className = 'cursor-dot';
+  ring.className = 'cursor-ring';
+  document.body.appendChild(dot);
+  document.body.appendChild(ring);
+
+  var x = -100, y = -100, rx = -100, ry = -100, shown = false;
+
+  document.addEventListener('mousemove', function(e) {
+    x = e.clientX; y = e.clientY;
+    if (!shown) { shown = true; document.body.classList.add('has-cursor'); }
+    dot.style.transform = 'translate(' + x + 'px,' + y + 'px) translate(-50%,-50%)';
+  });
+  document.addEventListener('mouseleave', function() {
+    shown = false;
+    document.body.classList.remove('has-cursor');
+  });
+
+  document.addEventListener('mouseover', function(e) {
+    if (e.target.closest('a, button, .project-card, .gallery-item, input, select, textarea')) {
+      ring.classList.add('is-link');
+    } else {
+      ring.classList.remove('is-link');
+    }
+  });
+
+  (function follow() {
+    rx += (x - rx) * 0.16;
+    ry += (y - ry) * 0.16;
+    ring.style.transform = 'translate(' + rx + 'px,' + ry + 'px) translate(-50%,-50%)';
+    requestAnimationFrame(follow);
+  })();
+})();
+
+/* ══════════════════════════════════════
+   PROJECT CARDS — 3D-наклон + блик
+══════════════════════════════════════ */
+(function() {
+  if (!window.matchMedia || !window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  document.querySelectorAll('.project-card').forEach(function(card) {
+    var glare = document.createElement('div');
+    glare.className = 'card-glare';
+    card.appendChild(glare);
+
+    card.addEventListener('mousemove', function(e) {
+      var rect = card.getBoundingClientRect();
+      var px = (e.clientX - rect.left) / rect.width;
+      var py = (e.clientY - rect.top) / rect.height;
+      var ry = (px - 0.5) * 10;
+      var rx = (0.5 - py) * 8;
+      card.style.transform = 'perspective(900px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg) translateY(-4px)';
+      card.style.setProperty('--gx', (px * 100).toFixed(1) + '%');
+      card.style.setProperty('--gy', (py * 100).toFixed(1) + '%');
+    });
+    card.addEventListener('mouseleave', function() {
+      card.style.transform = '';
+    });
+  });
+})();
+
+/* ══════════════════════════════════════
+   GALLERY — Параллакс при скролле
+══════════════════════════════════════ */
+(function() {
+  var items = document.querySelectorAll('.gallery-item');
+  if (!items.length) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var ticking = false;
+
+  function update() {
+    ticking = false;
+    var vh = window.innerHeight;
+    items.forEach(function(item, i) {
+      var rect = item.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > vh) return;
+      var progress = (rect.top + rect.height / 2 - vh / 2) / vh; // -0.5..0.5
+      var speed = (i % 3 === 0) ? 26 : (i % 3 === 1) ? -18 : 12;
+      item.style.setProperty('--py', (progress * speed).toFixed(1) + 'px');
+    });
+  }
+  window.addEventListener('scroll', function() {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  update();
 })();

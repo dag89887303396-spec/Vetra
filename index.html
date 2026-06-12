@@ -6,7 +6,7 @@
   <title>Vetra Estate — Новостройки Дагестана</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,7 +15,7 @@
 <div id="preloader">
   <div class="preloader-inner">
     <svg class="preloader-logo" viewBox="0 0 60 60" fill="none">
-      <polygon points="30,4 56,50 4,50" stroke="#C9A84C" stroke-width="2" fill="none" stroke-dasharray="130" stroke-dashoffset="130">
+      <polygon points="30,4 56,50 4,50" stroke="#D9B36A" stroke-width="2" fill="none" stroke-dasharray="130" stroke-dashoffset="130">
         <animate attributeName="stroke-dashoffset" from="130" to="0" dur="1.2s" fill="freeze"/>
       </polygon>
     </svg>
@@ -28,7 +28,7 @@
   <div class="nav-container">
     <a href="#" class="nav-logo">
       <svg viewBox="0 0 40 40" fill="none">
-        <polygon points="20,3 37,33 3,33" stroke="#C9A84C" stroke-width="1.5" fill="none"/>
+        <polygon points="20,3 37,33 3,33" stroke="#D9B36A" stroke-width="1.5" fill="none"/>
       </svg>
       <span>VETRA</span>
     </a>
@@ -58,20 +58,28 @@
 <!-- HERO -->
 <section id="hero">
   <canvas id="heroCanvas"></canvas>
-  <div class="hero-content reveal">
-    <p class="hero-tag">Элитная недвижимость · Дагестан</p>
-    <h1 class="hero-title">Живите<br><span class="gold">на высоте</span></h1>
-    <p class="hero-sub">Новостройки премиум-класса в Махачкале и Каспийске — для тех, кто ценит пространство, свет и качество.</p>
-    <div class="hero-actions">
+  <div class="hero-content" id="heroContent">
+    <p class="hero-tag hero-stagger">Элитная недвижимость · Дагестан</p>
+    <h1 class="hero-title"><span class="ht-line" data-split>Живите</span><br><span class="ht-line gold" data-split>на высоте</span></h1>
+    <p class="hero-sub hero-stagger">Новостройки премиум-класса в Махачкале и Каспийске — для тех, кто ценит пространство, свет и качество.</p>
+    <div class="hero-actions hero-stagger">
       <a href="#projects" class="btn-gold">Смотреть проекты</a>
       <a href="#calculator" class="btn-outline">Рассчитать ипотеку</a>
     </div>
   </div>
-  <div class="hero-scroll">
+  <div class="hero-scroll hero-stagger">
     <span>Прокрутите вниз</span>
-    <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12l7 7 7-7" stroke="#C9A84C" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12l7 7 7-7" stroke="#D9B36A" stroke-width="1.5" stroke-linecap="round"/></svg>
   </div>
 </section>
+
+<!-- MARQUEE -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span class="marquee-seg">ЖК «Горизонт» <i>✦</i> ЖК «Алые Паруса» <i>✦</i> ЖК «Московский» <i>✦</i> Махачкала <i>✦</i> Каспийск <i>✦</i> </span>
+    <span class="marquee-seg">ЖК «Горизонт» <i>✦</i> ЖК «Алые Паруса» <i>✦</i> ЖК «Московский» <i>✦</i> Махачкала <i>✦</i> Каспийск <i>✦</i> </span>
+  </div>
+</div>
 
 <!-- STATS -->
 <section class="stats-bar">
@@ -98,7 +106,7 @@
       <div class="project-body">
         <h3 class="project-name">ЖК «Горизонт»</h3>
         <p class="project-location">
-          <svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5s4.5-5 4.5-8.5c0-2.5-2-4.5-4.5-4.5zm0 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="#C9A84C"/></svg>
+          <svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5s4.5-5 4.5-8.5c0-2.5-2-4.5-4.5-4.5zm0 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="#D9B36A"/></svg>
           Махачкала, Ленинский район
         </p>
         <p class="project-desc">17-этажный комплекс с панорамными видами на Каспийское море. Подземный паркинг, зелёная зона, консьерж-сервис.</p>
@@ -119,7 +127,7 @@
       <div class="project-body">
         <h3 class="project-name">ЖК «Алые Паруса»</h3>
         <p class="project-location">
-          <svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5s4.5-5 4.5-8.5c0-2.5-2-4.5-4.5-4.5zm0 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="#C9A84C"/></svg>
+          <svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5s4.5-5 4.5-8.5c0-2.5-2-4.5-4.5-4.5zm0 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="#D9B36A"/></svg>
           Каспийск, набережная
         </p>
         <p class="project-desc">Эксклюзивный комплекс на первой линии у моря. Авторская архитектура, террасы с видом на Каспий, SPA-зона.</p>
@@ -140,7 +148,7 @@
       <div class="project-body">
         <h3 class="project-name">ЖК «Московский»</h3>
         <p class="project-location">
-          <svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5s4.5-5 4.5-8.5c0-2.5-2-4.5-4.5-4.5zm0 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="#C9A84C"/></svg>
+          <svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5s4.5-5 4.5-8.5c0-2.5-2-4.5-4.5-4.5zm0 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" fill="#D9B36A"/></svg>
           Махачкала, Московский пр-т
         </p>
         <p class="project-desc">Деловой центр города. Развитая инфраструктура, близость к бизнес-кварталу. Квартиры улучшенной планировки.</p>
@@ -277,15 +285,15 @@
     <p class="about-text reveal">Vetra Estate — застройщик с 12-летним опытом реализации жилых проектов в Республике Дагестан. Мы создаём жилые пространства, которые становятся домом для тысяч семей.</p>
     <div class="about-features reveal">
       <div class="af-item">
-        <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#C9A84C" stroke-width="1.5"/><path d="M13 20l5 5 9-10" stroke="#C9A84C" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#D9B36A" stroke-width="1.5"/><path d="M13 20l5 5 9-10" stroke="#D9B36A" stroke-width="2" stroke-linecap="round"/></svg>
         <div><strong>Проверенное качество</strong><p>Все объекты проходят многоуровневый контроль на каждом этапе строительства</p></div>
       </div>
       <div class="af-item">
-        <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#C9A84C" stroke-width="1.5"/><path d="M20 12v8l5 3" stroke="#C9A84C" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#D9B36A" stroke-width="1.5"/><path d="M20 12v8l5 3" stroke="#D9B36A" stroke-width="2" stroke-linecap="round"/></svg>
         <div><strong>Соблюдение сроков</strong><p>Сдаём объекты точно в срок без переносов — это наша гарантия и репутация</p></div>
       </div>
       <div class="af-item">
-        <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#C9A84C" stroke-width="1.5"/><path d="M14 26h12M20 14v12" stroke="#C9A84C" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#D9B36A" stroke-width="1.5"/><path d="M14 26h12M20 14v12" stroke="#D9B36A" stroke-width="2" stroke-linecap="round"/></svg>
         <div><strong>Полное сопровождение</strong><p>Помогаем с ипотекой, документами и регистрацией собственности</p></div>
       </div>
     </div>
@@ -311,7 +319,7 @@
       <canvas id="gameCanvas" width="360" height="500"></canvas>
       <div class="game-overlay" id="gameOverlay">
         <div class="go-content">
-          <svg viewBox="0 0 60 60" fill="none"><rect x="15" y="35" width="30" height="8" rx="2" fill="#C9A84C"/><rect x="20" y="27" width="20" height="8" rx="2" fill="#C9A84C" opacity=".7"/><rect x="25" y="19" width="10" height="8" rx="2" fill="#C9A84C" opacity=".4"/></svg>
+          <svg viewBox="0 0 60 60" fill="none"><rect x="15" y="35" width="30" height="8" rx="2" fill="#D9B36A"/><rect x="20" y="27" width="20" height="8" rx="2" fill="#D9B36A" opacity=".7"/><rect x="25" y="19" width="10" height="8" rx="2" fill="#D9B36A" opacity=".4"/></svg>
           <p id="gameOverlayTitle">Строй башню!</p>
           <p id="gameOverlaySub">Нажми, чтобы уложить блок точно на предыдущий. Каждый промах сужает блок.</p>
           <button class="btn-gold" id="gameStartBtn">Начать игру</button>
@@ -331,19 +339,19 @@
   <div class="contacts-wrapper reveal">
     <div class="contacts-info">
       <div class="ci-item">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .4h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.27a16 16 0 006.29 6.29l1.93-1.93a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7a2 2 0 011.77 2.04z" stroke="#C9A84C" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11a19.79 19.79 0 01-3.07-8.67A2 2 0 012 .4h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 8.27a16 16 0 006.29 6.29l1.93-1.93a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7a2 2 0 011.77 2.04z" stroke="#D9B36A" stroke-width="1.5" stroke-linecap="round"/></svg>
         <div><strong>Телефон</strong><a href="tel:+78001234567">+7 (800) 123-45-67</a></div>
       </div>
       <div class="ci-item">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#C9A84C" stroke-width="1.5"/><polyline points="22,6 12,13 2,6" stroke="#C9A84C" stroke-width="1.5"/></svg>
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#D9B36A" stroke-width="1.5"/><polyline points="22,6 12,13 2,6" stroke="#D9B36A" stroke-width="1.5"/></svg>
         <div><strong>Email</strong><a href="mailto:info@vetraestate.ru">info@vetraestate.ru</a></div>
       </div>
       <div class="ci-item">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z" stroke="#C9A84C" stroke-width="1.5"/></svg>
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z" stroke="#D9B36A" stroke-width="1.5"/></svg>
         <div><strong>Офис</strong><span>г. Махачкала, пр. Расула Гамзатова, 43</span></div>
       </div>
       <div class="ci-item">
-        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#C9A84C" stroke-width="1.5"/><polyline points="12,6 12,12 16,14" stroke="#C9A84C" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#D9B36A" stroke-width="1.5"/><polyline points="12,6 12,12 16,14" stroke="#D9B36A" stroke-width="1.5" stroke-linecap="round"/></svg>
         <div><strong>Часы работы</strong><span>Пн–Сб: 9:00–19:00</span></div>
       </div>
     </div>
@@ -382,7 +390,7 @@
   <div class="footer-container">
     <div class="footer-brand">
       <a href="#" class="nav-logo">
-        <svg viewBox="0 0 40 40" fill="none"><polygon points="20,3 37,33 3,33" stroke="#C9A84C" stroke-width="1.5" fill="none"/></svg>
+        <svg viewBox="0 0 40 40" fill="none"><polygon points="20,3 37,33 3,33" stroke="#D9B36A" stroke-width="1.5" fill="none"/></svg>
         <span>VETRA</span>
       </a>
       <p>Строим пространство для вашей жизни</p>
