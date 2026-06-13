@@ -845,25 +845,28 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   // слой свечения и световая волна для «оживления» фона
   const glow = hero.querySelector(".hero-glow");
   const sweep = hero.querySelector(".hero-sweep");
-  const heroVideo = hero.querySelector(".hero-video");
+  const heroVideos = hero.querySelectorAll(".hero-video");
 
   function syncGlow(layer) {
     if (glow && layer) glow.style.backgroundImage = getComputedStyle(layer).backgroundImage;
   }
 
-  // живой видео-фон показываем только для своего состояния (АК «Алые Паруса», вечер)
+  // живой видео-фон показываем только для соответствующего состояния (ЖК + вечер)
   function syncVideo(key) {
-    if (!heroVideo) return;
-    const on = heroVideo.dataset.for === key;
-    heroVideo.classList.toggle("is-active", on);
-    hero.classList.toggle("hero--video", on);
-    if (on) {
-      if (!heroVideo.dataset.loaded) { heroVideo.load(); heroVideo.dataset.loaded = "1"; }
-      const p = heroVideo.play();
-      if (p && p.catch) p.catch(() => {});
-    } else if (!heroVideo.paused) {
-      heroVideo.pause();
-    }
+    let anyOn = false;
+    heroVideos.forEach(v => {
+      const on = v.dataset.for === key;
+      v.classList.toggle("is-active", on);
+      if (on) {
+        anyOn = true;
+        if (!v.dataset.loaded) { v.load(); v.dataset.loaded = "1"; }
+        const p = v.play();
+        if (p && p.catch) p.catch(() => {});
+      } else if (!v.paused) {
+        v.pause();
+      }
+    });
+    hero.classList.toggle("hero--video", anyOn);
   }
 
   let project = "horizon";
