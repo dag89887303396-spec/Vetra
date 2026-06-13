@@ -845,9 +845,25 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   // слой свечения и световая волна для «оживления» фона
   const glow = hero.querySelector(".hero-glow");
   const sweep = hero.querySelector(".hero-sweep");
+  const heroVideo = hero.querySelector(".hero-video");
 
   function syncGlow(layer) {
     if (glow && layer) glow.style.backgroundImage = getComputedStyle(layer).backgroundImage;
+  }
+
+  // живой видео-фон показываем только для своего состояния (АК «Алые Паруса», вечер)
+  function syncVideo(key) {
+    if (!heroVideo) return;
+    const on = heroVideo.dataset.for === key;
+    heroVideo.classList.toggle("is-active", on);
+    hero.classList.toggle("hero--video", on);
+    if (on) {
+      if (!heroVideo.dataset.loaded) { heroVideo.load(); heroVideo.dataset.loaded = "1"; }
+      const p = heroVideo.play();
+      if (p && p.catch) p.catch(() => {});
+    } else if (!heroVideo.paused) {
+      heroVideo.pause();
+    }
   }
 
   let project = "horizon";
@@ -862,6 +878,7 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
     });
     const next = document.querySelector(".hero-layer.is-active");
     syncGlow(next);
+    syncVideo(key);
 
     // мягкое световое раскрытие при смене день/вечер
     if (withFlash && prev && next && prev !== next) {

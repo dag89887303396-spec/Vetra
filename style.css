@@ -1021,6 +1021,19 @@ body::before {
   background-position: center;
 }
 
+/* живой видео-фон страницы объекта */
+.object-hero-video {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #070a14;
+}
+/* затемнение-градиент поверх видео для читаемости текста */
+.object-hero-bg--video { z-index: -1; }
+
 .horizon-object-bg {
   background-image:
     linear-gradient(180deg, rgba(16,16,15,.2), rgba(16,16,15,.9)),
@@ -3100,6 +3113,26 @@ body::before {
   inset: 0;
   z-index: 0;
 }
+
+/* живой видео-фон (АК «Алые Паруса», вечер) — реальная анимация:
+   движение камеры, мерцающие окна, бассейн и фары машин */
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+  transition: opacity 1.1s ease;
+  will-change: opacity;
+}
+.hero-video.is-active { opacity: 1; }
+
+/* когда играет видео — гасим css-эффекты, чтобы не дублировать */
+.hero--video .hero-glow,
+.hero--video .hero-fx { opacity: 0 !important; }
 
 .hero-layer {
   position: absolute;
