@@ -845,28 +845,8 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   // слой свечения и световая волна для «оживления» фона
   const glow = hero.querySelector(".hero-glow");
   const sweep = hero.querySelector(".hero-sweep");
-  const heroVideos = hero.querySelectorAll(".hero-video");
-
   function syncGlow(layer) {
     if (glow && layer) glow.style.backgroundImage = getComputedStyle(layer).backgroundImage;
-  }
-
-  // живой видео-фон показываем только для соответствующего состояния (ЖК + вечер)
-  function syncVideo(key) {
-    let anyOn = false;
-    heroVideos.forEach(v => {
-      const on = v.dataset.for === key;
-      v.classList.toggle("is-active", on);
-      if (on) {
-        anyOn = true;
-        if (!v.dataset.loaded) { v.load(); v.dataset.loaded = "1"; }
-        const p = v.play();
-        if (p && p.catch) p.catch(() => {});
-      } else if (!v.paused) {
-        v.pause();
-      }
-    });
-    hero.classList.toggle("hero--video", anyOn);
   }
 
   let project = "horizon";
@@ -881,7 +861,6 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
     });
     const next = document.querySelector(".hero-layer.is-active");
     syncGlow(next);
-    syncVideo(key);
 
     // мягкое световое раскрытие при смене день/вечер
     if (withFlash && prev && next && prev !== next) {
@@ -898,7 +877,7 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
       setTimeout(() => {
         prev.classList.remove("iris-under");
         next.classList.remove("iris");
-      }, 1650);
+      }, 850);
     }
     document.querySelectorAll(".proj-dot").forEach(b =>
       b.classList.toggle("is-active", b.dataset.project === project));
