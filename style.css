@@ -3961,7 +3961,7 @@ body::before {
    ФУТЕР (расширенный)
    ═══════════════════════════════════════════════════════ */
 .footer { padding: 64px max(24px, calc((100vw - 1200px) / 2)) 40px; border-top: 1px solid var(--line); }
-.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; gap: 32px; }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 32px; }
 .footer-logo { font-size: 22px; font-weight: 800; letter-spacing: .02em; }
 .footer-brand p { color: var(--text3); font-size: 14px; line-height: 1.6; margin-top: 12px; max-width: 320px; }
 .footer-col { display: flex; flex-direction: column; gap: 10px; }
@@ -3969,7 +3969,9 @@ body::before {
 .footer-col a, .footer-col span { color: var(--text2); font-size: 14px; }
 .footer-col a:hover { color: var(--gold2); }
 .footer-legal { color: var(--text3); font-size: 12.5px; line-height: 1.5; }
-.footer-bottom { margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--text3); font-size: 12.5px; }
+.footer-bottom { margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--text3); font-size: 12.5px; display: flex; gap: 12px 24px; justify-content: space-between; flex-wrap: wrap; }
+.footer-bottom a { color: var(--text3); text-decoration: underline; }
+.footer-bottom a:hover { color: var(--gold2); }
 
 @media (max-width: 860px) {
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 28px; }
