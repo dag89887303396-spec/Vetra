@@ -854,91 +854,138 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const videoProjects = { horizon: true, moscow: true, alye: true };
   let videoTimer = null;
+  let transToken = 0;
+
+  function clearVideoTimer() {
+    if (videoTimer) { clearTimeout(videoTimer); videoTimer = null; }
+  }
 
   function stopHeroVideo() {
     if (!heroVideo) return;
-    if (videoTimer) { clearTimeout(videoTimer); videoTimer = null; }
+    clearVideoTimer();
+    transToken++;                         // отменяем висящие колбэки прошлого перехода
     heroVideo.classList.remove("is-playing");
     hero.classList.remove("is-hero-video");
     try { heroVideo.pause(); } catch (e) {}
   }
 
-  // proj — комплекс, toNight=true → день→ночь (dn), false → ночь→день (nd)
-  function playTransition(proj, toNight) {
+  function samePath(a, b) {
+    try { return new URL(a || "", location.href).pathname === new URL(b, location.href).pathname; }
+    catch (e) { return false; }
+  }
+
+  // proj — комплекс; toNight=true → день→ночь (dn), false → ночь→день (nd).
+  // onReveal вызывается в момент, когда видео уже перекрыло фон — там подменяем
+  // нижний статичный слой на целевой, чтобы по окончании показать точный кадр.
+  function playTransition(proj, toNight, onReveal) {
     if (!heroVideo || reduceMotion || !videoProjects[proj]) return false;
     const src = "videos/hero-" + proj + "-" + (toNight ? "dn" : "nd") + ".mp4";
-    if (videoTimer) { clearTimeout(videoTimer); videoTimer = null; }
-    if (!heroVideo.src || new URL(heroVideo.src).pathname !== new URL(src, location.href).pathname) {
-      heroVideo.src = src;
+    clearVideoTimer();
+    const token = ++transToken;
+    if (!samePath(heroVideo.getAttribute("src"), src)) {
+      heroVideo.setAttribute("src", src);
+      heroVideo.load();
     }
-    try { heroVideo.currentTime = 0; } catch (e) {}
-    hero.classList.add("is-hero-video");
-    heroVideo.classList.add("is-playing");
-    const finish = () => {
-      heroVideo.removeEventListener("ended", finish);
+
+    let revealed = false;
+    // подстраховка: если видео не готово — мгновенно переключаем фон без него
+    const failsafe = setTimeout(() => {
+      if (token !== transToken || revealed) return;
+      if (typeof onReveal === "function") onReveal();
       stopHeroVideo();
+    }, 1500);
+
+    const reveal = () => {
+      if (token !== transToken || revealed) return;
+      revealed = true;
+      clearTimeout(failsafe);
+      try { heroVideo.currentTime = 0; } catch (e) {}
+      heroVideo.classList.add("is-playing");          // мгновенно, без кросс-фейда
+      hero.classList.add("is-hero-video");
+      if (typeof onReveal === "function") onReveal();  // подменяем нижний слой на целевой
+      const finish = () => {
+        if (token !== transToken) return;
+        heroVideo.removeEventListener("ended", finish);
+        clearVideoTimer();
+        heroVideo.classList.remove("is-playing");      // мгновенно показываем целевой кадр
+        hero.classList.remove("is-hero-video");
+      };
+      heroVideo.addEventListener("ended", finish);
+      videoTimer = setTimeout(finish, 8000);           // подстраховка, если ended не сработает
+      const p = heroVideo.play();
+      if (p && p.catch) p.catch(() => { if (token === transToken) finish(); });
     };
-    heroVideo.addEventListener("ended", finish);
-    videoTimer = setTimeout(finish, 6000); // подстраховка, если ended не сработает
-    const p = heroVideo.play();
-    if (p && p.catch) p.catch(() => stopHeroVideo());
+
+    if (heroVideo.readyState >= 2) reveal();
+    else heroVideo.addEventListener("loadeddata", function once() {
+      heroVideo.removeEventListener("loadeddata", once);
+      reveal();
+    });
     return true;
   }
 
-  // лёгкая предзагрузка следующего ролика выбранного комплекса
+  // предзагрузка ролика выбранного комплекса (день→ночь)
   function preloadTransition(proj) {
     if (!heroVideo || reduceMotion || !videoProjects[proj] || heroVideo.classList.contains("is-playing")) return;
-    heroVideo.src = "videos/hero-" + proj + "-dn.mp4";
+    const src = "videos/hero-" + proj + "-dn.mp4";
+    if (!samePath(heroVideo.getAttribute("src"), src)) {
+      heroVideo.setAttribute("src", src);
+      heroVideo.load();
+    }
   }
 
   let project = "horizon";
   let time = "day";
 
-  function apply(withFlash) {
-    if (!withFlash) stopHeroVideo();
-    const key = project + "-" + time;
-    const prev = document.querySelector(".hero-layer.is-active");
+  function setLayers(target) {
     layers.forEach(l => {
       l.classList.remove("iris", "iris-under");
-      l.classList.toggle("is-active", l.dataset.bg === key);
+      l.classList.toggle("is-active", l === target);
     });
-    const next = document.querySelector(".hero-layer.is-active");
-    syncGlow(next);
+    syncGlow(target);
+  }
 
-    // мягкое световое раскрытие при смене день/вечер
-    if (withFlash && prev && next && prev !== next) {
-      const toggle = document.querySelector(".dn-toggle");
-      if (toggle) {
-        const tr = toggle.getBoundingClientRect();
-        const hr = hero.getBoundingClientRect();
-        // общий центр свечения для фона, волны и слоя-вспышки
-        hero.style.setProperty("--iris-x", (((tr.left + tr.width / 2) - hr.left) / hr.width * 100).toFixed(1) + "%");
-        hero.style.setProperty("--iris-y", (((tr.top + tr.height / 2) - hr.top) / hr.height * 100).toFixed(1) + "%");
+  function apply(withFlash) {
+    const key = project + "-" + time;
+    const prev = document.querySelector(".hero-layer.is-active");
+    const target = Array.prototype.find.call(layers, l => l.dataset.bg === key) || prev;
+
+    const wantVideo = withFlash && prev && target && prev !== target &&
+                      !reduceMotion && heroVideo && videoProjects[project];
+
+    if (wantVideo) {
+      // фон не трогаем до появления видео — оно стартует на текущем кадре (день/ночь),
+      // который совпадает со статичным фото, поэтому начало перехода незаметно
+      playTransition(project, time === "night", () => setLayers(target));
+    } else {
+      stopHeroVideo();
+      setLayers(target);
+      // запасной плавный переход, если видео недоступно (reduced-motion и т.п.)
+      if (withFlash && prev && target && prev !== target) {
+        const toggle = document.querySelector(".dn-toggle");
+        if (toggle) {
+          const tr = toggle.getBoundingClientRect();
+          const hr = hero.getBoundingClientRect();
+          hero.style.setProperty("--iris-x", (((tr.left + tr.width / 2) - hr.left) / hr.width * 100).toFixed(1) + "%");
+          hero.style.setProperty("--iris-y", (((tr.top + tr.height / 2) - hr.top) / hr.height * 100).toFixed(1) + "%");
+        }
+        prev.classList.add("iris-under");
+        target.classList.add("iris");
+        setTimeout(() => { prev.classList.remove("iris-under"); target.classList.remove("iris"); }, 850);
+        flash.classList.remove("run");
+        sweep?.classList.remove("run");
+        void flash.offsetWidth;
+        flash.classList.add("run");
+        sweep?.classList.add("run");
       }
-      prev.classList.add("iris-under");
-      next.classList.add("iris");
-      setTimeout(() => {
-        prev.classList.remove("iris-under");
-        next.classList.remove("iris");
-      }, 850);
-
-      // кинематографичный видео-переход поверх (день→ночь / ночь→день)
-      playTransition(project, time === "night");
     }
+
     document.querySelectorAll(".proj-dot").forEach(b =>
       b.classList.toggle("is-active", b.dataset.project === project));
     document.querySelectorAll(".dn-btn").forEach(b =>
       b.classList.toggle("is-active", b.dataset.time === time));
     document.querySelector(".dn-toggle")?.classList.toggle("is-night", time === "night");
     hero.classList.toggle("hero--night", time === "night");
-
-    if (withFlash) {
-      flash.classList.remove("run");
-      sweep?.classList.remove("run");
-      void flash.offsetWidth; // перезапуск анимации
-      flash.classList.add("run");
-      sweep?.classList.add("run");
-    }
   }
 
   // инициализируем свечение для стартового фона
@@ -983,7 +1030,7 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
       if (!heroVisible || document.hidden) return;
       time = time === "day" ? "night" : "day";
       apply(true);
-    }, 7000);
+    }, 8000);
     document.querySelectorAll(".proj-dot").forEach(b =>
       b.addEventListener("click", stopAutoCycle));
   }

@@ -3171,7 +3171,7 @@ body::before {
   z-index: 1;            /* над слоями-фото и свечением, под затемнением и переключателем */
   opacity: 0;
   pointer-events: none;
-  transition: opacity .5s ease;
+  transition: none;      /* мгновенное появление/скрытие на совпадающем кадре, без кросс-фейда */
   will-change: opacity;
 }
 .hero-video.is-playing { opacity: 1; }
