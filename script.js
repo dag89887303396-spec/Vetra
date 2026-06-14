@@ -1130,6 +1130,8 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   const nameEl = form.querySelector('input[name="name"]');
   const initEl = form.querySelector('input[name="initials"]');
   const textEl = form.querySelector('textarea[name="text"]');
+  const consentEl = form.querySelector('input[name="consent"]');
+  const consentRow = form.querySelector('.lead-consent');
 
   // отправка формы
   form.addEventListener("submit", (e) => {
@@ -1145,6 +1147,8 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
       el.classList.toggle("invalid", empty);
       if (empty) ok = false;
     });
+    if (consentEl && !consentEl.checked) { consentRow?.classList.add("invalid"); ok = false; }
+    else { consentRow?.classList.remove("invalid"); }
     if (!ok) { form.querySelector(".invalid")?.focus(); return; }
 
     const review = { name, initials, text, rating, when: whenLabel() };
@@ -1160,4 +1164,111 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   });
 
   loadSaved();
+})();
+
+/* ════════════════════════════════════════════════════════
+   КАЛЬКУЛЯТОР РАССРОЧКИ
+   ════════════════════════════════════════════════════════ */
+(function () {
+  const price = document.getElementById("calcPrice");
+  const down = document.getElementById("calcDown");
+  if (!price || !down) return;
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => Math.round(n).toLocaleString("ru-RU") + " ₽";
+  const priceOut = $("calcPriceOut"), downOut = $("calcDownOut"), monthly = $("calcMonthly");
+  const downAbsEl = $("calcDownAbs"), bodyEl = $("calcBody"), termOut = $("calcTermOut");
+  const wa = $("calcWa"), terms = $("calcTerms");
+  let term = 36;
+
+  function fill(el) {
+    const pct = (el.value - el.min) / (el.max - el.min) * 100;
+    el.style.setProperty("--fill", pct + "%");
+  }
+  function calc() {
+    const p = +price.value, dPct = +down.value;
+    const dAbs = Math.round(p * dPct / 100);
+    const body = Math.max(0, p - dAbs);
+    const m = term ? body / term : 0;
+    priceOut.textContent = fmt(p);
+    downOut.textContent = dPct + "% · " + fmt(dAbs);
+    downAbsEl.textContent = fmt(dAbs);
+    bodyEl.textContent = fmt(body);
+    termOut.textContent = term + " мес";
+    monthly.textContent = fmt(m);
+    fill(price); fill(down);
+    const msg = "Здравствуйте! Хочу расчёт рассрочки:\n" +
+      "Стоимость: " + fmt(p) + "\nПервый взнос: " + dPct + "% (" + fmt(dAbs) + ")\n" +
+      "Срок: " + term + " мес\nПлатёж: " + fmt(m) + "/мес";
+    if (wa) wa.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
+  }
+  price.addEventListener("input", calc);
+  down.addEventListener("input", calc);
+  if (terms) terms.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    term = +b.dataset.term;
+    terms.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+    calc();
+  }));
+  calc();
+})();
+
+/* ════════════════════════════════════════════════════════
+   FAQ — аккордеон
+   ════════════════════════════════════════════════════════ */
+(function () {
+  const items = document.querySelectorAll(".faq-item");
+  if (!items.length) return;
+  items.forEach((item) => {
+    const q = item.querySelector(".faq-q");
+    const a = item.querySelector(".faq-a");
+    if (!q || !a) return;
+    q.addEventListener("click", () => {
+      const isOpen = item.classList.contains("open");
+      items.forEach((it) => {
+        it.classList.remove("open");
+        it.querySelector(".faq-q")?.setAttribute("aria-expanded", "false");
+        const ans = it.querySelector(".faq-a");
+        if (ans) ans.style.maxHeight = null;
+      });
+      if (!isOpen) {
+        item.classList.add("open");
+        q.setAttribute("aria-expanded", "true");
+        a.style.maxHeight = a.scrollHeight + "px";
+      }
+    });
+  });
+})();
+
+/* ════════════════════════════════════════════════════════
+   ФОРМА ЗАЯВКИ — отправка в WhatsApp (без бэкенда)
+   ════════════════════════════════════════════════════════ */
+(function () {
+  const form = document.getElementById("leadForm");
+  if (!form) return;
+  const nameEl = form.querySelector('input[name="name"]');
+  const phoneEl = form.querySelector('input[name="phone"]');
+  const goalEl = form.querySelector('input[name="goal"]');
+  const consentEl = form.querySelector('input[name="consent"]');
+  const consentRow = form.querySelector(".lead-consent");
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    let ok = true;
+    [nameEl, phoneEl].forEach((el) => {
+      const empty = !el.value.trim();
+      el.classList.toggle("invalid", empty);
+      if (empty) ok = false;
+    });
+    const digits = (phoneEl.value.match(/\d/g) || []).length;
+    if (digits < 10) { phoneEl.classList.add("invalid"); ok = false; }
+    if (!consentEl.checked) { consentRow?.classList.add("invalid"); ok = false; }
+    else { consentRow?.classList.remove("invalid"); }
+    if (!ok) { form.querySelector(".invalid")?.focus?.(); return; }
+
+    const goal = goalEl && goalEl.value.trim();
+    const msg = "Здравствуйте! Заявка с сайта VetraEstate:\n" +
+      "Имя: " + nameEl.value.trim() + "\nТелефон: " + phoneEl.value.trim() +
+      (goal ? "\nЗапрос: " + goal : "");
+    window.open("https://wa.me/79894702263?text=" + encodeURIComponent(msg), "_blank");
+    form.reset();
+  });
 })();

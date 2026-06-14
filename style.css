@@ -3830,3 +3830,163 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   .hero-layer, .hero-layer.is-active { animation: none !important; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   КАЛЬКУЛЯТОР РАССРОЧКИ
+   ═══════════════════════════════════════════════════════ */
+.calc-card {
+  display: grid;
+  grid-template-columns: 1.15fr .85fr;
+  gap: 28px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 30px;
+}
+.calc-controls { display: flex; flex-direction: column; gap: 26px; justify-content: center; }
+.calc-field { display: flex; flex-direction: column; gap: 12px; }
+.calc-label {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--text3);
+}
+.calc-label b { font-size: 16px; text-transform: none; letter-spacing: 0; color: var(--gold2); font-weight: 700; }
+
+.calc-field input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 5px; border-radius: 5px;
+  background: linear-gradient(90deg, var(--gold) var(--fill,40%), rgba(255,255,255,.10) var(--fill,40%));
+  outline: none; cursor: pointer;
+}
+.calc-field input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold2), var(--gold));
+  border: 3px solid #1b1a18; box-shadow: 0 4px 12px rgba(0,0,0,.4); cursor: pointer;
+}
+.calc-field input[type="range"]::-moz-range-thumb {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold2); border: 3px solid #1b1a18; cursor: pointer;
+}
+
+.calc-terms { display: flex; gap: 8px; flex-wrap: wrap; }
+.calc-terms button {
+  flex: 1; min-width: 54px; padding: 11px 10px;
+  background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 12px;
+  color: var(--text2); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: border-color .2s ease, color .2s ease, background .2s ease;
+}
+.calc-terms button.on { border-color: var(--gold-border); color: #1b1a18; background: linear-gradient(135deg, var(--gold2), var(--gold)); }
+
+.calc-result {
+  display: flex; flex-direction: column; gap: 14px; justify-content: center;
+  background: linear-gradient(160deg, rgba(160,138,102,.14), rgba(160,138,102,.04));
+  border: 1px solid var(--gold-border); border-radius: 18px; padding: 26px;
+}
+.calc-result-label { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--text3); }
+.calc-result strong { font-size: clamp(30px, 4vw, 40px); color: var(--gold2); line-height: 1; }
+.calc-breakdown { display: flex; flex-direction: column; gap: 8px; margin: 6px 0 4px; }
+.calc-breakdown div { display: flex; justify-content: space-between; font-size: 14px; }
+.calc-breakdown span { color: var(--text3); }
+.calc-breakdown b { color: var(--text); font-weight: 600; }
+.calc-result .btn { width: 100%; margin-top: 4px; }
+.calc-note { font-size: 12px; color: var(--text3); line-height: 1.5; }
+
+@media (max-width: 760px) {
+  .calc-card { grid-template-columns: 1fr; padding: 22px; gap: 22px; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   FAQ
+   ═══════════════════════════════════════════════════════ */
+.faq-list { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.faq-item { border-bottom: 1px solid var(--line); }
+.faq-q {
+  width: 100%; text-align: left; background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  padding: 22px 4px; font-family: inherit; font-size: clamp(15px, 1.6vw, 18px);
+  font-weight: 600; color: var(--text); transition: color .2s ease;
+}
+.faq-q:hover { color: var(--gold2); }
+.faq-ic { position: relative; flex: 0 0 18px; width: 18px; height: 18px; }
+.faq-ic::before, .faq-ic::after {
+  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  background: var(--gold2); transition: transform .3s ease, opacity .3s ease;
+}
+.faq-ic::before { width: 16px; height: 2px; }
+.faq-ic::after { width: 2px; height: 16px; }
+.faq-item.open .faq-ic::after { transform: translate(-50%,-50%) scaleY(0); opacity: 0; }
+.faq-a { overflow: hidden; max-height: 0; transition: max-height .35s ease; }
+.faq-a p { padding: 0 4px 22px; color: var(--text2); font-size: 15px; line-height: 1.65; font-weight: 300; max-width: 760px; }
+
+/* ═══════════════════════════════════════════════════════
+   КОНТАКТЫ + ФОРМА ЗАЯВКИ
+   ═══════════════════════════════════════════════════════ */
+.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+.contact-meta { list-style: none; display: flex; flex-direction: column; gap: 14px; margin-top: 28px; }
+.contact-meta li { display: flex; flex-direction: column; gap: 2px; }
+.contact-meta b { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--text3); font-weight: 600; }
+.contact-meta a, .contact-meta span { color: var(--text); font-size: 16px; }
+.contact-meta a:hover { color: var(--gold2); }
+
+.lead-form {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 30px; display: flex; flex-direction: column; gap: 16px;
+}
+.lead-form h3 { font-size: 20px; margin-bottom: 4px; }
+.lead-field { display: flex; flex-direction: column; gap: 7px; }
+.lead-field span { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--text3); }
+.lead-field span i { text-transform: none; letter-spacing: 0; color: var(--text3); font-style: normal; }
+.lead-field input {
+  width: 100%; font-family: inherit; font-size: 15px; color: var(--text);
+  background: rgba(255,255,255,.03); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+  transition: border-color .25s ease, box-shadow .25s ease;
+}
+.lead-field input::placeholder { color: var(--text3); }
+.lead-field input:focus { outline: none; border-color: var(--gold-border); box-shadow: 0 0 0 3px rgba(160,138,102,.14); }
+.lead-field input.invalid { border-color: #c0564e; box-shadow: 0 0 0 3px rgba(192,86,78,.16); }
+
+.lead-consent { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.lead-consent input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--gold); flex: 0 0 auto; }
+.lead-consent span { font-size: 12.5px; color: var(--text3); line-height: 1.5; }
+.lead-consent a { color: var(--gold2); text-decoration: underline; }
+.lead-consent.invalid span { color: #d98079; }
+.lead-form .btn { width: 100%; margin-top: 2px; }
+.lead-note { font-size: 12px; color: var(--text3); line-height: 1.5; }
+
+@media (max-width: 860px) {
+  .contact-grid { grid-template-columns: 1fr; gap: 28px; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   ФУТЕР (расширенный)
+   ═══════════════════════════════════════════════════════ */
+.footer { padding: 64px max(24px, calc((100vw - 1200px) / 2)) 40px; border-top: 1px solid var(--line); }
+.footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; gap: 32px; }
+.footer-logo { font-size: 22px; font-weight: 800; letter-spacing: .02em; }
+.footer-brand p { color: var(--text3); font-size: 14px; line-height: 1.6; margin-top: 12px; max-width: 320px; }
+.footer-col { display: flex; flex-direction: column; gap: 10px; }
+.footer-col h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); font-weight: 700; margin-bottom: 4px; }
+.footer-col a, .footer-col span { color: var(--text2); font-size: 14px; }
+.footer-col a:hover { color: var(--gold2); }
+.footer-legal { color: var(--text3); font-size: 12.5px; line-height: 1.5; }
+.footer-bottom { margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--text3); font-size: 12.5px; }
+
+@media (max-width: 860px) {
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 28px; }
+}
+@media (max-width: 520px) {
+  .footer-grid { grid-template-columns: 1fr; gap: 24px; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   СТРАНИЦА «ПОЛИТИКА КОНФИДЕНЦИАЛЬНОСТИ»
+   ═══════════════════════════════════════════════════════ */
+.legal-page { max-width: 860px; margin: 0 auto; padding-top: clamp(96px, 14vh, 140px); }
+.legal-head h1 { font-size: clamp(30px, 5vw, 48px); margin: 14px 0 8px; }
+.legal-upd { color: var(--text3); font-size: 14px; }
+.legal-body { margin-top: 30px; }
+.legal-body h2 { font-size: clamp(18px, 2.4vw, 22px); margin: 28px 0 10px; color: var(--text); }
+.legal-body p { color: var(--text2); font-size: 15px; line-height: 1.7; font-weight: 300; }
+.legal-body a { color: var(--gold2); text-decoration: underline; }
+.legal-note { margin-top: 26px; padding: 14px 16px; border-left: 2px solid var(--gold-border); background: var(--gold-dim); color: var(--text3); font-size: 13.5px; border-radius: 0 12px 12px 0; }
+.legal-back { display: inline-flex; margin-top: 36px; }
