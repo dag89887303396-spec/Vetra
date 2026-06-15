@@ -14,8 +14,8 @@ settings below** unless they say otherwise:
    `personal_clipper_create` with:
    - `urls`: the link the user gave
    - `clips_num`: **5**
-   - `clip_aspect`: **9:16** (locked default — vertical Shorts). Use 16:9 only
-     if the user explicitly asks for horizontal.
+   - `clip_aspect`: **16:9** (locked default — horizontal). Use 9:16 only if the
+     user explicitly asks for vertical Shorts.
    - `subtitle_font`: **Bebas Neue**
    Then poll `personal_clipper_status` until `status: done`. Report any clips
    that fail (the service sometimes returns `max retries exceeded`), and offer
