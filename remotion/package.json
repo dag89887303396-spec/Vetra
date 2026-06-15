@@ -1,0 +1,25 @@
+{
+  "name": "vetra-shorts-editor",
+  "version": "1.0.0",
+  "description": "Remotion project that edits the Higgsfield clips into branded YouTube videos (intro card + clip + outro CTA).",
+  "private": true,
+  "scripts": {
+    "dev": "remotion studio",
+    "render": "remotion render",
+    "render:all": "node render-all.mjs",
+    "bundle": "remotion bundle",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.378",
+    "@remotion/google-fonts": "4.0.378",
+    "@remotion/media-utils": "4.0.378",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.378"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0",
+    "typescript": "5.5.4"
+  }
+}
