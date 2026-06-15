@@ -25,7 +25,9 @@ const IntroCard: React.FC<{kicker: string; title: string}> = ({
   title,
 }) => {
   const frame = useCurrentFrame();
-  const {fps, durationInFrames} = useVideoConfig();
+  const {fps, durationInFrames, width} = useVideoConfig();
+  // Sizes relative to frame width so the card works in both 9:16 and 16:9.
+  const vw = width / 100;
 
   const enter = spring({frame, fps, config: {damping: 200}});
   const exit = interpolate(
@@ -46,13 +48,13 @@ const IntroCard: React.FC<{kicker: string; title: string}> = ({
         fontFamily,
       }}
     >
-      <div style={{opacity, transform: `translateY(${translateY}px)`, textAlign: 'center', padding: '0 120px'}}>
+      <div style={{opacity, transform: `translateY(${translateY}px)`, textAlign: 'center', padding: `0 ${vw * 8}px`}}>
         <div
           style={{
             color: BRAND.accent,
-            fontSize: 48,
-            letterSpacing: 12,
-            marginBottom: 24,
+            fontSize: vw * 4,
+            letterSpacing: vw,
+            marginBottom: vw * 2.2,
           }}
         >
           {kicker}
@@ -60,7 +62,7 @@ const IntroCard: React.FC<{kicker: string; title: string}> = ({
         <div
           style={{
             color: 'white',
-            fontSize: 150,
+            fontSize: vw * 9,
             lineHeight: 1.02,
             letterSpacing: 2,
             textTransform: 'uppercase',
@@ -70,9 +72,9 @@ const IntroCard: React.FC<{kicker: string; title: string}> = ({
         </div>
         <div
           style={{
-            marginTop: 48,
-            height: 8,
-            width: interpolate(enter, [0, 1], [0, 320]),
+            marginTop: vw * 4,
+            height: vw * 0.7,
+            width: interpolate(enter, [0, 1], [0, vw * 28]),
             backgroundColor: BRAND.accent,
             marginLeft: 'auto',
             marginRight: 'auto',
@@ -86,7 +88,8 @@ const IntroCard: React.FC<{kicker: string; title: string}> = ({
 
 const OutroCard: React.FC = () => {
   const frame = useCurrentFrame();
-  const {fps} = useVideoConfig();
+  const {fps, width} = useVideoConfig();
+  const vw = width / 100;
   const enter = spring({frame, fps, config: {damping: 200}});
   const pulse = 1 + 0.04 * Math.sin(frame / 6);
 
@@ -105,9 +108,9 @@ const OutroCard: React.FC = () => {
             transform: `scale(${pulse})`,
             color: 'white',
             backgroundColor: BRAND.accent,
-            fontSize: 90,
-            letterSpacing: 6,
-            padding: '28px 80px',
+            fontSize: vw * 6,
+            letterSpacing: vw * 0.5,
+            padding: `${vw * 2.4}px ${vw * 6}px`,
             borderRadius: 18,
             display: 'inline-block',
           }}
@@ -116,10 +119,10 @@ const OutroCard: React.FC = () => {
         </div>
         <div
           style={{
-            marginTop: 40,
+            marginTop: vw * 3.5,
             color: 'white',
-            fontSize: 64,
-            letterSpacing: 10,
+            fontSize: vw * 4.5,
+            letterSpacing: vw * 0.8,
           }}
         >
           {BRAND.channel}
@@ -172,8 +175,8 @@ const ClipSegment: React.FC<{src: string; fade: number; durationInFrames: number
   );
   return (
     <AbsoluteFill style={{opacity, backgroundColor: 'black'}}>
-      <OffthreadVideo src={src} />
-      {/* Re-encode the clip's own audio straight through. */}
+      {/* Clips are cut in the target aspect, so cover fills the frame cleanly. */}
+      <OffthreadVideo src={src} style={{width: '100%', height: '100%', objectFit: 'cover'}} />
     </AbsoluteFill>
   );
 };

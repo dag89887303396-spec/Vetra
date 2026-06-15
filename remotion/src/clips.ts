@@ -20,6 +20,10 @@ export type Clip = {
 const CDN =
   'https://d8j0ntlcm91z4.cloudfront.net/clipify/user_39oW86LGLduzvzApbVLM1WxZCvW/d3d7da7d-ed45-448c-8015-24334095fa9f/d3d7da7d-ed45-448c-8015-24334095fa9f/clips';
 
+// NOTE: the entries below are a sample run cut in 16:9. The standing pipeline
+// default is 9:16 (ORIENTATION = 'vertical'); each new run replaces this list
+// and sets ORIENTATION to match. To preview these specific 16:9 samples
+// undistorted, set ORIENTATION = 'horizontal' below.
 export const CLIPS: Clip[] = [
   {
     id: 'clip-01',
@@ -62,8 +66,15 @@ export const BRAND = {
 
 // Timing (frames at 30fps).
 export const FPS = 30;
-export const WIDTH = 1920;
-export const HEIGHT = 1080;
+
+// Output orientation. 'vertical' = 1080x1920 (YouTube Shorts / Reels / TikTok),
+// 'horizontal' = 1920x1080. Switch this one value to change every composition.
+export type Orientation = 'vertical' | 'horizontal';
+export const ORIENTATION: Orientation = 'vertical';
+
+export const WIDTH = ORIENTATION === 'vertical' ? 1080 : 1920;
+export const HEIGHT = ORIENTATION === 'vertical' ? 1920 : 1080;
+
 export const INTRO_FRAMES = 60; // 2s title card
 export const OUTRO_FRAMES = 75; // 2.5s subscribe card
 export const FALLBACK_CLIP_FRAMES = 30 * 30; // 30s, used only if duration can't be probed

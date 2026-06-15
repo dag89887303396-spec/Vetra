@@ -1,0 +1,50 @@
+name: Render highlight videos
+
+# Renders the Remotion compositions (the edited highlight videos) on a
+# GitHub-hosted runner — which has open internet (can reach the Higgsfield CDN)
+# and where we install Chromium — then uploads the 5 mp4s as artifacts.
+#
+# Triggers automatically whenever the clip list or the Remotion code changes,
+# and can also be started by hand from the Actions tab.
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - 'remotion/src/**'
+      - 'remotion/package.json'
+      - 'remotion/remotion.config.ts'
+      - '.github/workflows/render-highlights.yml'
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: remotion
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: remotion/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chrome Headless Shell for Remotion
+        run: npx remotion browser ensure
+
+      - name: Render all highlight videos
+        run: npm run render:all
+
+      - name: Upload rendered videos
+        uses: actions/upload-artifact@v4
+        with:
+          name: highlight-videos
+          path: remotion/out/*.mp4
+          if-no-files-found: error
+          retention-days: 30
