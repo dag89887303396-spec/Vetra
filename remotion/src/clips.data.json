@@ -1,35 +1,12 @@
 {
   "orientation": "horizontal",
+  "source": "https://youtu.be/dThFpv5UCHM",
+  "_comment": "PLACEHOLDER timecodes — used only to validate the yt-dlp download + ffmpeg cut path in CI. Replace start/end (seconds or HH:MM:SS) with the real highlight moments from video_analysis once approved.",
   "clips": [
-    {
-      "id": "clip-01",
-      "kicker": "HIGHLIGHT 01",
-      "title": "Morocco Scores On Brazil And Speed Loses It",
-      "src": "https://d8j0ntlcm91z4.cloudfront.net/clipify/user_39oW86LGLduzvzApbVLM1WxZCvW/d3d7da7d-ed45-448c-8015-24334095fa9f/d3d7da7d-ed45-448c-8015-24334095fa9f/clips/clip_01.mp4"
-    },
-    {
-      "id": "clip-02",
-      "kicker": "HIGHLIGHT 02",
-      "title": "Speed Calls Vinny's Goal Seconds Before It Happens",
-      "src": "https://d8j0ntlcm91z4.cloudfront.net/clipify/user_39oW86LGLduzvzApbVLM1WxZCvW/d3d7da7d-ed45-448c-8015-24334095fa9f/d3d7da7d-ed45-448c-8015-24334095fa9f/clips/clip_02.mp4"
-    },
-    {
-      "id": "clip-03",
-      "kicker": "HIGHLIGHT 03",
-      "title": "Brazil Legend Tells Speed He Has 'No Chance'",
-      "src": "https://d8j0ntlcm91z4.cloudfront.net/clipify/user_39oW86LGLduzvzApbVLM1WxZCvW/d3d7da7d-ed45-448c-8015-24334095fa9f/d3d7da7d-ed45-448c-8015-24334095fa9f/clips/clip_03.mp4"
-    },
-    {
-      "id": "clip-04",
-      "kicker": "HIGHLIGHT 04",
-      "title": "Speed Tells Travis Scott To Make Rocky Lock In",
-      "src": "https://d8j0ntlcm91z4.cloudfront.net/clipify/user_39oW86LGLduzvzApbVLM1WxZCvW/d3d7da7d-ed45-448c-8015-24334095fa9f/d3d7da7d-ed45-448c-8015-24334095fa9f/clips/clip_04.mp4"
-    },
-    {
-      "id": "clip-05",
-      "kicker": "HIGHLIGHT 05",
-      "title": "Speed Accidentally Sits In The Mayor's Seat",
-      "src": "https://d8j0ntlcm91z4.cloudfront.net/clipify/user_39oW86LGLduzvzApbVLM1WxZCvW/d3d7da7d-ed45-448c-8015-24334095fa9f/d3d7da7d-ed45-448c-8015-24334095fa9f/clips/clip_05.mp4"
-    }
+    {"id": "clip-01", "title": "10 KG Or The Hair Gets Punished", "start": 5, "end": 25},
+    {"id": "clip-02", "title": "No Money, No Job, Still Getting Big", "start": 40, "end": 60},
+    {"id": "clip-03", "title": "Day One Bulk: Burgers And Infinite Cola", "start": 80, "end": 100},
+    {"id": "clip-04", "title": "Fake Training For The Edit", "start": 120, "end": 140},
+    {"id": "clip-05", "title": "I Lied About My Workout", "start": 160, "end": 180}
   ]
 }

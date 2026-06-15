@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "remotion studio",
     "render": "remotion render",
+    "prepare:clips": "node prepare-clips.mjs",
     "transcribe": "node transcribe.mjs",
     "render:all": "node render-all.mjs",
     "bundle": "remotion bundle",

@@ -1,40 +1,53 @@
-// Single source of truth for the clip list is src/clips.data.json — it is read
-// by the Remotion compositions (here), by transcribe.mjs (Whisper captions) and
-// by render-all.mjs, so there is only one place to edit per run.
+// Single source of truth for the clip list is src/clips.data.json — read by the
+// Remotion compositions (here), prepare-clips.mjs (cuts clean clips from the
+// source), transcribe.mjs (Whisper captions) and render-all.mjs.
 //
-// `src` points at the Higgsfield CDN. Remotion fetches it at render time, so the
-// render must run where that host is reachable (GitHub Actions, or your machine).
-// transcribe.mjs downloads each clip and writes word-level caption timings to
-// public/captions/<id>.json, which the Captions overlay renders on top.
+// Pipeline (Option B — Remotion-only subtitles):
+//   prepare-clips.mjs  : yt-dlp downloads `source`, ffmpeg cuts each clip's
+//                        [start,end] into public/clips/<id>.mp4 (no burned subs)
+//   transcribe.mjs     : Whisper → public/captions/<id>.json
+//   render             : clip (staticFile) + karaoke captions overlay
 
+import {staticFile} from 'remotion';
 import data from './clips.data.json';
 
 export type Clip = {
   id: string;
-  /** Headline shown on the intro card. */
+  /** Headline (kept for reference / future use). */
   title: string;
-  /** Short kicker line shown above the title. */
-  kicker: string;
-  /** Source video URL (or staticFile path if you downloaded the clips). */
-  src: string;
+  /** Start time in the source — seconds (number) or "HH:MM:SS" / "MM:SS". */
+  start: number | string;
+  /** End time in the source — seconds (number) or "HH:MM:SS" / "MM:SS". */
+  end: number | string;
 };
 
 export type Orientation = 'vertical' | 'horizontal';
 
+export const SOURCE_URL: string = data.source;
 export const CLIPS: Clip[] = data.clips;
 export const ORIENTATION: Orientation = data.orientation as Orientation;
 
+/** Parse "HH:MM:SS", "MM:SS" or a number of seconds into seconds. */
+export const toSeconds = (t: number | string): number => {
+  if (typeof t === 'number') return t;
+  const parts = t.split(':').map(Number);
+  return parts.reduce((acc, n) => acc * 60 + n, 0);
+};
+
+export const clipDurationSeconds = (clip: Clip): number =>
+  Math.max(0, toSeconds(clip.end) - toSeconds(clip.start));
+
+/** staticFile path of the clip cut by prepare-clips.mjs. */
+export const clipFile = (id: string) => staticFile(`clips/${id}.mp4`);
 /** staticFile path of the caption timings produced by transcribe.mjs. */
 export const captionsFile = (id: string) => `captions/${id}.json`;
 
-// Channel branding shown on intro/outro cards. Tweak freely.
+// Karaoke caption accent + branding hook.
 export const BRAND = {
-  channel: 'YOUR CHANNEL',
-  cta: 'SUBSCRIBE FOR MORE',
   accent: '#FFC400',
 };
 
-// Timing (frames at 30fps).
+// Timing.
 export const FPS = 30;
 
 const DIMENSIONS: Record<Orientation, {width: number; height: number}> = {
@@ -44,7 +57,3 @@ const DIMENSIONS: Record<Orientation, {width: number; height: number}> = {
 
 export const WIDTH = DIMENSIONS[ORIENTATION].width;
 export const HEIGHT = DIMENSIONS[ORIENTATION].height;
-
-export const INTRO_FRAMES = 60; // 2s title card
-export const OUTRO_FRAMES = 75; // 2.5s subscribe card
-export const FALLBACK_CLIP_FRAMES = 30 * 30; // 30s, used only if duration can't be probed

@@ -1,11 +1,10 @@
-// Transcribes every clip with Whisper.cpp and writes word-level caption timings
-// to public/captions/<id>.json — consumed by the Remotion <Captions> overlay.
+// Transcribes the locally-cut clips (public/clips/<id>.mp4, produced by
+// prepare-clips.mjs) with Whisper.cpp and writes word-level caption timings to
+// public/captions/<id>.json — consumed by the Remotion <Captions> overlay.
 //
-// Runs locally and in CI (needs open internet to fetch the clips + the Whisper
-// model). Usage: npm run transcribe
+// Run AFTER prepare-clips.mjs. Usage: npm run transcribe
 import {execFileSync} from 'node:child_process';
-import {existsSync, mkdirSync, writeFileSync} from 'node:fs';
-import {readFile} from 'node:fs/promises';
+import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {
@@ -29,12 +28,10 @@ const run = (file, args) =>
 
 async function main() {
   const data = JSON.parse(
-    await readFile(path.join(__dirname, 'src', 'clips.data.json'), 'utf8')
+    readFileSync(path.join(__dirname, 'src', 'clips.data.json'), 'utf8')
   );
 
-  for (const dir of [CLIPS_DIR, CAPTIONS_DIR]) {
-    if (!existsSync(dir)) mkdirSync(dir, {recursive: true});
-  }
+  if (!existsSync(CAPTIONS_DIR)) mkdirSync(CAPTIONS_DIR, {recursive: true});
 
   console.log(`Installing Whisper.cpp (${WHISPER_VERSION})…`);
   await installWhisperCpp({to: WHISPER_PATH, version: WHISPER_VERSION});
@@ -45,16 +42,13 @@ async function main() {
     console.log(`\n=== Transcribing ${clip.id} ===`);
     const mp4 = path.join(CLIPS_DIR, `${clip.id}.mp4`);
     const wav = path.join(CLIPS_DIR, `${clip.id}.wav`);
-
-    // Download the clip.
-    const res = await fetch(clip.src);
-    if (!res.ok) throw new Error(`Download failed (${res.status}) for ${clip.src}`);
-    writeFileSync(mp4, Buffer.from(await res.arrayBuffer()));
+    if (!existsSync(mp4)) {
+      throw new Error(`Missing ${mp4}. Run "npm run prepare" first.`);
+    }
 
     // Extract 16kHz mono wav using Remotion's bundled ffmpeg.
     run('npx', ['remotion', 'ffmpeg', '-i', mp4, '-ar', '16000', '-ac', '1', wav, '-y']);
 
-    // Transcribe with token-level timestamps.
     const whisperCppOutput = await transcribe({
       inputPath: wav,
       whisperPath: WHISPER_PATH,

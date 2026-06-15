@@ -35,8 +35,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install ffmpeg + yt-dlp
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+          sudo chmod a+rx /usr/local/bin/yt-dlp
+          yt-dlp --version
+
       - name: Install Chrome Headless Shell for Remotion
         run: npx remotion browser ensure
+
+      - name: Download source + cut clean clips
+        run: npm run prepare:clips
 
       - name: Transcribe clips (Whisper) for captions
         run: npm run transcribe
