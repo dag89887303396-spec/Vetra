@@ -16,26 +16,30 @@ settings below** unless they say otherwise:
    - `clips_num`: **5**
    - `clip_aspect`: **16:9** (locked default — horizontal). Use 9:16 only if the
      user explicitly asks for vertical Shorts.
-   - `subtitle_font`: **Bebas Neue**
+   - **Do NOT pass `subtitle_font`.** Subtitles are now rendered by Remotion
+     (karaoke style), so we want clips WITHOUT Higgsfield's burned-in captions.
+     (`subtitle_font` is optional; omit it to avoid double subtitles. If the
+     clipper still burns captions, flag it to the user.)
    Then poll `personal_clipper_status` until `status: done`. Report any clips
    that fail (the service sometimes returns `max retries exceeded`), and offer
    to re-run. Note: the clipper de-duplicates by video URL, so re-running the
    same link returns the existing job rather than re-rendering.
 
-2. **Wire the clips into Remotion.** Edit `remotion/src/clips.ts`:
-   - Replace `CLIPS` with the new clips (id, kicker `HIGHLIGHT 0N`, the
-     Higgsfield `title`, and `src` = the returned `cdn_url`).
-   - Set `ORIENTATION` to match the clip aspect (`'vertical'` for 9:16,
-     `'horizontal'` for 16:9).
-   - Keep the id list in `remotion/render-all.mjs` in sync with the ids.
+2. **Wire the clips into Remotion.** Edit `remotion/src/clips.data.json` (the
+   single source of truth — read by the compositions, `transcribe.mjs` and
+   `render-all.mjs`):
+   - Set `orientation` (`'vertical'` for 9:16, `'horizontal'` for 16:9).
+   - Replace `clips` with the new clips (id `clip-0N`, kicker `HIGHLIGHT 0N`,
+     the Higgsfield `title`, and `src` = the returned `cdn_url`).
    Verify with `cd remotion && npx tsc --noEmit`.
 
 3. **Render via GitHub Actions (NOT this sandbox).** This cloud sandbox cannot
    reach the Higgsfield CDN (network policy blocks the host) and has no
    Chromium/ffmpeg, so it **cannot render**. Commit + push the updated
    `remotion/` to the working branch. The `render-highlights.yml` workflow runs
-   automatically on push (it has open internet + installs Chromium), renders the
-   5 edited videos, and uploads them as the **`highlight-videos`** artifact.
+   automatically on push (open internet + Chromium). It **transcribes** each clip
+   with Whisper (`npm run transcribe` → `public/captions/<id>.json`), then
+   renders the 5 videos and uploads them as the **`highlight-videos`** artifact.
 
 4. **Deliver — ALWAYS post the links directly here in chat** (standing user
    request). Every time, paste into the chat reply:
@@ -47,13 +51,19 @@ settings below** unless they say otherwise:
 
 ### Editing style (Remotion)
 
-Each output = branded **intro title card** (kicker + Higgsfield title) →
-**the clip** (its Bebas Neue subtitles are already baked in by Higgsfield) →
-**outro "Subscribe" card**, with cross-fades. Clip length is auto-probed via
-`getVideoMetadata`. Branding (channel name, CTA, accent color), card layout and
-durations live in `remotion/src/clips.ts` (`BRAND`, `*_FRAMES`) and
-`remotion/src/HighlightVideo.tsx`. Fonts are sized relative to frame width, so
-the same components work in both 9:16 and 16:9.
+Each output = **the clip** with **Remotion-rendered karaoke captions** on top
+(TikTok style: active word highlighted in the accent color, black stroke).
+**No intro/outro cards** (removed per request). Clip length is auto-probed via
+`getVideoMetadata`, so output length == clip length.
+
+Captions come from `transcribe.mjs`: it downloads each clip, extracts a 16kHz
+mono wav via Remotion's bundled ffmpeg, runs Whisper.cpp (`base.en` by default,
+override with `CAPTION_MODEL`), and writes word-level timings to
+`public/captions/<id>.json`. The `<Captions>` overlay (`src/Captions.tsx`)
+renders them with `@remotion/captions` `createTikTokStyleCaptions`; caption
+style/font and the accent color (`BRAND.accent`) live in `src/Captions.tsx` and
+`src/clips.ts`. Fonts are sized relative to frame width, so it works in both
+9:16 and 16:9. If a clip's caption JSON is missing, the overlay renders nothing.
 
 ### Local render (alternative to CI)
 

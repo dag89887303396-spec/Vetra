@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "remotion studio",
     "render": "remotion render",
+    "transcribe": "node transcribe.mjs",
     "render:all": "node render-all.mjs",
     "bundle": "remotion bundle",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@remotion/captions": "4.0.378",
     "@remotion/cli": "4.0.378",
     "@remotion/google-fonts": "4.0.378",
+    "@remotion/install-whisper-cpp": "4.0.378",
     "@remotion/media-utils": "4.0.378",
     "react": "19.0.0",
     "react-dom": "19.0.0",

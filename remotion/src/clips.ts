@@ -1,11 +1,13 @@
-// The 5 highlight clips produced by Higgsfield from the YouTube live stream
-// (https://www.youtube.com/live/rmsfWJBQVAM), 16:9, with Bebas Neue subtitles
-// already baked in.
+// Single source of truth for the clip list is src/clips.data.json — it is read
+// by the Remotion compositions (here), by transcribe.mjs (Whisper captions) and
+// by render-all.mjs, so there is only one place to edit per run.
 //
-// `src` points at the Higgsfield CDN. Remotion fetches it at render time, so you
-// must run the render on a machine/network that can reach this host. If your
-// environment blocks the CDN, download each mp4 locally into ./public/clips/ and
-// change `src` to e.g. `staticFile('clips/clip_01.mp4')`.
+// `src` points at the Higgsfield CDN. Remotion fetches it at render time, so the
+// render must run where that host is reachable (GitHub Actions, or your machine).
+// transcribe.mjs downloads each clip and writes word-level caption timings to
+// public/captions/<id>.json, which the Captions overlay renders on top.
+
+import data from './clips.data.json';
 
 export type Clip = {
   id: string;
@@ -17,43 +19,13 @@ export type Clip = {
   src: string;
 };
 
-const CDN =
-  'https://d8j0ntlcm91z4.cloudfront.net/clipify/user_39oW86LGLduzvzApbVLM1WxZCvW/d3d7da7d-ed45-448c-8015-24334095fa9f/d3d7da7d-ed45-448c-8015-24334095fa9f/clips';
+export type Orientation = 'vertical' | 'horizontal';
 
-// The standing pipeline default is 16:9 (ORIENTATION = 'horizontal'); each new
-// run replaces this list and keeps ORIENTATION matching the clip aspect.
-export const CLIPS: Clip[] = [
-  {
-    id: 'clip-01',
-    kicker: 'HIGHLIGHT 01',
-    title: 'Morocco Scores On Brazil And Speed Loses It',
-    src: `${CDN}/clip_01.mp4`,
-  },
-  {
-    id: 'clip-02',
-    kicker: 'HIGHLIGHT 02',
-    title: "Speed Calls Vinny's Goal Seconds Before It Happens",
-    src: `${CDN}/clip_02.mp4`,
-  },
-  {
-    id: 'clip-03',
-    kicker: 'HIGHLIGHT 03',
-    title: "Brazil Legend Tells Speed He Has 'No Chance'",
-    src: `${CDN}/clip_03.mp4`,
-  },
-  {
-    id: 'clip-04',
-    kicker: 'HIGHLIGHT 04',
-    title: 'Speed Tells Travis Scott To Make Rocky Lock In',
-    src: `${CDN}/clip_04.mp4`,
-  },
-  {
-    id: 'clip-05',
-    kicker: 'HIGHLIGHT 05',
-    title: "Speed Accidentally Sits In The Mayor's Seat",
-    src: `${CDN}/clip_05.mp4`,
-  },
-];
+export const CLIPS: Clip[] = data.clips;
+export const ORIENTATION: Orientation = data.orientation as Orientation;
+
+/** staticFile path of the caption timings produced by transcribe.mjs. */
+export const captionsFile = (id: string) => `captions/${id}.json`;
 
 // Channel branding shown on intro/outro cards. Tweak freely.
 export const BRAND = {
@@ -64,11 +36,6 @@ export const BRAND = {
 
 // Timing (frames at 30fps).
 export const FPS = 30;
-
-// Output orientation. 'vertical' = 1080x1920 (YouTube Shorts / Reels / TikTok),
-// 'horizontal' = 1920x1080. Switch this one value to change every composition.
-export type Orientation = 'vertical' | 'horizontal';
-export const ORIENTATION: Orientation = 'horizontal';
 
 const DIMENSIONS: Record<Orientation, {width: number; height: number}> = {
   vertical: {width: 1080, height: 1920},

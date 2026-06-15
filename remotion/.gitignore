@@ -2,4 +2,6 @@ node_modules/
 out/
 build/
 .remotion/
-public/clips/*.mp4
+whisper.cpp/
+public/clips/
+public/captions/

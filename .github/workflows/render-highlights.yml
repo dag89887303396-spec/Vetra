@@ -38,6 +38,9 @@ jobs:
       - name: Install Chrome Headless Shell for Remotion
         run: npx remotion browser ensure
 
+      - name: Transcribe clips (Whisper) for captions
+        run: npm run transcribe
+
       - name: Render all highlight videos
         run: npm run render:all
 
