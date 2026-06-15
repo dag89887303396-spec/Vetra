@@ -37,9 +37,13 @@ settings below** unless they say otherwise:
    automatically on push (it has open internet + installs Chromium), renders the
    5 edited videos, and uploads them as the **`highlight-videos`** artifact.
 
-4. **Deliver.** Give the user the Actions run link / artifact, and the raw
-   Higgsfield `cdn_url`s as a fallback. They download the edited mp4s from the
-   workflow artifact.
+4. **Deliver — ALWAYS post the links directly here in chat** (standing user
+   request). Every time, paste into the chat reply:
+   - the **Actions run page link** (artifact `highlight-videos` is at the bottom
+     of that page), and
+   - the raw Higgsfield `cdn_url`s as direct, clickable fallback links to each
+     video.
+   Never make the user go hunting for the link — it goes in the message.
 
 ### Editing style (Remotion)
 
