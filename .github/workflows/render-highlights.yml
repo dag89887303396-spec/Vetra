@@ -1,20 +1,16 @@
 name: Render highlight videos
 
 # Renders the Remotion compositions (the edited highlight videos) on a
-# GitHub-hosted runner — which has open internet (can reach the Higgsfield CDN)
-# and where we install Chromium — then uploads the 5 mp4s as artifacts.
+# GitHub-hosted runner and uploads the 5 mp4s as the `highlight-videos` artifact.
 #
-# Triggers automatically whenever the clip list or the Remotion code changes,
-# and can also be started by hand from the Actions tab.
+# MANUAL ONLY (workflow_dispatch). YouTube blocks anonymous yt-dlp from CI
+# runner IPs ("Sign in to confirm you're not a bot"), so the default render path
+# is LOCAL (see remotion/README.md). To use CI you must authenticate yt-dlp:
+# add a `YOUTUBE_COOKIES` repo secret (Netscape cookies.txt) and a step that
+# writes it to a file + passes `--cookies` (and installs a JS runtime, e.g.
+# deno) — then trigger this workflow from the Actions tab.
 
 on:
-  push:
-    branches: ['**']
-    paths:
-      - 'remotion/src/**'
-      - 'remotion/package.json'
-      - 'remotion/remotion.config.ts'
-      - '.github/workflows/render-highlights.yml'
   workflow_dispatch:
 
 jobs:

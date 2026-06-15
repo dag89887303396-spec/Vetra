@@ -30,15 +30,20 @@ settings below** unless they say otherwise:
      seconds or `"HH:MM:SS"` of the chosen moments.
    Verify with `cd remotion && npx tsc --noEmit`.
 
-3. **Render via GitHub Actions (NOT this sandbox).** This sandbox blocks YouTube
-   + the Higgsfield CDN and has no Chromium/ffmpeg, so it **cannot render**.
-   Commit + push the updated `remotion/`. The `render-highlights.yml` workflow
-   (open internet + Chromium) installs ffmpeg/yt-dlp and runs:
-   `prepare:clips` (yt-dlp downloads `source`, ffmpeg cuts each [start,end] into
-   `public/clips/<id>.mp4`) → `transcribe` (Whisper → `public/captions/<id>.json`)
-   → `render:all`, then uploads the 5 videos as the **`highlight-videos`**
-   artifact. (Risk: yt-dlp can be blocked by YouTube on CI runners — if the
-   download step fails, flag it.)
+3. **Render LOCALLY (the default path).** YouTube blocks anonymous `yt-dlp`
+   from CI runner IPs ("Sign in to confirm you're not a bot"), and this sandbox
+   blocks YouTube + has no Chromium/ffmpeg — so neither can download/render. The
+   user runs it on their own machine (residential IP works):
+   ```bash
+   cd remotion && npm install
+   npm run prepare:clips   # yt-dlp downloads source, ffmpeg cuts public/clips/<id>.mp4
+   npm run transcribe      # Whisper → public/captions/<id>.json
+   npm run render:all      # → out/clip-0N.mp4
+   ```
+   Commit + push the updated `remotion/src/clips.data.json` so the config is
+   saved. The `render-highlights.yml` workflow is **manual-only** and needs a
+   `YOUTUBE_COOKIES` secret to authenticate yt-dlp — only suggest CI if the user
+   wants it and will provide cookies.
 
 4. **Deliver — ALWAYS post the links directly here in chat** (standing user
    request). Every time, paste into the chat reply:
@@ -52,8 +57,8 @@ settings below** unless they say otherwise:
 
 Each output = **the clip** with **Remotion-rendered karaoke captions** on top
 (TikTok style: active word highlighted in the accent color, black stroke).
-**No intro/outro cards** (removed per request). Clip length is auto-probed via
-`getVideoMetadata`, so output length == clip length.
+**No intro/outro cards** (removed per request). Each clip's length is `end -
+start` from its timecodes in `clips.data.json`.
 
 Captions come from `transcribe.mjs`: it takes each locally-cut clip
 (`public/clips/<id>.mp4` from `prepare-clips.mjs`), extracts a 16kHz mono wav via
@@ -64,12 +69,6 @@ renders them with `@remotion/captions` `createTikTokStyleCaptions`; caption
 style/font and the accent color (`BRAND.accent`) live in `src/Captions.tsx` and
 `src/clips.ts`. Fonts are sized relative to frame width, so it works in both
 9:16 and 16:9. If a clip's caption JSON is missing, the overlay renders nothing.
-
-### Local render (alternative to CI)
-
-```bash
-cd remotion && npm install && npm run render:all   # → out/clip-0N.mp4
-```
 
 ## Branch
 
