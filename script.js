@@ -831,245 +831,107 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   else bind();
 })();
 
-/* ═══ HERO v4: выбор ЖК + кинематографичный день↔ночь + живой фон ═══ */
+/* ═══ HERO SWITCHER: выбор ЖК + день/вечер ═══ */
 (function () {
   const hero = document.querySelector(".hero");
-  const stage = document.querySelector(".hero-bgs");
-  if (!hero || !stage) return;
+  const layers = document.querySelectorAll(".hero-layer");
+  if (!hero || !layers.length) return;
 
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  const layerEls = {};
-  document.querySelectorAll(".hero-layer").forEach((l) => {
-    layerEls[l.dataset.bg] = l;
-    l._op = parseFloat(getComputedStyle(l).opacity) || 0;
-  });
-
-  const grade = stage.querySelector(".hero-grade");
-  const fx = stage.querySelector(".hero-fx");
-  const ctx = fx ? fx.getContext("2d") : null;
+  // вспышка при смене дня/ночи
+  const flash = document.createElement("div");
+  flash.className = "hero-flash";
+  hero.querySelector(".hero-bgs")?.appendChild(flash);
 
   let project = "horizon";
   let time = "day";
-  let night = 0;        // текущее «количество ночи» 0..1
-  let targetNight = 0;  // цель
 
-  /* ── геометрия эффектов (доли кадра) ── */
-  let W = 0, H = 0, dpr = 1;
-  let stars = [], windows = [], streaks = [], motes = [];
-
-  function rnd(a, b) { return a + Math.random() * (b - a); }
-
-  function buildFx() {
-    if (!fx) return;
-    const r = stage.getBoundingClientRect();
-    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-    W = r.width; H = r.height;
-    fx.width = Math.round(W * dpr);
-    fx.height = Math.round(H * dpr);
-    fx.style.width = W + "px";
-    fx.style.height = H + "px";
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-    // звёзды — в верхней трети неба
-    stars = Array.from({ length: 70 }, () => ({
-      x: rnd(0, W), y: rnd(0, H * 0.36),
-      r: rnd(0.4, 1.4), ph: rnd(0, Math.PI * 2), sp: rnd(0.6, 1.8),
-    }));
-    // окна — по «телу» зданий
-    windows = Array.from({ length: 130 }, () => ({
-      x: rnd(0, W), y: rnd(H * 0.26, H * 0.74),
-      w: rnd(2, 4), h: rnd(2.5, 5),
-      ph: rnd(0, Math.PI * 2), sp: rnd(0.3, 1.3),
-      always: Math.random() < 0.45,
-    }));
-    // фары машин — в нижней дорожной полосе
-    streaks = Array.from({ length: 7 }, () => spawnStreak(true));
-    // плавающие искры/боке — по всему кадру
-    motes = Array.from({ length: 26 }, () => ({
-      x: rnd(0, W), y: rnd(0, H),
-      r: rnd(0.6, 2.2), sp: rnd(4, 14),
-      drift: rnd(-6, 6), ph: rnd(0, Math.PI * 2), a: rnd(0.05, 0.22),
-    }));
-  }
-
-  function spawnStreak(initial) {
-    const dir = Math.random() < 0.5 ? 1 : -1;
-    const tail = Math.random() < 0.5; // задние (красные) или передние (белые) фары
-    const y = rnd(H * 0.74, H * 0.96);
-    return {
-      dir,
-      x: initial ? rnd(0, W) : (dir > 0 ? -rnd(40, 240) : W + rnd(40, 240)),
-      y,
-      len: rnd(40, 120),
-      sp: rnd(120, 260),
-      tail,
-      wait: initial ? 0 : rnd(0, 3),
-    };
-  }
-
-  /* ── управление слоями ── */
-  function refreshLive() {
-    const dk = project + "-day", nk = project + "-night";
-    Object.entries(layerEls).forEach(([k, el]) => {
-      el.classList.toggle("live", k === dk || k === nk);
+  function apply(withFlash) {
+    const key = project + "-" + time;
+    const prev = document.querySelector(".hero-layer.is-active");
+    layers.forEach(l => {
+      l.classList.remove("iris", "iris-under");
+      l.classList.toggle("is-active", l.dataset.bg === key);
     });
-  }
+    const next = document.querySelector(".hero-layer.is-active");
 
-  function targetOpacity(key) {
-    if (key === project + "-day") return 1 - night;
-    if (key === project + "-night") return night;
-    return 0;
-  }
-
-  /* ── рендер-цикл ── */
-  let last = performance.now();
-  function loop(now) {
-    const dt = Math.min((now - last) / 1000, 0.05);
-    last = now;
-
-    night += (targetNight - night) * (reduce ? 1 : 0.05);
-    if (Math.abs(targetNight - night) < 0.002) night = targetNight;
-
-    // opacity слоёв
-    Object.entries(layerEls).forEach(([k, el]) => {
-      const t = targetOpacity(k);
-      el._op += (t - el._op) * (reduce ? 1 : 0.08);
-      if (Math.abs(t - el._op) < 0.003) el._op = t;
-      el.style.opacity = el._op.toFixed(3);
-    });
-
-    // градуировка «золотой час» во время перехода
-    if (grade) {
-      const heat = 4 * night * (1 - night); // пик на середине перехода
-      grade.style.opacity = (heat * 0.55).toFixed(3);
-      grade.style.setProperty("--grade-top", "rgba(255,168,86,1)");
-      grade.style.setProperty("--grade-bot", "rgba(255,104,44,1)");
-    }
-
-    if (ctx && !reduce) drawFx(dt, now / 1000);
-
-    requestAnimationFrame(loop);
-  }
-
-  function drawFx(dt, t) {
-    ctx.clearRect(0, 0, W, H);
-    const n = night;
-
-    // боке-искры
-    motes.forEach((m) => {
-      m.y -= m.sp * dt;
-      m.x += Math.sin(t + m.ph) * m.drift * dt;
-      if (m.y < -6) { m.y = H + 6; m.x = rnd(0, W); }
-      const tw = 0.6 + 0.4 * Math.sin(t * 1.5 + m.ph);
-      ctx.beginPath();
-      ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${n > 0.5 ? "150,180,230" : "255,225,170"},${(m.a * tw).toFixed(3)})`;
-      ctx.fill();
-    });
-
-    // звёзды (только ночью)
-    if (n > 0.02) {
-      stars.forEach((s) => {
-        const a = (0.25 + 0.55 * (0.5 + 0.5 * Math.sin(t * s.sp + s.ph))) * n;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(235,240,255,${a.toFixed(3)})`;
-        ctx.fill();
-      });
-    }
-
-    // окна — загораются к ночи
-    const winBase = 0.04;
-    windows.forEach((wd) => {
-      let lit;
-      if (wd.always) lit = 0.55 + 0.25 * Math.sin(t * wd.sp + wd.ph);
-      else lit = Math.max(0, Math.sin(t * wd.sp + wd.ph) - 0.45) * 1.6;
-      const a = winBase * (1 - n) + lit * n * 0.9;
-      if (a <= 0.01) return;
-      ctx.fillStyle = `rgba(255,206,128,${a.toFixed(3)})`;
-      ctx.fillRect(wd.x, wd.y, wd.w, wd.h);
-      // мягкое свечение
-      ctx.fillStyle = `rgba(255,196,120,${(a * 0.25).toFixed(3)})`;
-      ctx.fillRect(wd.x - 1.5, wd.y - 1.5, wd.w + 3, wd.h + 3);
-    });
-
-    // фары машин
-    const bright = 0.4 + 0.6 * n;
-    streaks.forEach((s, i) => {
-      if (s.wait > 0) { s.wait -= dt; return; }
-      s.x += s.dir * s.sp * dt;
-      if ((s.dir > 0 && s.x - s.len > W) || (s.dir < 0 && s.x + s.len < 0)) {
-        streaks[i] = spawnStreak(false);
-        return;
+    // круговое раскрытие при смене день/вечер
+    if (withFlash && prev && next && prev !== next) {
+      const toggle = document.querySelector(".dn-toggle");
+      if (toggle) {
+        const tr = toggle.getBoundingClientRect();
+        const hr = hero.getBoundingClientRect();
+        next.style.setProperty("--iris-x", (((tr.left + tr.width / 2) - hr.left) / hr.width * 100).toFixed(1) + "%");
+        next.style.setProperty("--iris-y", (((tr.top + tr.height / 2) - hr.top) / hr.height * 100).toFixed(1) + "%");
       }
-      const x0 = s.x, x1 = s.x - s.dir * s.len;
-      const g = ctx.createLinearGradient(x0, 0, x1, 0);
-      const col = s.tail ? "255,70,50" : "255,238,200";
-      g.addColorStop(0, `rgba(${col},${(0.7 * bright).toFixed(3)})`);
-      g.addColorStop(1, `rgba(${col},0)`);
-      ctx.strokeStyle = g;
-      ctx.lineWidth = 2.2;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(x0, s.y);
-      ctx.lineTo(x1, s.y + s.dir * 3);
-      ctx.stroke();
-    });
-  }
-
-  /* ── переключение ── */
-  function setProject(p) {
-    if (p === project) return;
-    project = p;
-    refreshLive();
-    document.querySelectorAll(".proj-dot").forEach((b) =>
+      prev.classList.add("iris-under");
+      next.classList.add("iris");
+      setTimeout(() => {
+        prev.classList.remove("iris-under");
+        next.classList.remove("iris");
+      }, 1350);
+    }
+    document.querySelectorAll(".proj-dot").forEach(b =>
       b.classList.toggle("is-active", b.dataset.project === project));
-  }
-
-  function setTime(tm) {
-    time = tm;
-    targetNight = tm === "night" ? 1 : 0;
-    document.querySelectorAll(".dn-btn").forEach((b) =>
+    document.querySelectorAll(".dn-btn").forEach(b =>
       b.classList.toggle("is-active", b.dataset.time === time));
     document.querySelector(".dn-toggle")?.classList.toggle("is-night", time === "night");
     hero.classList.toggle("hero--night", time === "night");
+
+    if (withFlash) {
+      flash.classList.remove("run");
+      void flash.offsetWidth; // перезапуск анимации
+      flash.classList.add("run");
+    }
   }
 
-  document.querySelectorAll(".proj-dot").forEach((btn) => {
-    btn.addEventListener("click", () => { stopAuto(); setProject(btn.dataset.project); });
-  });
-  document.querySelectorAll(".dn-btn").forEach((btn) => {
-    btn.addEventListener("click", () => { stopAuto(); if (btn.dataset.time !== time) setTime(btn.dataset.time); });
+  document.querySelectorAll(".proj-dot").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (btn.dataset.project === project) return;
+      project = btn.dataset.project;
+      apply(false);
+    });
   });
 
-  /* ── авто-смена дня и ночи ── */
-  let autoTimer = null, heroVisible = true;
-  function stopAuto() { if (autoTimer) { clearInterval(autoTimer); autoTimer = null; } }
-  if (!reduce) {
+  document.querySelectorAll(".dn-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      stopAutoCycle();
+      if (btn.dataset.time === time) return;
+      time = btn.dataset.time;
+      apply(true);
+    });
+  });
+
+  /* ── автоматическая смена дня и ночи ──
+     плавно листает день/вечер, пока посетитель сам
+     не воспользуется переключателем */
+  let autoTimer = null;
+  let heroVisible = true;
+
+  function stopAutoCycle() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+  }
+
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     if ("IntersectionObserver" in window) {
-      new IntersectionObserver((e) => { heroVisible = e[0].isIntersecting; },
-        { threshold: 0.25 }).observe(hero);
+      new IntersectionObserver(entries => {
+        heroVisible = entries[0].isIntersecting;
+      }, { threshold: 0.25 }).observe(hero);
     }
     autoTimer = setInterval(() => {
       if (!heroVisible || document.hidden) return;
-      setTime(time === "day" ? "night" : "day");
-    }, 8000);
+      time = time === "day" ? "night" : "day";
+      apply(true);
+    }, 7000);
+    document.querySelectorAll(".proj-dot").forEach(b =>
+      b.addEventListener("click", stopAutoCycle));
   }
 
-  /* ── инициализация ── */
-  buildFx();
-  refreshLive();
-  let rt;
-  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(buildFx, 200); });
-  requestAnimationFrame(loop);
-
-  // предзагрузка фонов
+  // предзагрузка всех фонов после загрузки страницы
   window.addEventListener("load", () => {
     const mobile = window.matchMedia("(max-width: 900px)").matches;
     const suffix = mobile ? "-m.jpg" : "-d.jpg";
-    ["horizon-day", "horizon-night", "moscow-day", "moscow-night", "alye-day", "alye-night"]
-      .forEach((k) => { const img = new Image(); img.src = "images/hero-" + k + suffix; });
+    ["horizon-day","horizon-night","moscow-day","moscow-night","alye-day","alye-night"]
+      .forEach(k => { const img = new Image(); img.src = "images/hero-" + k + suffix; });
   });
 })();
 
@@ -1201,5 +1063,44 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
     if (e.key === "Escape") close();
     else if (e.key === "ArrowLeft") move(-1);
     else if (e.key === "ArrowRight") move(1);
+  });
+})();
+
+/* ═══ 3D-НАКЛОН КАРТОЧЕК ОБЪЕКТОВ ═══ */
+(function () {
+  if (!window.matchMedia) return;
+  if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const cards = document.querySelectorAll(".projects-grid .project");
+  const MAX = 7; // макс. угол наклона, градусы
+
+  cards.forEach((card) => {
+    card.classList.add("tilt3d");
+    const glare = document.createElement("div");
+    glare.className = "tilt-glare";
+    card.appendChild(glare);
+
+    let raf = null;
+    card.addEventListener("mousemove", (e) => {
+      const r = card.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width;
+      const py = (e.clientY - r.top) / r.height;
+      const rx = (0.5 - py) * MAX * 2;
+      const ry = (px - 0.5) * MAX * 2;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        card.style.transform =
+          `perspective(1500px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateZ(10px)`;
+        card.style.boxShadow = "0 34px 80px rgba(0,0,0,.5)";
+        glare.style.setProperty("--gx", (px * 100).toFixed(1) + "%");
+        glare.style.setProperty("--gy", (py * 100).toFixed(1) + "%");
+      });
+    });
+    card.addEventListener("mouseleave", () => {
+      if (raf) cancelAnimationFrame(raf);
+      card.style.transform = "";
+      card.style.boxShadow = "";
+    });
   });
 })();

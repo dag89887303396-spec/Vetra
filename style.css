@@ -3559,53 +3559,6 @@ body::before {
 }
 
 /* ════════════════════════════════════════════════════
-   HERO v4 — кинематографичный переход день↔ночь
-   + «живой» фон: окна, фары машин, блики, звёзды
-════════════════════════════════════════════════════ */
-.hero-bgs { z-index: 0; }
-
-/* opacity слоёв теперь ведёт JS покадрово — отключаем CSS-переходы */
-.hero-layer {
-  transition: none !important;
-  transform: scale(1.05);
-  animation: none !important;
-}
-/* медленный Ken Burns на активной паре слоёв текущего ЖК */
-.hero-layer.live {
-  animation: heroKen 30s ease-in-out infinite alternate !important;
-}
-@keyframes heroKen {
-  from { transform: scale(1.05) translate3d(0, 0, 0); }
-  to   { transform: scale(1.13) translate3d(-1.6%, -1.2%, 0); }
-}
-
-/* холст спецэффектов — поверх фото, под затемнением */
-.hero-fx {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* цветовая градуировка перехода (тёплый закат → холодная ночь) */
-.hero-grade {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  opacity: 0;
-  mix-blend-mode: soft-light;
-  background: linear-gradient(180deg, var(--grade-top, transparent), var(--grade-bot, transparent));
-}
-
-/* затемнение для текста — всегда самым верхним из фоновых слоёв */
-.hero-stage .hero-shade { z-index: 2; }
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-layer.live { animation: none !important; }
-}
-
-/* ════════════════════════════════════════════════════
    ЗАЯВОЧНАЯ ФОРМА (WhatsApp + Telegram)
 ════════════════════════════════════════════════════ */
 .lead-form {
@@ -3738,4 +3691,35 @@ body::before {
   .mobile-bottom a:nth-child(1) { background: var(--surface2); }
   .mobile-bottom a:nth-child(2) { background: var(--green); }
   .mobile-bottom a:nth-child(3) { background: #2aabee; }
+}
+
+/* ════════════════════════════════════════════════════
+   3D-НАКЛОН КАРТОЧЕК ОБЪЕКТОВ (parallax tilt + блик)
+════════════════════════════════════════════════════ */
+@media (hover: hover) and (pointer: fine) {
+  .projects-grid { perspective: 1500px; }
+  .project.tilt3d {
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform .35s cubic-bezier(.22,.61,.36,1), box-shadow .35s ease, border-color .3s ease;
+    will-change: transform;
+  }
+  .project.tilt3d:hover { transform: none; } /* наклон ведёт JS */
+  .project.tilt3d .project-img,
+  .project.tilt3d .project-body { transform: translateZ(0); }
+  .tilt-glare {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity .3s ease;
+    background: radial-gradient(circle at var(--gx,50%) var(--gy,50%), rgba(255,255,255,.22), rgba(255,255,255,0) 46%);
+    mix-blend-mode: soft-light;
+  }
+  .project.tilt3d:hover .tilt-glare { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .project.tilt3d { transition: none; }
 }
