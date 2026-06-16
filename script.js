@@ -1113,8 +1113,9 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   const hero = document.querySelector(".hero");
   const bgs = hero?.querySelector(".hero-bgs");
   const sw = hero?.querySelector(".hero-switch");
-  const content = hero?.querySelector(".hero-content");
   if (!hero || !bgs) return;
+  // примечание: текст hero двигает отдельный скролл-параллакс,
+  // чтобы не было конфликта по transform
 
   let tx = 0, ty = 0, cx = 0, cy = 0, raf = null;
 
@@ -1131,7 +1132,6 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
     cy += (ty - cy) * 0.08;
     bgs.style.transform = `translate3d(${(-cx * 14).toFixed(1)}px, ${(-cy * 14).toFixed(1)}px, 0)`;
     if (sw) sw.style.transform = `translate3d(${(cx * 26).toFixed(1)}px, ${(cy * 22).toFixed(1)}px, 0)`;
-    if (content) content.style.transform = `translate3d(${(cx * 16).toFixed(1)}px, ${(cy * 12).toFixed(1)}px, 0)`;
     if (Math.abs(tx - cx) > 0.001 || Math.abs(ty - cy) > 0.001) raf = requestAnimationFrame(loop);
     else raf = null;
   }
@@ -1168,7 +1168,7 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   });
 })();
 
-/* ═══ 3D-ТУР: карусель-цилиндр ═══ */
+/* ═══ 3D-ТУР: карусель-цилиндр, вращение от скролла ═══ */
 (function () {
   const tour = document.getElementById("tour3d");
   const stage = document.getElementById("tour3dStage");
@@ -1180,8 +1180,8 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   const theta = 360 / N;
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let radius = 480;
-  let current = 0;
-  let auto = null;
+  let scrollPos = 0;   // вращение от скролла (в шагах)
+  let offset = 0;      // ручное смещение (стрелки/перетаскивание)
 
   function measure() {
     const w = items[0].getBoundingClientRect().width || 320;
@@ -1192,53 +1192,72 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
     render();
   }
 
-  function render() {
-    stage.style.transform = `translateZ(${-radius}px) rotateY(${-current * theta}deg)`;
-    const front = ((current % N) + N) % N;
+  function render(extra) {
+    const cur = scrollPos + offset + (extra || 0);
+    stage.style.transform = `translateZ(${-radius}px) rotateY(${(-cur * theta).toFixed(2)}deg)`;
+    const front = ((Math.round(cur) % N) + N) % N;
     items.forEach((it, i) => it.classList.toggle("is-front", i === front));
   }
 
-  function go(step) { current += step; render(); }
+  // вращение от прокрутки секции через экран
+  function onScroll() {
+    const sec = tour.closest("section") || tour;
+    const r = sec.getBoundingClientRect();
+    const vh = window.innerHeight;
+    // прогресс 0..1, пока секция проходит экран
+    const p = (vh - r.top) / (vh + r.height);
+    const clamped = Math.max(0, Math.min(1, p));
+    scrollPos = clamped * (N + 2); // примерно полный оборот за проход
+    if (!dragging) render();
+  }
 
-  tour.querySelector(".tour3d-next")?.addEventListener("click", () => { go(1); restart(); });
-  tour.querySelector(".tour3d-prev")?.addEventListener("click", () => { go(-1); restart(); });
+  // стрелки
+  tour.querySelector(".tour3d-next")?.addEventListener("click", () => { offset += 1; render(); });
+  tour.querySelector(".tour3d-prev")?.addEventListener("click", () => { offset -= 1; render(); });
 
   // перетаскивание
-  let down = false, startX = 0, moved = 0;
-  tour.addEventListener("pointerdown", (e) => { down = true; startX = e.clientX; moved = 0; stopAuto(); tour.setPointerCapture(e.pointerId); });
+  let dragging = false, startX = 0, moved = 0;
+  tour.addEventListener("pointerdown", (e) => { dragging = true; startX = e.clientX; moved = 0; tour.setPointerCapture(e.pointerId); });
   tour.addEventListener("pointermove", (e) => {
-    if (!down) return;
+    if (!dragging) return;
     moved = e.clientX - startX;
-    stage.style.transform = `translateZ(${-radius}px) rotateY(${(-current * theta + moved * 0.25).toFixed(2)}deg)`;
+    render(-moved * 0.25 / theta);
   });
   tour.addEventListener("pointerup", () => {
-    if (!down) return;
-    down = false;
-    const steps = Math.round(-moved * 0.25 / theta);
-    if (steps) go(steps); else render();
-    restart();
+    if (!dragging) return;
+    dragging = false;
+    offset += Math.round(-moved * 0.25 / theta);
+    render();
   });
-
-  function startAuto() { if (!reduce && !auto) auto = setInterval(() => go(1), 3500); }
-  function stopAuto() { if (auto) { clearInterval(auto); auto = null; } }
-  function restart() { stopAuto(); startAuto(); }
-
-  tour.addEventListener("mouseenter", stopAuto);
-  tour.addEventListener("mouseleave", startAuto);
-
-  // запуск, когда секция видна
-  if ("IntersectionObserver" in window) {
-    new IntersectionObserver((e) => {
-      e[0].isIntersecting ? startAuto() : stopAuto();
-    }, { threshold: 0.2 }).observe(tour);
-  } else startAuto();
 
   let rt;
   window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(measure, 150); });
-  // дождаться загрузки первого изображения для корректного размера
+  window.addEventListener("scroll", () => { if (!reduce) requestAnimationFrame(onScroll); }, { passive: true });
+
   const firstImg = items[0].querySelector("img");
   if (firstImg && !firstImg.complete) firstImg.addEventListener("load", measure, { once: true });
   measure();
+  onScroll();
+})();
+
+/* ═══ HERO: параллакс контента при скролле ═══ */
+(function () {
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const content = document.querySelector(".hero .hero-content");
+  const hero = document.querySelector(".hero");
+  if (!content || !hero) return;
+  let ticking = false;
+  function update() {
+    ticking = false;
+    const h = hero.offsetHeight || 1;
+    const y = Math.min(window.scrollY, h);
+    content.style.transform = `translateY(${(y * 0.28).toFixed(1)}px)`;
+    content.style.opacity = String(Math.max(0, 1 - y / (h * 0.85)));
+  }
+  window.addEventListener("scroll", () => {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  update();
 })();
 
 /* ═══ HERO: видео-фоны (plug-and-play для клипов Higgsfield) ═══

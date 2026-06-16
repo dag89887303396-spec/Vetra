@@ -991,16 +991,27 @@ body::before {
 
 .mobile-bottom { display: none; }
 
-/* ─── REVEAL ─── */
+/* ─── REVEAL (3D-появление при скролле) ─── */
 .reveal {
   opacity: 0;
-  transform: translateY(28px);
-  transition: opacity .75s ease, transform .75s ease;
+  transform: perspective(1300px) rotateX(11deg) translateY(46px);
+  transform-origin: 50% 100%;
+  transition: opacity .8s cubic-bezier(.22,.61,.36,1), transform .9s cubic-bezier(.22,.61,.36,1);
+  will-change: transform, opacity;
 }
 
 .reveal.visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: perspective(1300px) rotateX(0deg) translateY(0);
+}
+
+/* герой не наклоняем — он виден сразу */
+.hero.reveal { transform: none; }
+.hero.reveal.visible { transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { transform: translateY(20px); transition: opacity .4s ease, transform .4s ease; }
+  .reveal.visible { transform: none; }
 }
 
 /* ─── OBJECT PAGES ─── */
