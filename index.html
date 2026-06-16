@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <link rel="icon" type="image/png" href="favicon.png?v=202606122100">
+  <link rel="icon" type="image/png" href="favicon.png?v=202606161600">
   <meta name="google-site-verification" content="ah5EGE-GIdOqNANY60iLD1R32ajjtTGSFp-BNrKD7Gc" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,7 +9,7 @@
   <title>VetraEstate — Новостройки в Дагестане</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="style.css?v=202606122100" />
+  <link rel="stylesheet" href="style.css?v=202606161600" />
 </head>
 <body>
   <div class="site-shell">
@@ -37,32 +37,17 @@
 
     <main id="top">
       <section class="hero reveal">
-        <div class="hero-bgs" aria-hidden="true">
-          <div class="hero-layer hero-layer--horizon-day is-active" data-bg="horizon-day"></div>
-          <div class="hero-layer hero-layer--horizon-night" data-bg="horizon-night"></div>
-          <div class="hero-layer hero-layer--moscow-day" data-bg="moscow-day"></div>
-          <div class="hero-layer hero-layer--moscow-night" data-bg="moscow-night"></div>
-          <div class="hero-layer hero-layer--alye-day" data-bg="alye-day"></div>
-          <div class="hero-layer hero-layer--alye-night" data-bg="alye-night"></div>
-          <div class="hero-shade"></div>
-        </div>
-        <div class="hero-content">
-          <div class="eyebrow">Новостройки&nbsp;&bull;&nbsp;Дагестан&nbsp;&bull;&nbsp;2027–2028</div>
-          <h1>Квартиры у&nbsp;моря<br>и&nbsp;в&nbsp;<em>сердце</em>&nbsp;города</h1>
-          <p>
-            ЖК «Новый Горизонт», АК «Алые Паруса» и другие современные комплексы —
-            подбираем лучшие варианты для жизни и инвестиций без комиссии.
-          </p>
-
-          <div class="hero-actions">
-            <a class="btn btn-gold" href="#projects">Смотреть объекты</a>
-            <a class="btn btn-glass" href="https://wa.me/79894702263?text=Здравствуйте!%20Хочу%20подобрать%20квартиру" target="_blank">Написать в WhatsApp</a>
-          </div>
-
-          <div class="hero-stats">
-            <div><strong>от 100 000 ₽</strong><span>Первый взнос</span></div>
-            <div><strong>до 60 мес.</strong><span>Рассрочка</span></div>
-            <div><strong>0%</strong><span>Без переплат</span></div>
+        <div class="hero-stage">
+          <div class="hero-bgs" aria-hidden="true">
+            <div class="hero-layer hero-layer--horizon-day is-active" data-bg="horizon-day"></div>
+            <div class="hero-layer hero-layer--horizon-night" data-bg="horizon-night"></div>
+            <div class="hero-layer hero-layer--moscow-day" data-bg="moscow-day"></div>
+            <div class="hero-layer hero-layer--moscow-night" data-bg="moscow-night"></div>
+            <div class="hero-layer hero-layer--alye-day" data-bg="alye-day"></div>
+            <div class="hero-layer hero-layer--alye-night" data-bg="alye-night"></div>
+            <canvas class="hero-fx" aria-hidden="true"></canvas>
+            <div class="hero-grade" aria-hidden="true"></div>
+            <div class="hero-shade"></div>
           </div>
 
           <div class="hero-switch" aria-label="Выбор комплекса и времени суток">
@@ -95,10 +80,24 @@
           </div>
         </div>
 
-        <div class="hero-card">
-          <span>Быстрый подбор</span>
-          <strong>Жить · сдавать · инвестировать</strong>
-          <p>Отправим актуальные планировки, этажи и расчет платежа.</p>
+        <div class="hero-content">
+          <div class="eyebrow">Новостройки&nbsp;&bull;&nbsp;Дагестан&nbsp;&bull;&nbsp;2027–2028</div>
+          <h1>Квартиры у&nbsp;моря и&nbsp;в&nbsp;<em>сердце</em>&nbsp;города</h1>
+          <p>
+            ЖК «Новый Горизонт», АК «Алые Паруса» и другие современные комплексы —
+            подбираем лучшие варианты для жизни и инвестиций без комиссии.
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn btn-gold" href="#projects">Смотреть объекты</a>
+            <a class="btn btn-glass" href="https://wa.me/79894702263?text=Здравствуйте!%20Хочу%20подобрать%20квартиру" target="_blank">Написать в WhatsApp</a>
+          </div>
+
+          <div class="hero-stats">
+            <div><strong>от 100 000 ₽</strong><span>Первый взнос</span></div>
+            <div><strong>до 60 мес.</strong><span>Рассрочка</span></div>
+            <div><strong>0%</strong><span>Без переплат</span></div>
+          </div>
         </div>
       </section>
 
@@ -480,59 +479,7 @@
     </div>
   </div>
 
-  <script src="script.js?v=202606122100"></script>
-
-  <!-- My Money Feature V3 — premium redesign -->
-  <div class="money-widget-v2">
-    <button class="money-mini-v2" type="button">
-      <span class="money-mini-icon-v2">💰</span>
-      <span>
-        <strong>Мои деньги</strong>
-        <em>подберём ЖК по вашей сумме</em>
-      </span>
-      <span class="money-mini-pulse"></span>
-    </button>
-  </div>
-
-  <div class="money-drawer-v2" aria-hidden="true">
-    <div class="money-drawer-bg-v2"></div>
-    <div class="money-drawer-panel-v2" role="dialog" aria-modal="true" aria-label="Мои деньги">
-
-      <div class="money-panel-header-v2">
-        <div class="money-panel-header-icon">💰</div>
-        <div class="money-panel-header-text">
-          <small>Быстрый подбор</small>
-          <h2>Мои деньги</h2>
-          <p>Введите первоначальный взнос — покажем подходящие ЖК</p>
-        </div>
-        <button class="money-close-v2" type="button" aria-label="Закрыть">×</button>
-      </div>
-
-      <div class="money-body-v2">
-        <div class="money-input-row-v2">
-          <div class="money-input-wrap-v2">
-            <input class="money-input-v2" type="number" inputmode="numeric" min="0" step="10000" placeholder="500 000">
-          </div>
-          <button class="money-run-v2" type="button">Найти</button>
-        </div>
-
-        <div class="money-chips-v2">
-          <button type="button" data-money="150000">150 тыс.</button>
-          <button type="button" data-money="200000">200 тыс.</button>
-          <button type="button" data-money="500000">500 тыс.</button>
-          <button type="button" data-money="1000000">1 млн</button>
-          <button type="button" data-money="3000000">3 млн</button>
-        </div>
-
-        <div class="money-summary-v2"></div>
-        <div class="money-results-v2"></div>
-      </div>
-
-      <a class="money-whatsapp-v2" href="https://wa.me/79894702263" target="_blank" rel="noopener">
-        Отправить подборку в WhatsApp
-      </a>
-    </div>
-  </div>
+  <script src="script.js?v=202606161600"></script>
 
 </body>
 </html>

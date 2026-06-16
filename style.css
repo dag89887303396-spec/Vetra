@@ -135,9 +135,9 @@ body::before {
   min-height: 100vh;
   position: relative;
   color: white;
-  display: grid;
-  align-items: end;
-  padding: 160px max(24px, calc((100vw - 1200px) / 2)) 80px;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
 }
 
 .hero-bg {
@@ -3436,4 +3436,171 @@ body::before {
 @media (max-width: 680px) {
   .reviews-grid { grid-template-columns: 1fr; gap: 16px; }
   .review-card { padding: 22px; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   HERO V2 — чистое фото со сценой + текст под переключателем
+   ═══════════════════════════════════════════════════════ */
+
+/* СЦЕНА — фото на весь экран, переключатель сверху, без текста */
+.hero-stage {
+  position: relative;
+  width: 100%;
+  height: 76vh;
+  min-height: 520px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+/* затемнение только сверху и снизу — фото читается без помех */
+.hero-stage .hero-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(14,14,13,.55) 0%, rgba(14,14,13,.12) 22%, rgba(14,14,13,0) 45%),
+    linear-gradient(0deg, rgba(14,14,13,.78) 0%, rgba(14,14,13,.12) 26%, transparent 42%);
+}
+
+/* переключатель — поверх фото, по центру сверху */
+.hero-stage .hero-switch {
+  position: relative;
+  z-index: 3;
+  margin: 0;
+  margin-top: clamp(96px, 12vh, 132px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding: 18px 24px;
+  border-radius: 26px;
+  background: rgba(16,16,15,.30);
+  border: 1px solid rgba(255,255,255,.12);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 50px rgba(0,0,0,.32);
+}
+
+.hero-stage .hero-switch-projects {
+  display: flex;
+  gap: clamp(20px, 4vw, 40px);
+  justify-content: center;
+}
+
+/* ТЕКСТ — под фото, на тёмном фоне секции */
+.hero > .hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 920px;
+  width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  padding: clamp(38px, 6vh, 64px) max(24px, calc((100vw - 1120px) / 2)) clamp(48px, 7vh, 80px);
+}
+
+.hero > .hero-content .eyebrow { margin-bottom: 20px; }
+
+.hero > .hero-content h1 {
+  font-size: clamp(40px, 6vw, 78px);
+  line-height: .98;
+  margin-bottom: 22px;
+}
+
+.hero > .hero-content p {
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 30px;
+  font-size: 16px;
+}
+
+.hero > .hero-content .hero-actions {
+  justify-content: center;
+}
+
+.hero > .hero-content .hero-stats {
+  margin-top: 38px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* мобильная версия */
+@media (max-width: 900px) {
+  .hero-stage {
+    height: 70vh;
+    min-height: 460px;
+  }
+  .hero-stage .hero-switch {
+    margin-top: 88px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    width: min(92%, 420px);
+    padding: 16px;
+  }
+  .hero-stage .hero-switch-projects {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .hero > .hero-content { padding-top: 32px; padding-bottom: 48px; }
+  .hero > .hero-content .hero-stats { margin-top: 26px; }
+  .hero-stage .hero-shade {
+    background:
+      linear-gradient(180deg, rgba(14,14,13,.5) 0%, rgba(14,14,13,0) 40%),
+      linear-gradient(0deg, rgba(14,14,13,.8) 0%, transparent 38%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-layer, .hero-layer.is-active { animation: none !important; }
+}
+
+/* ════════════════════════════════════════════════════
+   HERO v4 — кинематографичный переход день↔ночь
+   + «живой» фон: окна, фары машин, блики, звёзды
+════════════════════════════════════════════════════ */
+.hero-bgs { z-index: 0; }
+
+/* opacity слоёв теперь ведёт JS покадрово — отключаем CSS-переходы */
+.hero-layer {
+  transition: none !important;
+  transform: scale(1.05);
+  animation: none !important;
+}
+/* медленный Ken Burns на активной паре слоёв текущего ЖК */
+.hero-layer.live {
+  animation: heroKen 30s ease-in-out infinite alternate !important;
+}
+@keyframes heroKen {
+  from { transform: scale(1.05) translate3d(0, 0, 0); }
+  to   { transform: scale(1.13) translate3d(-1.6%, -1.2%, 0); }
+}
+
+/* холст спецэффектов — поверх фото, под затемнением */
+.hero-fx {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* цветовая градуировка перехода (тёплый закат → холодная ночь) */
+.hero-grade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: soft-light;
+  background: linear-gradient(180deg, var(--grade-top, transparent), var(--grade-bot, transparent));
+}
+
+/* затемнение для текста — всегда самым верхним из фоновых слоёв */
+.hero-stage .hero-shade { z-index: 2; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-layer.live { animation: none !important; }
 }
