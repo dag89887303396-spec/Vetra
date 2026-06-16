@@ -458,9 +458,47 @@
           <h2>Подберём квартиру под ваш бюджет</h2>
           <p>Напишите нам — отправим свободные квартиры, цены, планировки и расчёт ежемесячного платежа.</p>
 
+          <form class="lead-form" id="leadForm" novalidate>
+            <div class="lead-row">
+              <label class="lead-field">
+                <span>Ваше имя</span>
+                <input type="text" name="name" autocomplete="name" placeholder="Например, Магомед" required>
+              </label>
+              <label class="lead-field">
+                <span>Телефон</span>
+                <input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 ___ ___-__-__" required>
+              </label>
+            </div>
+            <div class="lead-row">
+              <label class="lead-field">
+                <span>Объект</span>
+                <select name="object">
+                  <option value="Любой объект">Любой / нужна подборка</option>
+                  <option value="ЖК «Новый Горизонт»">ЖК «Новый Горизонт»</option>
+                  <option value="АК «Алые Паруса»">АК «Алые Паруса»</option>
+                  <option value="ЖК «Московский»">ЖК «Московский»</option>
+                </select>
+              </label>
+              <label class="lead-field">
+                <span>Первый взнос</span>
+                <input type="text" name="budget" inputmode="numeric" placeholder="например, 500 000 ₽">
+              </label>
+            </div>
+            <label class="lead-field">
+              <span>Комментарий <em>(необязательно)</em></span>
+              <input type="text" name="note" placeholder="кол-во комнат, этаж, цель покупки…">
+            </label>
+
+            <div class="lead-actions">
+              <button type="submit" class="btn btn-gold lead-submit" data-channel="whatsapp">Отправить в WhatsApp</button>
+              <button type="submit" class="btn btn-dark lead-submit" data-channel="telegram">Отправить в Telegram</button>
+            </div>
+            <p class="lead-hint" id="leadHint">Нажимая кнопку, вы отправляете заявку менеджеру напрямую в мессенджер.</p>
+          </form>
+
           <div class="contact-actions">
-            <a class="btn btn-gold" href="https://wa.me/79894702263?text=Здравствуйте!%20Хочу%20подобрать%20квартиру" target="_blank">Написать в WhatsApp</a>
-            <a class="btn btn-dark" href="tel:+79894702263">Позвонить</a>
+            <a class="btn btn-glass" href="tel:+79894702263">Позвонить</a>
+            <a class="btn btn-glass" href="https://t.me/muhammad_ls" target="_blank" rel="noopener">Telegram</a>
           </div>
 
           <div class="phone">+7 989 470-22-63</div>
@@ -476,8 +514,20 @@
     <div class="mobile-bottom">
       <a href="tel:+79894702263">Позвонить</a>
       <a href="https://wa.me/79894702263" target="_blank">WhatsApp</a>
+      <a href="https://t.me/muhammad_ls" target="_blank" rel="noopener">Telegram</a>
     </div>
   </div>
+
+  <!-- Лайтбокс галереи -->
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <button class="lightbox-close" type="button" aria-label="Закрыть">×</button>
+    <button class="lightbox-nav lightbox-prev" type="button" aria-label="Назад">‹</button>
+    <img class="lightbox-img" alt="">
+    <button class="lightbox-nav lightbox-next" type="button" aria-label="Вперёд">›</button>
+  </div>
+
+  <!-- Тост-уведомление -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="script.js?v=202606161600"></script>
 

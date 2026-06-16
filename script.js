@@ -1073,3 +1073,133 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   });
 })();
 
+
+/* ═══ ЗАЯВОЧНАЯ ФОРМА → WhatsApp / Telegram ═══ */
+(function () {
+  const form = document.getElementById("leadForm");
+  if (!form) return;
+
+  const WA_PHONE = "79894702263";
+  const TG_USER = "muhammad_ls";
+  const toast = document.getElementById("toast");
+  let toastTimer = null;
+
+  function showToast(text) {
+    if (!toast) return;
+    toast.textContent = text;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 4200);
+  }
+
+  function buildMessage() {
+    const f = form.elements;
+    const name = f.name.value.trim();
+    const phone = f.phone.value.trim();
+    const object = f.object.value;
+    const budget = f.budget.value.trim();
+    const note = f.note.value.trim();
+
+    let msg = "Здравствуйте! Заявка с сайта VetraEstate:\n";
+    msg += "Имя: " + name + "\n";
+    msg += "Телефон: " + phone + "\n";
+    msg += "Объект: " + object + "\n";
+    if (budget) msg += "Первый взнос: " + budget + "\n";
+    if (note) msg += "Комментарий: " + note + "\n";
+    return msg.trim();
+  }
+
+  function validate() {
+    let ok = true;
+    ["name", "phone"].forEach((n) => {
+      const el = form.elements[n];
+      const bad = !el.value.trim();
+      el.classList.toggle("invalid", bad);
+      if (bad) ok = false;
+    });
+    return ok;
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  form.querySelectorAll(".lead-submit").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!validate()) {
+        showToast("Заполните имя и телефон");
+        return;
+      }
+      const msg = buildMessage();
+      const channel = btn.dataset.channel;
+
+      if (channel === "whatsapp") {
+        window.open("https://wa.me/" + WA_PHONE + "?text=" + encodeURIComponent(msg), "_blank");
+      } else {
+        // Telegram не подставляет текст в личный чат — копируем и открываем диалог
+        const copied = await copyText(msg);
+        window.open("https://t.me/" + TG_USER, "_blank");
+        showToast(copied
+          ? "Заявка скопирована — вставьте её в чат с менеджером"
+          : "Открываем Telegram — напишите менеджеру вашу заявку");
+      }
+    });
+  });
+
+  // снимаем подсветку ошибки при вводе
+  form.querySelectorAll("input").forEach((el) =>
+    el.addEventListener("input", () => el.classList.remove("invalid")));
+})();
+
+/* ═══ ЛАЙТБОКС ГАЛЕРЕИ ═══ */
+(function () {
+  const lb = document.getElementById("lightbox");
+  const grid = document.querySelector(".horizon-gallery .gallery-grid");
+  if (!lb || !grid) return;
+
+  const imgs = Array.from(grid.querySelectorAll("img"));
+  if (!imgs.length) return;
+
+  const lbImg = lb.querySelector(".lightbox-img");
+  const closeBtn = lb.querySelector(".lightbox-close");
+  const prevBtn = lb.querySelector(".lightbox-prev");
+  const nextBtn = lb.querySelector(".lightbox-next");
+  let i = 0;
+
+  function open(idx) {
+    i = idx;
+    lbImg.src = imgs[i].src;
+    lbImg.alt = imgs[i].alt || "";
+    lb.classList.add("open");
+    lb.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+  function close() {
+    lb.classList.remove("open");
+    lb.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+  function move(step) {
+    i = (i + step + imgs.length) % imgs.length;
+    lbImg.src = imgs[i].src;
+    lbImg.alt = imgs[i].alt || "";
+  }
+
+  imgs.forEach((img, idx) => img.addEventListener("click", () => open(idx)));
+  closeBtn.addEventListener("click", close);
+  prevBtn.addEventListener("click", () => move(-1));
+  nextBtn.addEventListener("click", () => move(1));
+  lb.addEventListener("click", (e) => { if (e.target === lb) close(); });
+  document.addEventListener("keydown", (e) => {
+    if (!lb.classList.contains("open")) return;
+    if (e.key === "Escape") close();
+    else if (e.key === "ArrowLeft") move(-1);
+    else if (e.key === "ArrowRight") move(1);
+  });
+})();
