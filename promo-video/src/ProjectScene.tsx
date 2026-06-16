@@ -183,8 +183,8 @@ export const ProjectScene: React.FC<ProjectSceneProps> = ({
           }}
         >
           {[
-            [price, "стоимость"],
-            [area, "площадь"],
+            [price, "цена за м²"],
+            [area, "платёж/мес"],
             [due, "сдача"],
           ].map(([v, k]) => (
             <div key={k}>

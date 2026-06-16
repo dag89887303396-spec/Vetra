@@ -114,8 +114,8 @@ export const Outro: React.FC = () => {
         }}
       >
         +7 989 470-22-63
-        <div style={{ fontSize: 25, color: COLORS.muted, marginTop: 12, letterSpacing: "0.2em" }}>
-          WHATSAPP · VETRA ESTATE
+        <div style={{ fontSize: 23, color: COLORS.muted, marginTop: 12, letterSpacing: "0.18em" }}>
+          WHATSAPP · TELEGRAM @muhammad_ls
         </div>
       </div>
     </AbsoluteFill>

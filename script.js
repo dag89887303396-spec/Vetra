@@ -1240,3 +1240,41 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   if (firstImg && !firstImg.complete) firstImg.addEventListener("load", measure, { once: true });
   measure();
 })();
+
+/* ═══ HERO: видео-фоны (plug-and-play для клипов Higgsfield) ═══
+   Когда появятся клипы, впишите их в HERO_VIDEOS:
+   ключ "проект-время" → базовый путь без суффикса -d.mp4 / -m.mp4.
+   Пример: "alye-night": "images/hero-alye-night"
+   Файлы: hero-<project>-<time>-d.mp4 (десктоп), -m.mp4 (мобайл).
+   Пустой список = фон остаётся фотографией (как сейчас).            */
+(function () {
+  var HERO_VIDEOS = {
+    // "horizon-day":  "images/hero-horizon-day",
+    // "horizon-night":"images/hero-horizon-night",
+    // "moscow-day":   "images/hero-moscow-day",
+    // "moscow-night": "images/hero-moscow-night",
+    // "alye-day":     "images/hero-alye-day",
+    // "alye-night":   "images/hero-alye-night"
+  };
+  if (!Object.keys(HERO_VIDEOS).length) return;
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  var mobile = window.matchMedia("(max-width: 900px)").matches;
+  var suffix = mobile ? "-m.mp4" : "-d.mp4";
+
+  Object.keys(HERO_VIDEOS).forEach(function (key) {
+    var layer = document.querySelector('.hero-layer[data-bg="' + key + '"]');
+    if (!layer) return;
+    var v = document.createElement("video");
+    v.className = "hero-video";
+    v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+    v.setAttribute("playsinline", ""); v.setAttribute("muted", "");
+    v.preload = "metadata";
+    var s = document.createElement("source");
+    s.src = HERO_VIDEOS[key] + suffix; s.type = "video/mp4";
+    v.appendChild(s);
+    v.addEventListener("error", function () { v.remove(); }); // нет файла — остаётся фото
+    layer.appendChild(v);
+    if (v.play) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
+  });
+})();

@@ -18,39 +18,39 @@ export const Promo: React.FC = () => {
 
       <Sequence from={TIMELINE.horizon.from} durationInFrames={TIMELINE.horizon.duration}>
         <ProjectScene
-          image="horizon-5.jpeg"
-          badge="Продажи идут"
-          name="ЖК «Горизонт»"
-          location="Махачкала · Ленинский район"
-          price="от 4,2 млн ₽"
-          area="36–95 м²"
-          due="Q2 2025"
+          image="horizon-1.jpeg"
+          badge="Редукторный район"
+          name="ЖК «Новый Горизонт»"
+          location="Махачкала · ул. Луговая, 12"
+          price="от 60 000 ₽"
+          area="от 50 000 ₽"
+          due="2027"
           index={0}
         />
       </Sequence>
 
       <Sequence from={TIMELINE.alye.from} durationInFrames={TIMELINE.alye.duration}>
         <ProjectScene
-          image="alye-photo-5.jpg"
-          badge="Первая линия у моря"
-          name="ЖК «Алые Паруса»"
-          location="Каспийск · набережная"
-          price="от 5,8 млн ₽"
-          area="48–120 м²"
-          due="Q4 2025"
+          image="alye-day.jpg"
+          badge="Премиум у моря"
+          name="АК «Алые Паруса»"
+          location="Каспийск · Турали-7"
+          price="от 50 000 ₽"
+          area="от 30 000 ₽"
+          due="2028"
           index={1}
         />
       </Sequence>
 
       <Sequence from={TIMELINE.moscow.from} durationInFrames={TIMELINE.moscow.duration}>
         <ProjectScene
-          image="moscow-photo-2.jpg"
-          badge="Последние квартиры"
+          image="moscow-2.jpg"
+          badge="Город в городе"
           name="ЖК «Московский»"
-          location="Махачкала · Московский пр-т"
-          price="от 3,5 млн ₽"
-          area="32–85 м²"
-          due="Q1 2025"
+          location="Махачкала · ул. Даганова"
+          price="от 70 000 ₽"
+          area="от 50 000 ₽"
+          due="2027"
           index={2}
         />
       </Sequence>
