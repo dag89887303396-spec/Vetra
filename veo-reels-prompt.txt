@@ -1,0 +1,67 @@
+ПРОМПТ ДЛЯ VEO / OMNI FLASH — профессиональный Reels-монтаж ролика VetraEstate
+====================================================================
+
+Формат вывода: вертикальное видео 9:16, 1080×1920, 30 fps, длительность 20–30 сек.
+
+--- ОСНОВНОЙ ПРОМПТ (RU) ---
+
+Сделай профессиональный динамичный монтаж для Instagram Reels из моего
+вертикального видео-обращения. На видео — девушка-эксперт по недвижимости
+(деловой стиль) рассказывает про сайт VetraEstate: новостройки в Дагестане,
+рассрочка, онлайн-калькулятор, подбор квартир.
+
+ВАЖНО:
+- БЕЗ СУБТИТРОВ. Удали уже вшитые в кадр субтитры, новых не добавляй.
+  Никаких подписей и текста поверх речи.
+- Сохрани оригинальный голос спикера, речь — главная дорожка.
+
+Монтаж и стиль:
+- Ритмичные склейки в такт музыке, без «мёртвых» пауз; убери паузы и
+  слова-паразиты, сделай темп бодрым.
+- Хук в первые 1–2 секунды: самый сильный кадр спикера крупным планом.
+- Плавные кинематографичные приёмы: лёгкий zoom/punch-in на спикере при
+  смене мысли, аккуратный whip-pan на переходах, мягкая стабилизация.
+- Вставляй b-roll поверх речи (cutaways): экран сайта VetraEstate,
+  онлайн-калькулятор рассрочки, рендеры жилых комплексов «Новый Горизонт»,
+  «Алые Паруса», «Московский». B-roll накладывай в момент, когда спикер о
+  них говорит.
+- Цветокоррекция: премиальная, тёплая, в тёмно-сером и бежевом тоне (под
+  бренд сайта), мягкий контраст, лёгкая виньетка, кинематографичные тени.
+- Музыка: ненавязчивый cinematic / corporate lo-fi бит, громкость
+  приглушать под речь (ducking), нарастание к финалу.
+- Финал (2–3 сек): чистая брендовая заставка «VetraEstate» с контактом
+  (WhatsApp / Telegram) — как графическая карточка в конце, НЕ как субтитры
+  поверх речи.
+
+Настроение: премиум, доверие, современная недвижимость у моря.
+
+--- АЛЬТЕРНАТИВНЫЙ ПРОМПТ (EN, если инструмент лучше понимает английский) ---
+
+Create a professional, dynamic Instagram Reels edit from my vertical
+talking-head video of a real-estate expert presenting the VetraEstate
+website (new-build apartments in Dagestan, installment plans, online
+calculator, unit selection).
+
+MUST: NO subtitles — remove the burned-in captions already in the footage
+and do not add any new text over the speech. Keep the speaker's original
+voice as the main track.
+
+Editing: beat-synced cuts, remove dead pauses and filler for a snappy pace;
+strong hook in the first 1–2s (close-up of the speaker); smooth cinematic
+push-ins on the speaker, subtle whip-pan transitions, gentle stabilization.
+Insert B-roll cutaways over the narration: the VetraEstate website, the
+installment calculator, and renders of the residential complexes. Premium
+warm color grade in dark-grey and beige brand tones, soft contrast, light
+vignette. Add unobtrusive cinematic/corporate lo-fi music, ducked under the
+voice, building toward the end. End with a clean 2–3s branded outro card
+"VetraEstate" with WhatsApp / Telegram contact (as a graphic card, not as
+subtitles over speech). Output 9:16, 1080×1920, 30fps, 20–30s.
+
+--- БЫСТРЫЕ НАСТРОЙКИ ---
+- Соотношение сторон: 9:16 (вертикаль)
+- Разрешение: 1080×1920, 30 fps
+- Длительность: 20–30 сек
+- Субтитры: ВЫКЛ
+- Музыка: cinematic / corporate lo-fi, с ducking под голос
+- Если инструмент просит загрузить b-roll отдельно — добавьте скриншоты/
+  запись экрана сайта и рендеры ЖК, чтобы было что вставлять поверх речи.
