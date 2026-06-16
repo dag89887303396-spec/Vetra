@@ -3723,3 +3723,145 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
   .project.tilt3d { transition: none; }
 }
+
+/* ════════════════════════════════════════════════════
+   3D-ФЛИП КАРТОЧЕК ПРЕИМУЩЕСТВ
+════════════════════════════════════════════════════ */
+.benefit-card.flip {
+  background: none;
+  border: none;
+  padding: 0;
+  perspective: 1400px;
+  min-height: 220px;
+}
+.benefit-card.flip .flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  transition: transform .7s cubic-bezier(.22,.61,.36,1);
+  transform-style: preserve-3d;
+}
+.benefit-card.flip:hover .flip-inner,
+.benefit-card.flip:focus .flip-inner,
+.benefit-card.flip.flipped .flip-inner { transform: rotateY(180deg); }
+.benefit-card.flip .flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--card);
+  padding: 28px 26px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-sm);
+}
+.benefit-card.flip .flip-front span {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold2);
+  letter-spacing: .12em;
+}
+.benefit-card.flip .flip-front h3,
+.benefit-card.flip .flip-back h3 { margin: 14px 0 10px; font-size: 19px; }
+.benefit-card.flip .flip-front p,
+.benefit-card.flip .flip-back p { color: var(--text2); font-size: 14.5px; line-height: 1.55; }
+.benefit-card.flip .flip-back {
+  transform: rotateY(180deg);
+  background: linear-gradient(150deg, var(--surface2), var(--card));
+  border-color: var(--gold-border);
+  justify-content: center;
+}
+.flip-cta {
+  margin-top: 18px;
+  align-self: flex-start;
+  color: var(--gold2);
+  font-weight: 700;
+  font-size: 14.5px;
+  border-bottom: 1px solid var(--gold-border);
+  padding-bottom: 3px;
+  transition: color .2s, border-color .2s;
+}
+.flip-cta:hover { color: var(--text); border-color: var(--gold2); }
+
+/* ════════════════════════════════════════════════════
+   3D-КРУГЛЯШИ ВЫБОРА ЖК
+════════════════════════════════════════════════════ */
+@media (hover: hover) and (pointer: fine) {
+  .hero-switch-projects { perspective: 700px; }
+  .proj-dot { transform-style: preserve-3d; }
+  .proj-dot .proj-dot-ring {
+    transition: border-color .35s ease, box-shadow .35s ease, transform .2s ease;
+    will-change: transform;
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   3D-ТУР (карусель-цилиндр)
+════════════════════════════════════════════════════ */
+.tour-section { overflow: hidden; }
+.tour3d {
+  position: relative;
+  height: clamp(280px, 42vw, 460px);
+  perspective: 1300px;
+  margin-top: 18px;
+}
+.tour3d-stage {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  transform-style: preserve-3d;
+  transition: transform .7s cubic-bezier(.22,.61,.36,1);
+}
+.tour3d-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(220px, 34vw, 420px);
+  height: clamp(150px, 24vw, 280px);
+  margin-left: calc(clamp(220px, 34vw, 420px) / -2);
+  margin-top: calc(clamp(150px, 24vw, 280px) / -2);
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--gold-border);
+  box-shadow: 0 24px 60px rgba(0,0,0,.5);
+  backface-visibility: hidden;
+  background: var(--card);
+}
+.tour3d-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tour3d-item::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(8,8,7,.55);
+  transition: opacity .5s ease;
+}
+.tour3d-item.is-front::after { opacity: 0; }
+.tour3d-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1px solid var(--gold-border);
+  background: rgba(20,20,18,.72);
+  color: var(--text);
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background .2s, transform .2s;
+}
+.tour3d-nav:hover { background: rgba(40,38,35,.92); }
+.tour3d-prev { left: 8px; }
+.tour3d-next { right: 8px; }
+.tour3d-nav:hover { transform: translateY(-50%) scale(1.07); }
+
+@media (prefers-reduced-motion: reduce) {
+  .benefit-card.flip .flip-inner,
+  .tour3d-stage { transition: none; }
+}

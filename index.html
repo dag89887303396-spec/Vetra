@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <link rel="icon" type="image/png" href="favicon.png?v=202606161610">
+  <link rel="icon" type="image/png" href="favicon.png?v=202606161620">
   <meta name="google-site-verification" content="ah5EGE-GIdOqNANY60iLD1R32ajjtTGSFp-BNrKD7Gc" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,7 +9,7 @@
   <title>VetraEstate — Новостройки в Дагестане</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="style.css?v=202606161610" />
+  <link rel="stylesheet" href="style.css?v=202606161620" />
 </head>
 <body>
   <div class="site-shell">
@@ -300,6 +300,31 @@
         </div>
       </section>
 
+      <section class="section tour-section" id="tour">
+        <div class="section-head reveal">
+          <div>
+            <span class="section-label">3D-тур</span>
+            <h2>Прогулка по&nbsp;комплексу</h2>
+          </div>
+          <p>Покрутите карусель — фасады, двор, набережная и виды объекта в объёме.</p>
+        </div>
+
+        <div class="tour3d reveal" id="tour3d">
+          <div class="tour3d-stage" id="tour3dStage">
+            <div class="tour3d-item"><img src="images/horizon-1.jpeg" alt="Общий вид"></div>
+            <div class="tour3d-item"><img src="images/alye-photo-5.jpg" alt="Алые Паруса"></div>
+            <div class="tour3d-item"><img src="images/horizon-3.jpeg" alt="Вечерний вид"></div>
+            <div class="tour3d-item"><img src="images/moscow-photo-2.jpg" alt="Московский"></div>
+            <div class="tour3d-item"><img src="images/horizon-4.jpeg" alt="Коммерция"></div>
+            <div class="tour3d-item"><img src="images/alye-photo-4.jpg" alt="Набережная"></div>
+            <div class="tour3d-item"><img src="images/horizon-6.jpeg" alt="Входная группа"></div>
+            <div class="tour3d-item"><img src="images/moscow-photo-5.jpg" alt="Двор"></div>
+          </div>
+          <button class="tour3d-nav tour3d-prev" type="button" aria-label="Назад">‹</button>
+          <button class="tour3d-nav tour3d-next" type="button" aria-label="Вперёд">›</button>
+        </div>
+      </section>
+
       <section class="section benefits" id="benefits">
         <div class="section-head reveal">
           <div>
@@ -309,10 +334,30 @@
         </div>
 
         <div class="benefit-grid">
-          <div class="benefit-card reveal"><span>01</span><h3>Цены от застройщика</h3><p>Актуальные условия, рассрочка и варианты при полной оплате.</p></div>
-          <div class="benefit-card reveal"><span>02</span><h3>Полный пакет документов</h3><p>Подбираем объекты с проверенной документацией.</p></div>
-          <div class="benefit-card reveal"><span>03</span><h3>Подбор под цель</h3><p>Для жизни, сдачи в аренду, инвестиций или перепродажи.</p></div>
-          <div class="benefit-card reveal"><span>04</span><h3>Бесплатная консультация</h3><p>Покажем цены, планировки, этажи и расчёт рассрочки.</p></div>
+          <div class="benefit-card flip reveal" tabindex="0">
+            <div class="flip-inner">
+              <div class="flip-face flip-front"><span>01</span><h3>Цены от застройщика</h3><p>Актуальные условия, рассрочка и варианты при полной оплате.</p></div>
+              <div class="flip-face flip-back"><h3>Цены от застройщика</h3><p>Пришлём прайс и спецпредложения по каждому ЖК прямо в мессенджер.</p><a class="flip-cta" href="https://wa.me/79894702263?text=Здравствуйте!%20Пришлите,%20пожалуйста,%20актуальные%20цены" target="_blank" rel="noopener">Узнать цены →</a></div>
+            </div>
+          </div>
+          <div class="benefit-card flip reveal" tabindex="0">
+            <div class="flip-inner">
+              <div class="flip-face flip-front"><span>02</span><h3>Полный пакет документов</h3><p>Подбираем объекты с проверенной документацией.</p></div>
+              <div class="flip-face flip-back"><h3>Полный пакет документов</h3><p>Проверяем разрешения, ДДУ и историю застройщика до сделки.</p><a class="flip-cta" href="https://wa.me/79894702263?text=Здравствуйте!%20Расскажите%20о%20документах%20по%20объекту" target="_blank" rel="noopener">Подробнее →</a></div>
+            </div>
+          </div>
+          <div class="benefit-card flip reveal" tabindex="0">
+            <div class="flip-inner">
+              <div class="flip-face flip-front"><span>03</span><h3>Подбор под цель</h3><p>Для жизни, сдачи в аренду, инвестиций или перепродажи.</p></div>
+              <div class="flip-face flip-back"><h3>Подбор под цель</h3><p>Подберём ликвидные лоты под аренду или перепродажу с расчётом доходности.</p><a class="flip-cta" href="https://wa.me/79894702263?text=Здравствуйте!%20Хочу%20подобрать%20квартиру%20под%20инвестиции" target="_blank" rel="noopener">Подобрать →</a></div>
+            </div>
+          </div>
+          <div class="benefit-card flip reveal" tabindex="0">
+            <div class="flip-inner">
+              <div class="flip-face flip-front"><span>04</span><h3>Бесплатная консультация</h3><p>Покажем цены, планировки, этажи и расчёт рассрочки.</p></div>
+              <div class="flip-face flip-back"><h3>Бесплатная консультация</h3><p>Расчёт платежа, этажи и планировки за 15 минут — бесплатно.</p><a class="flip-cta" href="https://wa.me/79894702263?text=Здравствуйте!%20Хочу%20бесплатную%20консультацию" target="_blank" rel="noopener">Получить →</a></div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -527,7 +572,7 @@
   <!-- Тост-уведомление -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="script.js?v=202606161610"></script>
+  <script src="script.js?v=202606161620"></script>
 
 </body>
 </html>

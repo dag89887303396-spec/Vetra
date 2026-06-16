@@ -1104,3 +1104,139 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
     });
   });
 })();
+
+/* ═══ ПАРАЛЛАКС HERO (3D-глубина за курсором) ═══ */
+(function () {
+  if (!window.matchMedia || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const hero = document.querySelector(".hero");
+  const bgs = hero?.querySelector(".hero-bgs");
+  const sw = hero?.querySelector(".hero-switch");
+  const content = hero?.querySelector(".hero-content");
+  if (!hero || !bgs) return;
+
+  let tx = 0, ty = 0, cx = 0, cy = 0, raf = null;
+
+  hero.addEventListener("mousemove", (e) => {
+    const r = hero.getBoundingClientRect();
+    tx = (e.clientX - r.left) / r.width - 0.5;   // -0.5..0.5
+    ty = (e.clientY - r.top) / r.height - 0.5;
+    if (!raf) raf = requestAnimationFrame(loop);
+  });
+  hero.addEventListener("mouseleave", () => { tx = 0; ty = 0; if (!raf) raf = requestAnimationFrame(loop); });
+
+  function loop() {
+    cx += (tx - cx) * 0.08;
+    cy += (ty - cy) * 0.08;
+    bgs.style.transform = `translate3d(${(-cx * 14).toFixed(1)}px, ${(-cy * 14).toFixed(1)}px, 0)`;
+    if (sw) sw.style.transform = `translate3d(${(cx * 26).toFixed(1)}px, ${(cy * 22).toFixed(1)}px, 0)`;
+    if (content) content.style.transform = `translate3d(${(cx * 16).toFixed(1)}px, ${(cy * 12).toFixed(1)}px, 0)`;
+    if (Math.abs(tx - cx) > 0.001 || Math.abs(ty - cy) > 0.001) raf = requestAnimationFrame(loop);
+    else raf = null;
+  }
+})();
+
+/* ═══ 3D-НАКЛОН КРУГЛЯШЕЙ ВЫБОРА ЖК ═══ */
+(function () {
+  if (!window.matchMedia || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  document.querySelectorAll(".proj-dot").forEach((dot) => {
+    const ring = dot.querySelector(".proj-dot-ring");
+    if (!ring) return;
+    dot.addEventListener("mousemove", (e) => {
+      const r = ring.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width - 0.5;
+      const py = (e.clientY - r.top) / r.height - 0.5;
+      ring.style.transform =
+        `perspective(500px) rotateX(${(-py * 22).toFixed(1)}deg) rotateY(${(px * 22).toFixed(1)}deg) translateZ(8px) scale(1.05)`;
+    });
+    dot.addEventListener("mouseleave", () => { ring.style.transform = ""; });
+  });
+})();
+
+/* ═══ ТАП-ФЛИП ПРЕИМУЩЕСТВ НА ТАЧ-УСТРОЙСТВАХ ═══ */
+(function () {
+  const coarse = window.matchMedia && window.matchMedia("(hover: none)").matches;
+  if (!coarse) return;
+  document.querySelectorAll(".benefit-card.flip").forEach((card) => {
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("a")) return; // ссылка на обороте работает как обычно
+      card.classList.toggle("flipped");
+    });
+  });
+})();
+
+/* ═══ 3D-ТУР: карусель-цилиндр ═══ */
+(function () {
+  const tour = document.getElementById("tour3d");
+  const stage = document.getElementById("tour3dStage");
+  if (!tour || !stage) return;
+
+  const items = Array.from(stage.querySelectorAll(".tour3d-item"));
+  const N = items.length;
+  if (!N) return;
+  const theta = 360 / N;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let radius = 480;
+  let current = 0;
+  let auto = null;
+
+  function measure() {
+    const w = items[0].getBoundingClientRect().width || 320;
+    radius = Math.round((w / 2) / Math.tan((theta / 2) * Math.PI / 180)) + 40;
+    items.forEach((it, i) => {
+      it.style.transform = `rotateY(${i * theta}deg) translateZ(${radius}px)`;
+    });
+    render();
+  }
+
+  function render() {
+    stage.style.transform = `translateZ(${-radius}px) rotateY(${-current * theta}deg)`;
+    const front = ((current % N) + N) % N;
+    items.forEach((it, i) => it.classList.toggle("is-front", i === front));
+  }
+
+  function go(step) { current += step; render(); }
+
+  tour.querySelector(".tour3d-next")?.addEventListener("click", () => { go(1); restart(); });
+  tour.querySelector(".tour3d-prev")?.addEventListener("click", () => { go(-1); restart(); });
+
+  // перетаскивание
+  let down = false, startX = 0, moved = 0;
+  tour.addEventListener("pointerdown", (e) => { down = true; startX = e.clientX; moved = 0; stopAuto(); tour.setPointerCapture(e.pointerId); });
+  tour.addEventListener("pointermove", (e) => {
+    if (!down) return;
+    moved = e.clientX - startX;
+    stage.style.transform = `translateZ(${-radius}px) rotateY(${(-current * theta + moved * 0.25).toFixed(2)}deg)`;
+  });
+  tour.addEventListener("pointerup", () => {
+    if (!down) return;
+    down = false;
+    const steps = Math.round(-moved * 0.25 / theta);
+    if (steps) go(steps); else render();
+    restart();
+  });
+
+  function startAuto() { if (!reduce && !auto) auto = setInterval(() => go(1), 3500); }
+  function stopAuto() { if (auto) { clearInterval(auto); auto = null; } }
+  function restart() { stopAuto(); startAuto(); }
+
+  tour.addEventListener("mouseenter", stopAuto);
+  tour.addEventListener("mouseleave", startAuto);
+
+  // запуск, когда секция видна
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver((e) => {
+      e[0].isIntersecting ? startAuto() : stopAuto();
+    }, { threshold: 0.2 }).observe(tour);
+  } else startAuto();
+
+  let rt;
+  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(measure, 150); });
+  // дождаться загрузки первого изображения для корректного размера
+  const firstImg = items[0].querySelector("img");
+  if (firstImg && !firstImg.complete) firstImg.addEventListener("load", measure, { once: true });
+  measure();
+})();
