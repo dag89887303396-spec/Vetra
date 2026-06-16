@@ -1,12 +1,8 @@
 {
   "orientation": "horizontal",
-  "source": "https://youtu.be/dThFpv5UCHM",
-  "_comment": "PLACEHOLDER timecodes — used only to validate the yt-dlp download + ffmpeg cut path in CI. Replace start/end (seconds or HH:MM:SS) with the real highlight moments from video_analysis once approved.",
-  "clips": [
-    {"id": "clip-01", "title": "10 KG Or The Hair Gets Punished", "start": 5, "end": 25},
-    {"id": "clip-02", "title": "No Money, No Job, Still Getting Big", "start": 40, "end": 60},
-    {"id": "clip-03", "title": "Day One Bulk: Burgers And Infinite Cola", "start": 80, "end": 100},
-    {"id": "clip-04", "title": "Fake Training For The Edit", "start": 120, "end": 140},
-    {"id": "clip-05", "title": "I Lied About My Workout", "start": 160, "end": 180}
-  ]
+  "source": "https://www.youtube.com/live/aa4-NNyMDZw",
+  "clipCount": 10,
+  "clipLength": 55,
+  "_comment": "STANDARD: 10 clean 16:9 clips, each <1 min, NO subtitles. Leave \"clips\" empty and prepare-clips.mjs auto-slices `clipCount` evenly-spaced clips of up to `clipLength`s across the source. To override, add explicit {id,title,start,end} entries to \"clips\".",
+  "clips": []
 }

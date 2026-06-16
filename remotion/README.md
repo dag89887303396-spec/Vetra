@@ -1,13 +1,11 @@
-# Vetra Highlight Editor (Remotion)
+# Vetra Clipper
 
-Turns a YouTube video into 5 highlight clips with **Remotion-rendered karaoke
-captions** (TikTok style: active word highlighted, black stroke). No intro/outro
-cards — each output is just the clip + captions.
+**Standard:** a YouTube link → **10 clean clips, 16:9, each under a minute, NO
+subtitles.** The clips are cut directly from the source — that's the whole
+deliverable (no captions, no Remotion render step).
 
-## Why render locally
+## Why local
 
-The Higgsfield clipper always burns its own subtitles into the picture, so to
-get clean Remotion captions we cut the clips ourselves from the source video.
 Downloading the source needs `yt-dlp`, and **YouTube blocks anonymous `yt-dlp`
 from CI / datacenter IPs** ("Sign in to confirm you're not a bot"). Your own
 machine (a residential IP) is not blocked, so the pipeline runs cleanly locally.
@@ -15,54 +13,53 @@ machine (a residential IP) is not blocked, so the pipeline runs cleanly locally.
 ## Prerequisites
 
 - **Node 18+**
-- **ffmpeg** on your PATH — https://ffmpeg.org/download.html
+- **ffmpeg + ffprobe** on your PATH — https://ffmpeg.org/download.html
 - **yt-dlp** on your PATH — https://github.com/yt-dlp/yt-dlp#installation
-  (a recent version; you may also want `deno` installed, which yt-dlp uses for
-  some YouTube formats)
 
-## 1. Pick the clips
+## 1. Set the source
 
-Edit `src/clips.data.json`:
+Edit `src/clips.data.json` — usually only the `source` line changes:
 
 ```json
 {
-  "orientation": "horizontal",          // "vertical" for 9:16 Shorts
-  "source": "https://youtu.be/VIDEO_ID",
-  "clips": [
-    {"id": "clip-01", "title": "…", "start": "00:03:12", "end": "00:03:36"},
-    {"id": "clip-02", "title": "…", "start": 412,        "end": 437}
-  ]
+  "orientation": "horizontal",
+  "source": "https://www.youtube.com/live/VIDEO_ID",
+  "clipCount": 10,
+  "clipLength": 55,
+  "clips": []
 }
 ```
 
-`start`/`end` are seconds (numbers) or `"HH:MM:SS"` / `"MM:SS"`. Pick the
-moments you want — the output length of each clip is `end - start`.
+Leave `clips` empty: the script auto-slices `clipCount` evenly-spaced clips of up
+to `clipLength` seconds across the whole video. To hand-pick moments instead, add
+entries `{"id": "clip-01", "title": "…", "start": "00:03:12", "end": "00:03:36"}`
+(seconds or `HH:MM:SS`) and they override the auto-slicer.
 
-## 2. Run the pipeline
+## 2. Cut the clips
 
 ```bash
 cd remotion
 npm install
-npm run prepare:clips   # yt-dlp downloads source → ffmpeg cuts public/clips/<id>.mp4
-npm run transcribe      # Whisper → public/captions/<id>.json
-npm run render:all      # → out/clip-01.mp4 … out/clip-05.mp4
+npm run prepare:clips   # → public/clips/clip-01.mp4 … clip-10.mp4 (clean 16:9)
 ```
 
-Or preview/tweak interactively first:
+That's it — the files in `public/clips/` are the final clips. Every clip is
+scaled+padded to 1920×1080 so the output is always 16:9.
+
+## Optional: Remotion karaoke captions
+
+The repo still contains the older captioned path if you ever want burned-in
+TikTok-style karaoke captions instead of clean clips:
 
 ```bash
-npm run dev             # Remotion Studio at http://localhost:3000
+npm run transcribe      # Whisper → public/captions/<id>.json
+npm run render:all      # → out/clip-0N.mp4 (clip + captions overlay)
 ```
 
-## Customizing captions
-
-`CAPTION_MODEL` env var picks the Whisper model (default `base.en`; try
-`medium.en` for higher accuracy, slower). Caption style, font (Bebas Neue) and
-the accent color (`BRAND.accent`) live in `src/Captions.tsx` and `src/clips.ts`.
-Fonts scale with frame width, so the same look works in 9:16 and 16:9.
+Caption style/font and accent color live in `src/Captions.tsx` and `src/clips.ts`.
 
 ## CI (optional)
 
-`.github/workflows/render-highlights.yml` runs the same pipeline on GitHub
-Actions but is **manual only** and requires authenticating yt-dlp with a
-`YOUTUBE_COOKIES` secret (see the comment at the top of that file).
+`.github/workflows/render-highlights.yml` runs on GitHub Actions but is **manual
+only** and needs a `YOUTUBE_COOKIES` secret to authenticate yt-dlp (see the
+comment at the top of that file).
