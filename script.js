@@ -842,53 +842,162 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   flash.className = "hero-flash";
   hero.querySelector(".hero-bgs")?.appendChild(flash);
 
+  // слой свечения и световая волна для «оживления» фона
+  const glow = hero.querySelector(".hero-glow");
+  const sweep = hero.querySelector(".hero-sweep");
+  function syncGlow(layer) {
+    if (glow && layer) glow.style.backgroundImage = getComputedStyle(layer).backgroundImage;
+  }
+
+  // ── кинематографичные видео-переходы день ↔ ночь ──
+  const heroVideo = hero.querySelector(".hero-video");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const videoProjects = { horizon: true, moscow: true, alye: true };
+  let videoTimer = null;
+  let transToken = 0;
+
+  function clearVideoTimer() {
+    if (videoTimer) { clearTimeout(videoTimer); videoTimer = null; }
+  }
+
+  function stopHeroVideo() {
+    if (!heroVideo) return;
+    clearVideoTimer();
+    transToken++;                         // отменяем висящие колбэки прошлого перехода
+    heroVideo.classList.remove("is-playing");
+    hero.classList.remove("is-hero-video");
+    try { heroVideo.pause(); } catch (e) {}
+  }
+
+  function samePath(a, b) {
+    try { return new URL(a || "", location.href).pathname === new URL(b, location.href).pathname; }
+    catch (e) { return false; }
+  }
+
+  // proj — комплекс; toNight=true → день→ночь (dn), false → ночь→день (nd).
+  // onReveal вызывается в момент, когда видео уже перекрыло фон — там подменяем
+  // нижний статичный слой на целевой, чтобы по окончании показать точный кадр.
+  function playTransition(proj, toNight, onReveal) {
+    if (!heroVideo || reduceMotion || !videoProjects[proj]) return false;
+    const src = "videos/hero-" + proj + "-" + (toNight ? "dn" : "nd") + ".mp4";
+    clearVideoTimer();
+    const token = ++transToken;
+    if (!samePath(heroVideo.getAttribute("src"), src)) {
+      heroVideo.setAttribute("src", src);
+      heroVideo.load();
+    }
+
+    let revealed = false;
+    // подстраховка: если видео не готово — мгновенно переключаем фон без него
+    const failsafe = setTimeout(() => {
+      if (token !== transToken || revealed) return;
+      if (typeof onReveal === "function") onReveal();
+      stopHeroVideo();
+    }, 1500);
+
+    const reveal = () => {
+      if (token !== transToken || revealed) return;
+      revealed = true;
+      clearTimeout(failsafe);
+      try { heroVideo.currentTime = 0; } catch (e) {}
+      heroVideo.classList.add("is-playing");          // мгновенно, без кросс-фейда
+      hero.classList.add("is-hero-video");
+      if (typeof onReveal === "function") onReveal();  // подменяем нижний слой на целевой
+      const finish = () => {
+        if (token !== transToken) return;
+        heroVideo.removeEventListener("ended", finish);
+        clearVideoTimer();
+        heroVideo.classList.remove("is-playing");      // мгновенно показываем целевой кадр
+        hero.classList.remove("is-hero-video");
+      };
+      heroVideo.addEventListener("ended", finish);
+      videoTimer = setTimeout(finish, 8000);           // подстраховка, если ended не сработает
+      const p = heroVideo.play();
+      if (p && p.catch) p.catch(() => { if (token === transToken) finish(); });
+    };
+
+    if (heroVideo.readyState >= 2) reveal();
+    else heroVideo.addEventListener("loadeddata", function once() {
+      heroVideo.removeEventListener("loadeddata", once);
+      reveal();
+    });
+    return true;
+  }
+
+  // предзагрузка ролика выбранного комплекса (день→ночь)
+  function preloadTransition(proj) {
+    if (!heroVideo || reduceMotion || !videoProjects[proj] || heroVideo.classList.contains("is-playing")) return;
+    const src = "videos/hero-" + proj + "-dn.mp4";
+    if (!samePath(heroVideo.getAttribute("src"), src)) {
+      heroVideo.setAttribute("src", src);
+      heroVideo.load();
+    }
+  }
+
   let project = "horizon";
   let time = "day";
+
+  function setLayers(target) {
+    layers.forEach(l => {
+      l.classList.remove("iris", "iris-under");
+      l.classList.toggle("is-active", l === target);
+    });
+    syncGlow(target);
+  }
 
   function apply(withFlash) {
     const key = project + "-" + time;
     const prev = document.querySelector(".hero-layer.is-active");
-    layers.forEach(l => {
-      l.classList.remove("iris", "iris-under");
-      l.classList.toggle("is-active", l.dataset.bg === key);
-    });
-    const next = document.querySelector(".hero-layer.is-active");
+    const target = Array.prototype.find.call(layers, l => l.dataset.bg === key) || prev;
 
-    // круговое раскрытие при смене день/вечер
-    if (withFlash && prev && next && prev !== next) {
-      const toggle = document.querySelector(".dn-toggle");
-      if (toggle) {
-        const tr = toggle.getBoundingClientRect();
-        const hr = hero.getBoundingClientRect();
-        next.style.setProperty("--iris-x", (((tr.left + tr.width / 2) - hr.left) / hr.width * 100).toFixed(1) + "%");
-        next.style.setProperty("--iris-y", (((tr.top + tr.height / 2) - hr.top) / hr.height * 100).toFixed(1) + "%");
+    const wantVideo = withFlash && prev && target && prev !== target &&
+                      !reduceMotion && heroVideo && videoProjects[project];
+
+    if (wantVideo) {
+      // фон не трогаем до появления видео — оно стартует на текущем кадре (день/ночь),
+      // который совпадает со статичным фото, поэтому начало перехода незаметно
+      playTransition(project, time === "night", () => setLayers(target));
+    } else {
+      stopHeroVideo();
+      setLayers(target);
+      // запасной плавный переход, если видео недоступно (reduced-motion и т.п.)
+      if (withFlash && prev && target && prev !== target) {
+        const toggle = document.querySelector(".dn-toggle");
+        if (toggle) {
+          const tr = toggle.getBoundingClientRect();
+          const hr = hero.getBoundingClientRect();
+          hero.style.setProperty("--iris-x", (((tr.left + tr.width / 2) - hr.left) / hr.width * 100).toFixed(1) + "%");
+          hero.style.setProperty("--iris-y", (((tr.top + tr.height / 2) - hr.top) / hr.height * 100).toFixed(1) + "%");
+        }
+        prev.classList.add("iris-under");
+        target.classList.add("iris");
+        setTimeout(() => { prev.classList.remove("iris-under"); target.classList.remove("iris"); }, 850);
+        flash.classList.remove("run");
+        sweep?.classList.remove("run");
+        void flash.offsetWidth;
+        flash.classList.add("run");
+        sweep?.classList.add("run");
       }
-      prev.classList.add("iris-under");
-      next.classList.add("iris");
-      setTimeout(() => {
-        prev.classList.remove("iris-under");
-        next.classList.remove("iris");
-      }, 1350);
     }
+
     document.querySelectorAll(".proj-dot").forEach(b =>
       b.classList.toggle("is-active", b.dataset.project === project));
     document.querySelectorAll(".dn-btn").forEach(b =>
       b.classList.toggle("is-active", b.dataset.time === time));
     document.querySelector(".dn-toggle")?.classList.toggle("is-night", time === "night");
     hero.classList.toggle("hero--night", time === "night");
-
-    if (withFlash) {
-      flash.classList.remove("run");
-      void flash.offsetWidth; // перезапуск анимации
-      flash.classList.add("run");
-    }
   }
+
+  // инициализируем свечение для стартового фона
+  syncGlow(document.querySelector(".hero-layer.is-active"));
+  preloadTransition(project);
 
   document.querySelectorAll(".proj-dot").forEach(btn => {
     btn.addEventListener("click", () => {
       if (btn.dataset.project === project) return;
       project = btn.dataset.project;
       apply(false);
+      preloadTransition(project);
     });
   });
 
@@ -921,7 +1030,7 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
       if (!heroVisible || document.hidden) return;
       time = time === "day" ? "night" : "day";
       apply(true);
-    }, 7000);
+    }, 8000);
     document.querySelectorAll(".proj-dot").forEach(b =>
       b.addEventListener("click", stopAutoCycle));
   }
@@ -935,109 +1044,295 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
   });
 })();
 
+/* ════════════════════════════════════════════════════════
+   ФОРМА «ОСТАВИТЬ ОТЗЫВ» — добавление отзыва на сайт
+   (сохранение в localStorage, без бэкенда)
+   ════════════════════════════════════════════════════════ */
+(function () {
+  const form = document.getElementById("reviewForm");
+  const toggle = document.getElementById("reviewFormToggle");
+  const grid = document.querySelector(".reviews-grid");
+  if (!form || !grid || !toggle) return;
 
-/* ═══ ЗАЯВОЧНАЯ ФОРМА → WhatsApp / Telegram ═══ */
+  const STORE_KEY = "vetra_reviews";
+  const MONTHS = ["января","февраля","марта","апреля","мая","июня",
+    "июля","августа","сентября","октября","ноября","декабря"];
+
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+
+  // аватар из инициалов Ф.И.О.: первые 2 буквы
+  function avatarFrom(initials, name) {
+    const letters = (initials || name || "").replace(/[^A-Za-zА-Яа-яЁё]/g, "");
+    return (letters.slice(0, 2) || "VE").toUpperCase();
+  }
+
+  function whenLabel() {
+    const d = new Date();
+    return "Отзыв клиента · " + MONTHS[d.getMonth()] + " " + d.getFullYear();
+  }
+
+  function buildCard(r, isNew) {
+    const stars = "★★★★★☆☆☆☆☆".slice(5 - r.rating, 10 - r.rating);
+    const card = document.createElement("article");
+    card.className = "review-card" + (isNew ? " review-new" : "");
+    card.innerHTML =
+      '<div class="review-top">' +
+        '<span class="review-avatar">' + esc(avatarFrom(r.initials, r.name)) + "</span>" +
+        "<div><strong>" + esc(r.name) + "</strong><em>" + esc(r.when || whenLabel()) + "</em></div>" +
+      "</div>" +
+      '<div class="review-stars">' + stars + "</div>" +
+      "<p>" + esc(r.text) + "</p>";
+    return card;
+  }
+
+  // загрузка сохранённых отзывов (новые — сверху)
+  function loadSaved() {
+    let saved = [];
+    try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); } catch (e) {}
+    saved.forEach((r) => grid.insertBefore(buildCard(r, false), grid.firstChild));
+  }
+
+  function save(r) {
+    let saved = [];
+    try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); } catch (e) {}
+    saved.push(r);
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(saved)); } catch (e) {}
+  }
+
+  // показать / скрыть форму
+  toggle.addEventListener("click", () => {
+    const open = form.hasAttribute("hidden");
+    if (open) {
+      form.removeAttribute("hidden");
+      toggle.setAttribute("aria-expanded", "true");
+      form.querySelector('input[name="name"]').focus();
+    } else {
+      form.setAttribute("hidden", "");
+      toggle.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  // выбор оценки звёздами
+  const ratingInput = form.querySelector('input[name="rating"]');
+  const stars = Array.from(form.querySelectorAll(".rate-star"));
+  function paintStars(val) {
+    stars.forEach((s) => s.classList.toggle("is-on", Number(s.dataset.val) <= val));
+  }
+  stars.forEach((s) => s.addEventListener("click", () => {
+    const val = Number(s.dataset.val);
+    ratingInput.value = String(val);
+    paintStars(val);
+  }));
+
+  // поля формы (form.name указывал бы на атрибут формы — берём элементы явно)
+  const nameEl = form.querySelector('input[name="name"]');
+  const initEl = form.querySelector('input[name="initials"]');
+  const textEl = form.querySelector('textarea[name="text"]');
+  const consentEl = form.querySelector('input[name="consent"]');
+  const consentRow = form.querySelector('.lead-consent');
+
+  // отправка формы
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = nameEl.value.trim();
+    const initials = initEl.value.trim();
+    const text = textEl.value.trim();
+    const rating = Math.min(5, Math.max(1, Number(ratingInput.value) || 5));
+
+    let ok = true;
+    [nameEl, initEl, textEl].forEach((el) => {
+      const empty = !el.value.trim();
+      el.classList.toggle("invalid", empty);
+      if (empty) ok = false;
+    });
+    if (consentEl && !consentEl.checked) { consentRow?.classList.add("invalid"); ok = false; }
+    else { consentRow?.classList.remove("invalid"); }
+    if (!ok) { form.querySelector(".invalid")?.focus(); return; }
+
+    const review = { name, initials, text, rating, when: whenLabel() };
+    grid.insertBefore(buildCard(review, true), grid.firstChild);
+    save(review);
+
+    form.reset();
+    ratingInput.value = "5";
+    paintStars(5);
+    form.setAttribute("hidden", "");
+    toggle.setAttribute("aria-expanded", "false");
+    document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  loadSaved();
+})();
+
+/* ════════════════════════════════════════════════════════
+   КАЛЬКУЛЯТОР РАССРОЧКИ
+   ════════════════════════════════════════════════════════ */
+(function () {
+  const price = document.getElementById("calcPrice");
+  const down = document.getElementById("calcDown");
+  if (!price || !down) return;
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => Math.round(n).toLocaleString("ru-RU") + " ₽";
+  const priceOut = $("calcPriceOut"), downOut = $("calcDownOut"), monthly = $("calcMonthly");
+  const downAbsEl = $("calcDownAbs"), bodyEl = $("calcBody"), termOut = $("calcTermOut");
+  const wa = $("calcWa"), terms = $("calcTerms");
+  let term = 36;
+
+  function fill(el) {
+    const pct = (el.value - el.min) / (el.max - el.min) * 100;
+    el.style.setProperty("--fill", pct + "%");
+  }
+  function calc() {
+    const p = +price.value, dPct = +down.value;
+    const dAbs = Math.round(p * dPct / 100);
+    const body = Math.max(0, p - dAbs);
+    const m = term ? body / term : 0;
+    priceOut.textContent = fmt(p);
+    downOut.textContent = dPct + "% · " + fmt(dAbs);
+    downAbsEl.textContent = fmt(dAbs);
+    bodyEl.textContent = fmt(body);
+    termOut.textContent = term + " мес";
+    monthly.textContent = fmt(m);
+    fill(price); fill(down);
+    const msg = "Здравствуйте! Хочу расчёт рассрочки:\n" +
+      "Стоимость: " + fmt(p) + "\nПервый взнос: " + dPct + "% (" + fmt(dAbs) + ")\n" +
+      "Срок: " + term + " мес\nПлатёж: " + fmt(m) + "/мес";
+    if (wa) wa.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
+  }
+  price.addEventListener("input", calc);
+  down.addEventListener("input", calc);
+  if (terms) terms.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    term = +b.dataset.term;
+    terms.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+    calc();
+  }));
+  calc();
+})();
+
+/* ════════════════════════════════════════════════════════
+   FAQ — аккордеон
+   ════════════════════════════════════════════════════════ */
+(function () {
+  const items = document.querySelectorAll(".faq-item");
+  if (!items.length) return;
+  items.forEach((item) => {
+    const q = item.querySelector(".faq-q");
+    const a = item.querySelector(".faq-a");
+    if (!q || !a) return;
+    q.addEventListener("click", () => {
+      const isOpen = item.classList.contains("open");
+      items.forEach((it) => {
+        it.classList.remove("open");
+        it.querySelector(".faq-q")?.setAttribute("aria-expanded", "false");
+        const ans = it.querySelector(".faq-a");
+        if (ans) ans.style.maxHeight = null;
+      });
+      if (!isOpen) {
+        item.classList.add("open");
+        q.setAttribute("aria-expanded", "true");
+        a.style.maxHeight = a.scrollHeight + "px";
+      }
+    });
+  });
+})();
+
+/* ════════════════════════════════════════════════════════
+   ФОРМА ЗАЯВКИ — отправка в WhatsApp (без бэкенда)
+   ════════════════════════════════════════════════════════ */
 (function () {
   const form = document.getElementById("leadForm");
   if (!form) return;
-
+  const nameEl = form.querySelector('input[name="name"]');
+  const phoneEl = form.querySelector('input[name="phone"]');
+  const goalEl = form.querySelector('input[name="goal"]');
+  const consentEl = form.querySelector('input[name="consent"]');
+  const consentRow = form.querySelector(".lead-consent");
   const WA_PHONE = "79894702263";
   const TG_USER = "muhammad_ls";
-  const toast = document.getElementById("toast");
-  let toastTimer = null;
 
-  function showToast(text) {
-    if (!toast) return;
-    toast.textContent = text;
-    toast.classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove("show"), 4200);
-  }
-
-  function buildMessage() {
-    const f = form.elements;
-    const name = f.name.value.trim();
-    const phone = f.phone.value.trim();
-    const object = f.object.value;
-    const budget = f.budget.value.trim();
-    const note = f.note.value.trim();
-
-    let msg = "Здравствуйте! Заявка с сайта VetraEstate:\n";
-    msg += "Имя: " + name + "\n";
-    msg += "Телефон: " + phone + "\n";
-    msg += "Объект: " + object + "\n";
-    if (budget) msg += "Первый взнос: " + budget + "\n";
-    if (note) msg += "Комментарий: " + note + "\n";
-    return msg.trim();
+  function toast(text) {
+    const t = document.getElementById("toast");
+    if (!t) return;
+    t.textContent = text;
+    t.classList.add("show");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove("show"), 4200);
   }
 
   function validate() {
     let ok = true;
-    ["name", "phone"].forEach((n) => {
-      const el = form.elements[n];
-      const bad = !el.value.trim();
-      el.classList.toggle("invalid", bad);
-      if (bad) ok = false;
+    [nameEl, phoneEl].forEach((el) => {
+      const empty = !el.value.trim();
+      el.classList.toggle("invalid", empty);
+      if (empty) ok = false;
     });
+    const digits = (phoneEl.value.match(/\d/g) || []).length;
+    if (digits < 10) { phoneEl.classList.add("invalid"); ok = false; }
+    if (!consentEl.checked) { consentRow?.classList.add("invalid"); ok = false; }
+    else { consentRow?.classList.remove("invalid"); }
+    if (!ok) form.querySelector(".invalid")?.focus?.();
     return ok;
   }
 
-  async function copyText(text) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch (e) {
-      return false;
-    }
+  function buildMsg() {
+    const goal = goalEl && goalEl.value.trim();
+    return "Здравствуйте! Заявка с сайта VetraEstate:\n" +
+      "Имя: " + nameEl.value.trim() + "\nТелефон: " + phoneEl.value.trim() +
+      (goal ? "\nЗапрос: " + goal : "");
   }
 
-  form.querySelectorAll(".lead-submit").forEach((btn) => {
-    btn.addEventListener("click", async (e) => {
-      e.preventDefault();
-      if (!validate()) {
-        showToast("Заполните имя и телефон");
-        return;
-      }
-      const msg = buildMessage();
-      const channel = btn.dataset.channel;
+  async function send(channel) {
+    if (!validate()) return;
+    const msg = buildMsg();
+    if (channel === "telegram") {
+      let copied = false;
+      try { await navigator.clipboard.writeText(msg); copied = true; } catch (e) {}
+      window.open("https://t.me/" + TG_USER, "_blank");
+      toast(copied
+        ? "Заявка скопирована — вставьте её в чат с менеджером в Telegram"
+        : "Открываем Telegram — напишите менеджеру вашу заявку");
+    } else {
+      window.open("https://wa.me/" + WA_PHONE + "?text=" + encodeURIComponent(msg), "_blank");
+      toast("Открываем WhatsApp — нажмите «Отправить» в мессенджере");
+    }
+    form.reset();
+  }
 
-      if (channel === "whatsapp") {
-        window.open("https://wa.me/" + WA_PHONE + "?text=" + encodeURIComponent(msg), "_blank");
-      } else {
-        // Telegram не подставляет текст в личный чат — копируем и открываем диалог
-        const copied = await copyText(msg);
-        window.open("https://t.me/" + TG_USER, "_blank");
-        showToast(copied
-          ? "Заявка скопирована — вставьте её в чат с менеджером"
-          : "Открываем Telegram — напишите менеджеру вашу заявку");
-      }
+  form.addEventListener("submit", (e) => { e.preventDefault(); send("whatsapp"); });
+  form.querySelectorAll(".lead-send").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      if (btn.dataset.channel === "telegram") { e.preventDefault(); send("telegram"); }
     });
   });
-
-  // снимаем подсветку ошибки при вводе
   form.querySelectorAll("input").forEach((el) =>
     el.addEventListener("input", () => el.classList.remove("invalid")));
 })();
 
-/* ═══ ЛАЙТБОКС ГАЛЕРЕИ ═══ */
+/* ════════════════════════════════════════════════════════
+   АНИМАЦИЯ КАРТИНОК — появление при скролле + лайтбокс
+   ════════════════════════════════════════════════════════ */
 (function () {
+  // Лайтбокс для галереи объектов (появление картинок — через CSS)
   const lb = document.getElementById("lightbox");
   const grid = document.querySelector(".horizon-gallery .gallery-grid");
   if (!lb || !grid) return;
-
-  const imgs = Array.from(grid.querySelectorAll("img"));
-  if (!imgs.length) return;
-
+  const gimgs = Array.prototype.slice.call(grid.querySelectorAll("img"));
+  if (!gimgs.length) return;
   const lbImg = lb.querySelector(".lightbox-img");
   const closeBtn = lb.querySelector(".lightbox-close");
   const prevBtn = lb.querySelector(".lightbox-prev");
   const nextBtn = lb.querySelector(".lightbox-next");
-  let i = 0;
+  let idx = 0;
 
-  function open(idx) {
-    i = idx;
-    lbImg.src = imgs[i].src;
-    lbImg.alt = imgs[i].alt || "";
+  function show(i) {
+    idx = (i + gimgs.length) % gimgs.length;
+    lbImg.src = gimgs[idx].src;
+    lbImg.alt = gimgs[idx].alt || "";
+  }
+  function open(i) {
+    show(i);
     lb.classList.add("open");
     lb.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
@@ -1047,253 +1342,15 @@ ${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос 
     lb.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
   }
-  function move(step) {
-    i = (i + step + imgs.length) % imgs.length;
-    lbImg.src = imgs[i].src;
-    lbImg.alt = imgs[i].alt || "";
-  }
-
-  imgs.forEach((img, idx) => img.addEventListener("click", () => open(idx)));
+  gimgs.forEach((img, i) => img.addEventListener("click", () => open(i)));
   closeBtn.addEventListener("click", close);
-  prevBtn.addEventListener("click", () => move(-1));
-  nextBtn.addEventListener("click", () => move(1));
+  prevBtn.addEventListener("click", () => show(idx - 1));
+  nextBtn.addEventListener("click", () => show(idx + 1));
   lb.addEventListener("click", (e) => { if (e.target === lb) close(); });
   document.addEventListener("keydown", (e) => {
     if (!lb.classList.contains("open")) return;
     if (e.key === "Escape") close();
-    else if (e.key === "ArrowLeft") move(-1);
-    else if (e.key === "ArrowRight") move(1);
-  });
-})();
-
-/* ═══ 3D-НАКЛОН КАРТОЧЕК ОБЪЕКТОВ ═══ */
-(function () {
-  if (!window.matchMedia) return;
-  if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-  const cards = document.querySelectorAll(".projects-grid .project");
-  const MAX = 7; // макс. угол наклона, градусы
-
-  cards.forEach((card) => {
-    card.classList.add("tilt3d");
-    const glare = document.createElement("div");
-    glare.className = "tilt-glare";
-    card.appendChild(glare);
-
-    let raf = null;
-    card.addEventListener("mousemove", (e) => {
-      const r = card.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width;
-      const py = (e.clientY - r.top) / r.height;
-      const rx = (0.5 - py) * MAX * 2;
-      const ry = (px - 0.5) * MAX * 2;
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        card.style.transform =
-          `perspective(1500px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateZ(10px)`;
-        card.style.boxShadow = "0 34px 80px rgba(0,0,0,.5)";
-        glare.style.setProperty("--gx", (px * 100).toFixed(1) + "%");
-        glare.style.setProperty("--gy", (py * 100).toFixed(1) + "%");
-      });
-    });
-    card.addEventListener("mouseleave", () => {
-      if (raf) cancelAnimationFrame(raf);
-      card.style.transform = "";
-      card.style.boxShadow = "";
-    });
-  });
-})();
-
-/* ═══ ПАРАЛЛАКС HERO (3D-глубина за курсором) ═══ */
-(function () {
-  if (!window.matchMedia || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-  const hero = document.querySelector(".hero");
-  const bgs = hero?.querySelector(".hero-bgs");
-  const sw = hero?.querySelector(".hero-switch");
-  if (!hero || !bgs) return;
-  // примечание: текст hero двигает отдельный скролл-параллакс,
-  // чтобы не было конфликта по transform
-
-  let tx = 0, ty = 0, cx = 0, cy = 0, raf = null;
-
-  hero.addEventListener("mousemove", (e) => {
-    const r = hero.getBoundingClientRect();
-    tx = (e.clientX - r.left) / r.width - 0.5;   // -0.5..0.5
-    ty = (e.clientY - r.top) / r.height - 0.5;
-    if (!raf) raf = requestAnimationFrame(loop);
-  });
-  hero.addEventListener("mouseleave", () => { tx = 0; ty = 0; if (!raf) raf = requestAnimationFrame(loop); });
-
-  function loop() {
-    cx += (tx - cx) * 0.08;
-    cy += (ty - cy) * 0.08;
-    bgs.style.transform = `translate3d(${(-cx * 14).toFixed(1)}px, ${(-cy * 14).toFixed(1)}px, 0)`;
-    if (sw) sw.style.transform = `translate3d(${(cx * 26).toFixed(1)}px, ${(cy * 22).toFixed(1)}px, 0)`;
-    if (Math.abs(tx - cx) > 0.001 || Math.abs(ty - cy) > 0.001) raf = requestAnimationFrame(loop);
-    else raf = null;
-  }
-})();
-
-/* ═══ 3D-НАКЛОН КРУГЛЯШЕЙ ВЫБОРА ЖК ═══ */
-(function () {
-  if (!window.matchMedia || !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-  document.querySelectorAll(".proj-dot").forEach((dot) => {
-    const ring = dot.querySelector(".proj-dot-ring");
-    if (!ring) return;
-    dot.addEventListener("mousemove", (e) => {
-      const r = ring.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width - 0.5;
-      const py = (e.clientY - r.top) / r.height - 0.5;
-      ring.style.transform =
-        `perspective(500px) rotateX(${(-py * 22).toFixed(1)}deg) rotateY(${(px * 22).toFixed(1)}deg) translateZ(8px) scale(1.05)`;
-    });
-    dot.addEventListener("mouseleave", () => { ring.style.transform = ""; });
-  });
-})();
-
-/* ═══ ТАП-ФЛИП ПРЕИМУЩЕСТВ НА ТАЧ-УСТРОЙСТВАХ ═══ */
-(function () {
-  const coarse = window.matchMedia && window.matchMedia("(hover: none)").matches;
-  if (!coarse) return;
-  document.querySelectorAll(".benefit-card.flip").forEach((card) => {
-    card.addEventListener("click", (e) => {
-      if (e.target.closest("a")) return; // ссылка на обороте работает как обычно
-      card.classList.toggle("flipped");
-    });
-  });
-})();
-
-/* ═══ 3D-ТУР: карусель-цилиндр, вращение от скролла ═══ */
-(function () {
-  const tour = document.getElementById("tour3d");
-  const stage = document.getElementById("tour3dStage");
-  if (!tour || !stage) return;
-
-  const items = Array.from(stage.querySelectorAll(".tour3d-item"));
-  const N = items.length;
-  if (!N) return;
-  const theta = 360 / N;
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let radius = 480;
-  let scrollPos = 0;   // вращение от скролла (в шагах)
-  let offset = 0;      // ручное смещение (стрелки/перетаскивание)
-
-  function measure() {
-    const w = items[0].getBoundingClientRect().width || 320;
-    radius = Math.round((w / 2) / Math.tan((theta / 2) * Math.PI / 180)) + 40;
-    items.forEach((it, i) => {
-      it.style.transform = `rotateY(${i * theta}deg) translateZ(${radius}px)`;
-    });
-    render();
-  }
-
-  function render(extra) {
-    const cur = scrollPos + offset + (extra || 0);
-    stage.style.transform = `translateZ(${-radius}px) rotateY(${(-cur * theta).toFixed(2)}deg)`;
-    const front = ((Math.round(cur) % N) + N) % N;
-    items.forEach((it, i) => it.classList.toggle("is-front", i === front));
-  }
-
-  // вращение от прокрутки секции через экран
-  function onScroll() {
-    const sec = tour.closest("section") || tour;
-    const r = sec.getBoundingClientRect();
-    const vh = window.innerHeight;
-    // прогресс 0..1, пока секция проходит экран
-    const p = (vh - r.top) / (vh + r.height);
-    const clamped = Math.max(0, Math.min(1, p));
-    scrollPos = clamped * (N + 2); // примерно полный оборот за проход
-    if (!dragging) render();
-  }
-
-  // стрелки
-  tour.querySelector(".tour3d-next")?.addEventListener("click", () => { offset += 1; render(); });
-  tour.querySelector(".tour3d-prev")?.addEventListener("click", () => { offset -= 1; render(); });
-
-  // перетаскивание
-  let dragging = false, startX = 0, moved = 0;
-  tour.addEventListener("pointerdown", (e) => { dragging = true; startX = e.clientX; moved = 0; tour.setPointerCapture(e.pointerId); });
-  tour.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
-    moved = e.clientX - startX;
-    render(-moved * 0.25 / theta);
-  });
-  tour.addEventListener("pointerup", () => {
-    if (!dragging) return;
-    dragging = false;
-    offset += Math.round(-moved * 0.25 / theta);
-    render();
-  });
-
-  let rt;
-  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(measure, 150); });
-  window.addEventListener("scroll", () => { if (!reduce) requestAnimationFrame(onScroll); }, { passive: true });
-
-  const firstImg = items[0].querySelector("img");
-  if (firstImg && !firstImg.complete) firstImg.addEventListener("load", measure, { once: true });
-  measure();
-  onScroll();
-})();
-
-/* ═══ HERO: параллакс контента при скролле ═══ */
-(function () {
-  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  const content = document.querySelector(".hero .hero-content");
-  const hero = document.querySelector(".hero");
-  if (!content || !hero) return;
-  let ticking = false;
-  function update() {
-    ticking = false;
-    const h = hero.offsetHeight || 1;
-    const y = Math.min(window.scrollY, h);
-    content.style.transform = `translateY(${(y * 0.28).toFixed(1)}px)`;
-    content.style.opacity = String(Math.max(0, 1 - y / (h * 0.85)));
-  }
-  window.addEventListener("scroll", () => {
-    if (!ticking) { ticking = true; requestAnimationFrame(update); }
-  }, { passive: true });
-  update();
-})();
-
-/* ═══ HERO: видео-фоны (plug-and-play для клипов Higgsfield) ═══
-   Когда появятся клипы, впишите их в HERO_VIDEOS:
-   ключ "проект-время" → базовый путь без суффикса -d.mp4 / -m.mp4.
-   Пример: "alye-night": "images/hero-alye-night"
-   Файлы: hero-<project>-<time>-d.mp4 (десктоп), -m.mp4 (мобайл).
-   Пустой список = фон остаётся фотографией (как сейчас).            */
-(function () {
-  var HERO_VIDEOS = {
-    // "horizon-day":  "images/hero-horizon-day",
-    // "horizon-night":"images/hero-horizon-night",
-    // "moscow-day":   "images/hero-moscow-day",
-    // "moscow-night": "images/hero-moscow-night",
-    // "alye-day":     "images/hero-alye-day",
-    // "alye-night":   "images/hero-alye-night"
-  };
-  if (!Object.keys(HERO_VIDEOS).length) return;
-  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-  var mobile = window.matchMedia("(max-width: 900px)").matches;
-  var suffix = mobile ? "-m.mp4" : "-d.mp4";
-
-  Object.keys(HERO_VIDEOS).forEach(function (key) {
-    var layer = document.querySelector('.hero-layer[data-bg="' + key + '"]');
-    if (!layer) return;
-    var v = document.createElement("video");
-    v.className = "hero-video";
-    v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
-    v.setAttribute("playsinline", ""); v.setAttribute("muted", "");
-    v.preload = "metadata";
-    var s = document.createElement("source");
-    s.src = HERO_VIDEOS[key] + suffix; s.type = "video/mp4";
-    v.appendChild(s);
-    v.addEventListener("error", function () { v.remove(); }); // нет файла — остаётся фото
-    layer.appendChild(v);
-    if (v.play) { var pr = v.play(); if (pr && pr.catch) pr.catch(function () {}); }
+    else if (e.key === "ArrowLeft") show(idx - 1);
+    else if (e.key === "ArrowRight") show(idx + 1);
   });
 })();
