@@ -1,740 +1,1356 @@
-'use strict';
+const revealItems = document.querySelectorAll(".reveal");
 
-/* ══════════════════════════════════════
-   PRELOADER
-══════════════════════════════════════ */
-window.addEventListener('load', function() {
-  var pl = document.getElementById('preloader');
-  if (!pl) return;
-  setTimeout(function() {
-    pl.classList.add('hidden');
-    setTimeout(function() { pl.style.display = 'none'; }, 700);
-  }, 1600);
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add("visible");
+    }
+  });
+}, { threshold: 0.12 });
+
+revealItems.forEach((item) => revealObserver.observe(item));
+
+const filters = document.querySelectorAll(".filter");
+const projects = document.querySelectorAll(".project");
+
+filters.forEach((filter) => {
+  filter.addEventListener("click", () => {
+    filters.forEach((f) => f.classList.remove("active"));
+    filter.classList.add("active");
+
+    const selected = filter.dataset.filter;
+
+    projects.forEach((project) => {
+      const categories = project.dataset.category;
+      const shouldShow = selected === "all" || categories.includes(selected);
+      project.classList.toggle("hidden", !shouldShow);
+    });
+  });
 });
 
-/* ══════════════════════════════════════
-   NAVBAR
-══════════════════════════════════════ */
-(function() {
-  var nav = document.getElementById('navbar');
-  var burger = document.getElementById('navBurger');
-  var mobile = document.getElementById('navMobile');
+const navToggle = document.querySelector(".nav-toggle");
+const navLinks = document.querySelector(".nav-links");
 
-  window.addEventListener('scroll', function() {
-    if (window.scrollY > 60) {
-      nav.classList.add('scrolled');
-    } else {
-      nav.classList.remove('scrolled');
-    }
+navToggle.addEventListener("click", () => {
+  navLinks.classList.toggle("open");
+});
+
+navLinks.querySelectorAll("a").forEach((link) => {
+  link.addEventListener("click", () => navLinks.classList.remove("open"));
+});
+
+
+
+
+// Layout-linked smart installment calculators
+function formatRub(value) {
+  const n = Math.max(Math.round(Number(value) || 0), 0);
+  return n.toLocaleString("ru-RU") + " ₽";
+}
+
+function getSmartPrice(area, down, minDown, maxPrice, fullPrice) {
+  const fullPaymentTotal = area * fullPrice;
+
+  if (down <= minDown) return maxPrice;
+  if (down >= fullPaymentTotal) return fullPrice;
+
+  const progress = (down - minDown) / Math.max(fullPaymentTotal - minDown, 1);
+  const price = maxPrice - progress * (maxPrice - fullPrice);
+
+  return Math.round(price / 1000) * 1000;
+}
+
+function setAnimatedText(el, text) {
+  if (!el) return;
+  if (el.textContent !== text) {
+    el.textContent = text;
+    el.classList.remove("number-pop");
+    void el.offsetWidth;
+    el.classList.add("number-pop");
+    setTimeout(() => el.classList.remove("number-pop"), 260);
+  }
+}
+
+function updateCalc(calcBox) {
+  const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
+  let down = Number(calcBox.querySelector(".calc-down")?.value || 0);
+  const term = Math.max(Number(calcBox.querySelector(".calc-term")?.value || 1), 1);
+
+  const maxPrice = Number(calcBox.dataset.currentMaxprice || calcBox.dataset.defaultPrice || 0);
+  const fullPrice = Number(calcBox.dataset.currentFullprice || calcBox.dataset.defaultFullprice || 0);
+  const minDown = Number(calcBox.dataset.currentMindown || 0);
+
+  const smartPrice = getSmartPrice(area, down, minDown, maxPrice, fullPrice);
+  const priceInput = calcBox.querySelector(".calc-price");
+  if (priceInput) priceInput.value = smartPrice;
+
+  const total = area * smartPrice;
+  if (down > total) {
+    down = total;
+    const downInput = calcBox.querySelector(".calc-down");
+    if (downInput) downInput.value = Math.round(down);
+  }
+
+  const rest = Math.max(total - down, 0);
+  const monthly = rest / term;
+  const fullTotal = area * fullPrice;
+
+  setAnimatedText(calcBox.querySelector(".calc-total"), formatRub(total));
+  setAnimatedText(calcBox.querySelector(".calc-rest"), formatRub(rest));
+  setAnimatedText(calcBox.querySelector(".calc-monthly"), formatRub(monthly) + "/мес");
+  setAnimatedText(calcBox.querySelector(".calc-full"), formatRub(fullTotal));
+
+  const project = calcBox.querySelector(".calc-project")?.textContent.trim() || "";
+  const plan = calcBox.querySelector(".calc-plan-title")?.textContent.trim() || "";
+  const msg = `Здравствуйте! Хочу отправить расчет с сайта VetraEstate.
+Объект: ${project}
+Планировка: ${plan}
+Площадь: ${area} м²
+Цена за м²: ${formatRub(smartPrice)}
+Первый взнос: ${formatRub(down)}
+Срок рассрочки: ${term} мес.
+Стоимость квартиры: ${formatRub(total)}
+Остаток: ${formatRub(rest)}
+Ежемесячный платеж: ${formatRub(monthly)}/мес.`;
+  const sendBtn = calcBox.querySelector(".calc-send-wa");
+  if (sendBtn) sendBtn.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
+
+}
+
+function selectPlan(card, shouldScroll = true) {
+  const section = card.closest(".calculator-section");
+  const calcBox = section.querySelector(".calc-box");
+  if (!calcBox) return;
+
+  section.querySelectorAll(".plan-calc-card").forEach((c) => c.classList.remove("active"));
+  card.classList.add("active");
+
+  const project = card.dataset.project;
+  const type = card.dataset.type;
+  const area = card.dataset.area;
+  const price = card.dataset.price;
+  const fullprice = card.dataset.fullprice;
+  const down = card.dataset.down;
+  const minDown = card.dataset.mindown || down;
+  const term = card.dataset.term;
+
+  calcBox.dataset.currentMaxprice = price;
+  calcBox.dataset.currentFullprice = fullprice;
+  calcBox.dataset.currentMindown = minDown;
+
+  calcBox.querySelector(".calc-project").textContent = project;
+  calcBox.querySelector(".calc-plan-title").textContent = `${type} • ${area} м²`;
+  calcBox.querySelector(".calc-area").value = area;
+  calcBox.querySelector(".calc-down").value = down;
+  calcBox.querySelector(".calc-term").value = term;
+
+  updateCalc(calcBox);
+
+  if (shouldScroll) {
+    calcBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
+
+document.querySelectorAll(".calculator-section").forEach((section) => {
+  const firstCard = section.querySelector(".plan-calc-card");
+  const calcBox = section.querySelector(".calc-box");
+
+  section.querySelectorAll(".plan-calc-card").forEach((card) => {
+    card.addEventListener("click", () => selectPlan(card, true));
   });
 
-  if (burger && mobile) {
-    burger.addEventListener('click', function() {
-      mobile.classList.toggle('open');
-    });
-    mobile.querySelectorAll('.nm-link').forEach(function(link) {
-      link.addEventListener('click', function() {
-        mobile.classList.remove('open');
-      });
-    });
-  }
-})();
-
-/* ══════════════════════════════════════
-   HERO CANVAS — Aurora Animation
-══════════════════════════════════════ */
-(function() {
-  var canvas = document.getElementById('heroCanvas');
-  if (!canvas) return;
-  var ctx = canvas.getContext('2d');
-  var W, H;
-
-  function resize() {
-    W = canvas.width = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  var blobs = [];
-  var colors = [
-    [201, 168, 76],
-    [120, 80, 20],
-    [180, 130, 60],
-    [60, 40, 10],
-    [220, 190, 100],
-  ];
-
-  for (var i = 0; i < 6; i++) {
-    var c = colors[i % colors.length];
-    blobs.push({
-      x: Math.random(),
-      y: Math.random(),
-      r: 0.25 + Math.random() * 0.35,
-      vx: (Math.random() - 0.5) * 0.0003,
-      vy: (Math.random() - 0.5) * 0.0002,
-      phase: Math.random() * Math.PI * 2,
-      color: c
+  if (calcBox) {
+    calcBox.querySelectorAll("input").forEach((input) => {
+      input.addEventListener("input", () => updateCalc(calcBox));
     });
   }
 
-  var particles = [];
-  for (var j = 0; j < 60; j++) {
-    particles.push({
-      x: Math.random(),
-      y: Math.random(),
-      size: 0.5 + Math.random() * 1.5,
-      speed: 0.00015 + Math.random() * 0.0003,
-      opacity: 0.2 + Math.random() * 0.6
-    });
+  // Initial selection without jumping down the page
+  if (firstCard) selectPlan(firstCard, false);
+});
+
+
+// Premium layout modal
+document.querySelectorAll(".layouts-grid").forEach((grid) => {
+  const imgs = Array.from(grid.querySelectorAll(".zoomable-layout"));
+  if (!imgs.length) return;
+
+  const modal = document.querySelector(".layout-modal");
+  if (!modal) return;
+
+  const modalImg = modal.querySelector("img");
+  const closeBtn = modal.querySelector(".layout-modal-close");
+  const prevBtn = modal.querySelector(".layout-prev");
+  const nextBtn = modal.querySelector(".layout-next");
+  let index = 0;
+
+  function openModal(i) {
+    index = i;
+    modalImg.src = imgs[index].src;
+    modalImg.alt = imgs[index].alt || "Планировка";
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
   }
 
-  var t = 0;
-  function draw() {
-    t += 0.005;
-    ctx.clearRect(0, 0, W, H);
-
-    // Dark base
-    ctx.fillStyle = '#080808';
-    ctx.fillRect(0, 0, W, H);
-
-    // Aurora blobs
-    ctx.globalCompositeOperation = 'screen';
-    blobs.forEach(function(b) {
-      b.x += b.vx;
-      b.y += b.vy;
-      if (b.x < -0.2) b.x = 1.2;
-      if (b.x > 1.2) b.x = -0.2;
-      if (b.y < -0.2) b.y = 1.2;
-      if (b.y > 1.2) b.y = -0.2;
-
-      var pulse = 0.85 + 0.15 * Math.sin(t + b.phase);
-      var rx = b.r * W * pulse;
-      var ry = b.r * H * 0.6 * pulse;
-      var cx = b.x * W;
-      var cy = b.y * H;
-
-      var grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(rx, ry));
-      var alpha = (0.04 + 0.03 * Math.sin(t * 0.7 + b.phase)).toFixed(3);
-      grd.addColorStop(0, 'rgba(' + b.color[0] + ',' + b.color[1] + ',' + b.color[2] + ',' + alpha + ')');
-      grd.addColorStop(1, 'rgba(' + b.color[0] + ',' + b.color[1] + ',' + b.color[2] + ',0)');
-
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.scale(rx / Math.max(rx, ry), ry / Math.max(rx, ry));
-      ctx.beginPath();
-      ctx.arc(0, 0, Math.max(rx, ry), 0, Math.PI * 2);
-      ctx.fillStyle = grd;
-      ctx.fill();
-      ctx.restore();
-    });
-    ctx.globalCompositeOperation = 'source-over';
-
-    // Particles
-    particles.forEach(function(p) {
-      p.y -= p.speed;
-      if (p.y < -0.01) p.y = 1.01;
-      ctx.beginPath();
-      ctx.arc(p.x * W, p.y * H, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(201,168,76,' + (p.opacity * (0.7 + 0.3 * Math.sin(t * 2 + p.x * 10))) + ')';
-      ctx.fill();
-    });
-
-    // Horizontal shimmer line
-    var y = H * 0.6 + 30 * Math.sin(t * 0.5);
-    var shimmer = ctx.createLinearGradient(0, y - 1, W, y + 1);
-    shimmer.addColorStop(0, 'rgba(201,168,76,0)');
-    shimmer.addColorStop(0.3, 'rgba(201,168,76,0.06)');
-    shimmer.addColorStop(0.5, 'rgba(201,168,76,0.12)');
-    shimmer.addColorStop(0.7, 'rgba(201,168,76,0.06)');
-    shimmer.addColorStop(1, 'rgba(201,168,76,0)');
-    ctx.fillStyle = shimmer;
-    ctx.fillRect(0, y - 1, W, 2);
-
-    // Bottom vignette
-    var vgrd = ctx.createLinearGradient(0, H * 0.7, 0, H);
-    vgrd.addColorStop(0, 'rgba(8,8,8,0)');
-    vgrd.addColorStop(1, 'rgba(8,8,8,0.95)');
-    ctx.fillStyle = vgrd;
-    ctx.fillRect(0, 0, W, H);
-
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
-
-/* ══════════════════════════════════════
-   SCROLL REVEAL
-══════════════════════════════════════ */
-(function() {
-  var els = document.querySelectorAll('.reveal');
-  if (!('IntersectionObserver' in window)) {
-    els.forEach(function(el) { el.classList.add('visible'); });
-    return;
-  }
-  var io = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        var delay = entry.target.dataset.delay || 0;
-        setTimeout(function() {
-          entry.target.classList.add('visible');
-        }, parseInt(delay));
-        io.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.12 });
-  els.forEach(function(el) { io.observe(el); });
-})();
-
-/* ══════════════════════════════════════
-   STATS COUNTER
-══════════════════════════════════════ */
-(function() {
-  var nums = document.querySelectorAll('.stat-num');
-  if (!nums.length) return;
-  var started = false;
-
-  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
-
-  function runCounters() {
-    if (started) return;
-    started = true;
-    nums.forEach(function(el) {
-      var target = parseInt(el.dataset.target, 10);
-      var duration = 2000;
-      var start = null;
-      function step(ts) {
-        if (!start) start = ts;
-        var progress = Math.min((ts - start) / duration, 1);
-        el.textContent = Math.round(easeOut(progress) * target);
-        if (progress < 1) requestAnimationFrame(step);
-        else el.textContent = target;
-      }
-      requestAnimationFrame(step);
-    });
+  function closeModal() {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
   }
 
-  var io = new IntersectionObserver(function(entries) {
-    if (entries.some(function(e) { return e.isIntersecting; })) runCounters();
-  }, { threshold: 0.3 });
-  var statsBar = document.querySelector('.stats-bar');
-  if (statsBar) io.observe(statsBar);
-})();
+  function move(step) {
+    index = (index + step + imgs.length) % imgs.length;
+    modalImg.src = imgs[index].src;
+    modalImg.alt = imgs[index].alt || "Планировка";
+  }
 
-/* ══════════════════════════════════════
-   LAYOUTS / FLOOR PLANS
-══════════════════════════════════════ */
-(function() {
-  var data = {
-    horizon: {
-      1: { img: 'images/horizon-new-layout-11.jpg', title: '1-комнатная квартира', area: '36 м²', floor: '3–17', ceil: '2.9 м', price: 'от 4.2 млн ₽', finish: 'Чистовая', status: 'В продаже' },
-      2: { img: 'images/horizon-new-layout-13.jpg', title: '2-комнатная квартира', area: '58 м²', floor: '3–17', ceil: '2.9 м', price: 'от 6.8 млн ₽', finish: 'Чистовая', status: 'В продаже' },
-      3: { img: 'images/horizon-new-layout-15.jpg', title: '3-комнатная квартира', area: '78 м²', floor: '5–17', ceil: '2.9 м', price: 'от 9.1 млн ₽', finish: 'Чистовая', status: 'Ограниченно' }
-    },
-    alye: {
-      1: { img: 'images/alye-layout-11.jpg', title: '1-комнатная квартира', area: '42 м²', floor: '2–14', ceil: '3.0 м', price: 'от 5.8 млн ₽', finish: 'Под ключ', status: 'В продаже' },
-      2: { img: 'images/alye-layout-14.jpg', title: '2-комнатная квартира', area: '68 м²', floor: '2–14', ceil: '3.0 м', price: 'от 8.9 млн ₽', finish: 'Под ключ', status: 'В продаже' },
-      3: { img: 'images/alye-layout-18.jpg', title: '3-комнатная квартира', area: '95 м²', floor: '3–14', ceil: '3.0 м', price: 'от 12.5 млн ₽', finish: 'Под ключ', status: 'В продаже' }
-    },
-    moscow: {
-      1: { img: 'images/moscow-layout-25.jpg', title: '1-комнатная квартира', area: '32 м²', floor: '2–12', ceil: '2.8 м', price: 'от 3.5 млн ₽', finish: 'Черновая', status: 'В продаже' },
-      2: { img: 'images/moscow-layout-26.jpg', title: '2-комнатная квартира', area: '52 м²', floor: '2–12', ceil: '2.8 м', price: 'от 5.6 млн ₽', finish: 'Черновая', status: 'Ограниченно' },
-      3: { img: 'images/moscow-layout-28.jpg', title: '3-комнатная квартира', area: '72 м²', floor: '2–12', ceil: '2.8 м', price: 'от 7.8 млн ₽', finish: 'Черновая', status: 'Последние' }
+  imgs.forEach((img, i) => img.addEventListener("click", () => openModal(i)));
+  closeBtn?.addEventListener("click", closeModal);
+  prevBtn?.addEventListener("click", () => move(-1));
+  nextBtn?.addEventListener("click", () => move(1));
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (!modal.classList.contains("open")) return;
+    if (e.key === "Escape") closeModal();
+    if (e.key === "ArrowLeft") move(-1);
+    if (e.key === "ArrowRight") move(1);
+  });
+});
+
+// Range slider sync and golden price highlight
+document.querySelectorAll(".calc-box").forEach((calcBox) => {
+  const downInput = calcBox.querySelector(".calc-down");
+  const range = calcBox.querySelector(".calc-down-range");
+  const priceInput = calcBox.querySelector(".calc-price");
+
+  function syncRangeFromInputs() {
+    const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
+    const maxPrice = Number(calcBox.dataset.currentMaxprice || calcBox.dataset.defaultPrice || 0);
+    const maxTotal = Math.max(area * maxPrice, 1000000);
+
+    if (range) {
+      range.max = Math.round(maxTotal);
+      range.value = Number(downInput?.value || 0);
+    }
+
+    if (priceInput) {
+      const currentPrice = Number(priceInput.value || 0);
+      const fullPrice = Number(calcBox.dataset.currentFullprice || calcBox.dataset.defaultFullprice || 0);
+      priceInput.classList.toggle("good-price", currentPrice <= fullPrice + 5000);
+    }
+  }
+
+  if (range && downInput) {
+    range.addEventListener("input", () => {
+      downInput.value = range.value;
+      if (typeof updateCalc === "function") updateCalc(calcBox);
+      syncRangeFromInputs();
+    });
+
+    downInput.addEventListener("input", () => {
+      if (typeof updateCalc === "function") updateCalc(calcBox);
+      syncRangeFromInputs();
+    });
+
+    calcBox.querySelector(".calc-area")?.addEventListener("input", syncRangeFromInputs);
+  }
+
+  setTimeout(syncRangeFromInputs, 100);
+});
+
+// Patch selectPlan to keep range updated after choosing a plan
+if (typeof selectPlan === "function" && !window.__vetraSelectPlanPatched) {
+  window.__vetraSelectPlanPatched = true;
+  const originalSelectPlan = selectPlan;
+  selectPlan = function(card, shouldScroll = true) {
+    originalSelectPlan(card, shouldScroll);
+    const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
+    if (!calcBox) return;
+    const downInput = calcBox.querySelector(".calc-down");
+    const range = calcBox.querySelector(".calc-down-range");
+    if (range && downInput) {
+      const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
+      const maxPrice = Number(calcBox.dataset.currentMaxprice || calcBox.dataset.defaultPrice || 0);
+      range.max = Math.round(Math.max(area * maxPrice, 1000000));
+      range.value = downInput.value;
     }
   };
+}
 
-  var currentProject = 'horizon';
-  var currentType = 1;
 
-  var img = document.getElementById('layoutImg');
-  var specTitle = document.getElementById('specTitle');
-  var specArea = document.getElementById('specArea');
-  var specFloor = document.getElementById('specFloor');
-  var specCeil = document.getElementById('specCeil');
-  var specPrice = document.getElementById('specPrice');
-  var specFinish = document.getElementById('specFinish');
-  var specStatus = document.getElementById('specStatus');
+// Final WhatsApp send calculation updater
+function vetraUpdateSendButton(calcBox) {
+  if (!calcBox) return;
 
-  function updateLayout() {
-    var info = data[currentProject][currentType];
-    if (!info) return;
+  const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
+  const price = Number(calcBox.querySelector(".calc-price")?.value || 0);
+  const down = Number(calcBox.querySelector(".calc-down")?.value || 0);
+  const term = Math.max(Number(calcBox.querySelector(".calc-term")?.value || 1), 1);
 
-    img.classList.add('fading');
-    setTimeout(function() {
-      img.src = info.img;
-      img.onload = function() { img.classList.remove('fading'); };
-      img.onerror = function() { img.classList.remove('fading'); };
-    }, 200);
+  const total = area * price;
+  const rest = Math.max(total - down, 0);
+  const monthly = rest / term;
 
-    specTitle.textContent = info.title;
-    specArea.textContent = info.area;
-    specFloor.textContent = info.floor;
-    specCeil.textContent = info.ceil;
-    specPrice.textContent = info.price;
-    specFinish.textContent = info.finish;
-    specStatus.textContent = info.status;
-  }
+  const project = calcBox.querySelector(".calc-project")?.textContent.trim() || "";
+  const plan = calcBox.querySelector(".calc-plan-title")?.textContent.trim() || "";
 
-  var projectBtns = document.querySelectorAll('.lp-btn');
-  projectBtns.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      projectBtns.forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      currentProject = btn.dataset.project;
-      updateLayout();
-    });
+  const msg = `Здравствуйте! Хочу отправить расчет с сайта VetraEstate.
+
+Объект: ${project}
+Планировка: ${plan}
+Площадь: ${area} м²
+Цена за м²: ${formatRub(price)}
+Первый взнос: ${formatRub(down)}
+Срок рассрочки: ${term} мес.
+
+Стоимость квартиры: ${formatRub(total)}
+Остаток после взноса: ${formatRub(rest)}
+Ежемесячный платеж: ${formatRub(monthly)}/мес.`;
+
+  const btn = calcBox.querySelector(".calc-send-wa");
+  if (btn) btn.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
+}
+
+document.querySelectorAll(".calc-box").forEach((calcBox) => {
+  const update = () => setTimeout(() => vetraUpdateSendButton(calcBox), 30);
+  calcBox.querySelectorAll("input").forEach((input) => input.addEventListener("input", update));
+  update();
+});
+
+document.querySelectorAll(".plan-calc-card").forEach((card) => {
+  card.addEventListener("click", () => {
+    const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
+    setTimeout(() => vetraUpdateSendButton(calcBox), 80);
+  });
+});
+
+
+// Final reliable send calculation button
+function vetraFinalFormatRub(value) {
+  const n = Math.max(Math.round(Number(value) || 0), 0);
+  return n.toLocaleString("ru-RU") + " ₽";
+}
+
+function vetraFinalSendCalc(calcBox) {
+  if (!calcBox) return;
+
+  const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
+  const price = Number(calcBox.querySelector(".calc-price")?.value || 0);
+  const down = Number(calcBox.querySelector(".calc-down")?.value || 0);
+  const term = Math.max(Number(calcBox.querySelector(".calc-term")?.value || 1), 1);
+
+  const total = area * price;
+  const rest = Math.max(total - down, 0);
+  const monthly = rest / term;
+
+  const project = calcBox.querySelector(".calc-project")?.textContent.trim() || "";
+  const plan = calcBox.querySelector(".calc-plan-title")?.textContent.trim() || "";
+
+  const msg = `Здравствуйте! Хочу отправить расчет с сайта VetraEstate.
+
+Объект: ${project}
+Планировка: ${plan}
+Площадь: ${area} м²
+Цена за м²: ${vetraFinalFormatRub(price)}
+Первый взнос: ${vetraFinalFormatRub(down)}
+Срок рассрочки: ${term} мес.
+
+Стоимость квартиры: ${vetraFinalFormatRub(total)}
+Остаток после взноса: ${vetraFinalFormatRub(rest)}
+Ежемесячный платеж: ${vetraFinalFormatRub(monthly)}/мес.`;
+
+  const btn = calcBox.querySelector(".calc-send-wa");
+  if (btn) btn.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
+}
+
+function vetraBindSendButtons() {
+  document.querySelectorAll(".calc-box").forEach((calcBox) => {
+    const update = () => setTimeout(() => vetraFinalSendCalc(calcBox), 50);
+    calcBox.querySelectorAll("input").forEach((input) => input.addEventListener("input", update));
+    update();
   });
 
-  var typeBtns = document.querySelectorAll('.lt-btn');
-  typeBtns.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      typeBtns.forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      currentType = parseInt(btn.dataset.type, 10);
-      updateLayout();
+  document.querySelectorAll(".plan-calc-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
+      setTimeout(() => vetraFinalSendCalc(calcBox), 120);
     });
   });
+}
 
-  // Init
-  updateLayout();
-})();
+document.addEventListener("DOMContentLoaded", vetraBindSendButtons);
+vetraBindSendButtons();
 
-/* ══════════════════════════════════════
-   MORTGAGE CALCULATOR
-══════════════════════════════════════ */
-(function() {
-  var sliderPrice = document.getElementById('calcPrice');
-  var sliderDown  = document.getElementById('calcDown');
-  var sliderTerm  = document.getElementById('calcTerm');
-  var sliderRate  = document.getElementById('calcRate');
 
-  if (!sliderPrice) return;
+// Send current calculator result to WhatsApp
+function formatRubVetra(value) {
+  const n = Math.max(Math.round(Number(value) || 0), 0);
+  return n.toLocaleString("ru-RU") + " ₽";
+}
 
-  var valPrice   = document.getElementById('calcPriceVal');
-  var valDown    = document.getElementById('calcDownVal');
-  var valTerm    = document.getElementById('calcTermVal');
-  var valRate    = document.getElementById('calcRateVal');
-  var elMonthly  = document.getElementById('calcMonthly');
-  var elLoan     = document.getElementById('crLoan');
-  var elOverpay  = document.getElementById('crOverpay');
-  var elTotal    = document.getElementById('crTotal');
+function sendCurrentCalcToWhatsAppVetra(calcBox) {
+  if (!calcBox) return;
 
-  function fmt(n) {
-    return Math.round(n).toLocaleString('ru-RU') + ' ₽';
+  const area = Number(calcBox.querySelector(".calc-area")?.value || 0);
+  const price = Number(calcBox.querySelector(".calc-price")?.value || 0);
+  const down = Number(calcBox.querySelector(".calc-down")?.value || 0);
+  const term = Math.max(Number(calcBox.querySelector(".calc-term")?.value || 1), 1);
+
+  const total = area * price;
+  const rest = Math.max(total - down, 0);
+  const monthly = rest / term;
+
+  const project = calcBox.querySelector(".calc-project")?.textContent.trim() || "";
+  const plan = calcBox.querySelector(".calc-plan-title")?.textContent.trim() || "";
+
+  const message = `Здравствуйте! Хочу отправить расчет с сайта VetraEstate.
+
+Объект: ${project}
+Планировка: ${plan}
+Площадь: ${area} м²
+Цена за м²: ${formatRubVetra(price)}
+Первый взнос: ${formatRubVetra(down)}
+Срок рассрочки: ${term} мес.
+
+Стоимость квартиры: ${formatRubVetra(total)}
+Остаток после взноса: ${formatRubVetra(rest)}
+Ежемесячный платеж: ${formatRubVetra(monthly)}/мес.`;
+
+  const btn = calcBox.querySelector(".calc-send-wa");
+  if (btn) {
+    btn.href = "https://wa.me/79894702263?text=" + encodeURIComponent(message);
+  }
+}
+
+function bindVetraCalcWhatsAppButtons() {
+  document.querySelectorAll(".calc-box").forEach((calcBox) => {
+    const update = () => setTimeout(() => sendCurrentCalcToWhatsAppVetra(calcBox), 50);
+
+    calcBox.querySelectorAll("input").forEach((input) => {
+      input.addEventListener("input", update);
+      input.addEventListener("change", update);
+    });
+
+    update();
+  });
+
+  document.querySelectorAll(".plan-calc-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
+      setTimeout(() => sendCurrentCalcToWhatsAppVetra(calcBox), 150);
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", bindVetraCalcWhatsAppButtons);
+bindVetraCalcWhatsAppButtons();
+
+
+// Link top layout option cards to calculator
+function vetraScrollToCalculator(calcBox) {
+  if (!calcBox) return;
+  const y = calcBox.getBoundingClientRect().top + window.pageYOffset - 115;
+  window.scrollTo({ top: y, behavior: "smooth" });
+}
+
+function vetraChooseCalculatorPlanByIndex(section, index) {
+  const calculatorSection = document.querySelector(".calculator-section");
+  if (!calculatorSection) return;
+
+  const cards = calculatorSection.querySelectorAll(".plan-calc-card");
+  const card = cards[index] || cards[0];
+  if (!card) return;
+
+  if (typeof selectPlan === "function") {
+    selectPlan(card, false);
+  } else {
+    card.click();
   }
 
-  function updateProgress(el) {
-    var min = parseFloat(el.min);
-    var max = parseFloat(el.max);
-    var val = parseFloat(el.value);
-    var pct = ((val - min) / (max - min) * 100).toFixed(1) + '%';
-    el.style.setProperty('--progress', pct);
+  document.querySelectorAll(".layout-calc-trigger").forEach((el) => el.classList.remove("active"));
+  const trigger = document.querySelector(`.layout-calc-trigger[data-plan-index="${index}"]`);
+  if (trigger) trigger.classList.add("active");
+
+  const calcBox = calculatorSection.querySelector(".calc-box");
+  setTimeout(() => vetraScrollToCalculator(calcBox), 80);
+}
+
+document.querySelectorAll(".layout-calc-trigger").forEach((trigger) => {
+  const run = () => {
+    const index = Number(trigger.dataset.planIndex || 0);
+    vetraChooseCalculatorPlanByIndex(trigger.closest(".section"), index);
+  };
+
+  trigger.addEventListener("click", run);
+  trigger.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      run();
+    }
+  });
+});
+
+// Make existing calculator cards scroll to calculator top clearly
+document.querySelectorAll(".plan-calc-card").forEach((card) => {
+  card.addEventListener("click", () => {
+    const calcBox = card.closest(".calculator-section")?.querySelector(".calc-box");
+    setTimeout(() => vetraScrollToCalculator(calcBox), 100);
+  });
+});
+
+
+// FIX: top layout cards select calculator plan and scroll to calculator
+function vetraCalcScrollToBox(calcBox) {
+  if (!calcBox) return;
+  const y = calcBox.getBoundingClientRect().top + window.pageYOffset - 110;
+  window.scrollTo({ top: y, behavior: "smooth" });
+}
+
+function vetraSelectCalcPlanByIndex(index) {
+  const calculatorSection = document.querySelector(".calculator-section");
+  if (!calculatorSection) return;
+
+  const cards = Array.from(calculatorSection.querySelectorAll(".plan-calc-card"));
+  const card = cards[index] || cards[0];
+  if (!card) return;
+
+  if (typeof selectPlan === "function") {
+    selectPlan(card, false);
+  } else {
+    card.click();
   }
 
-  function calculate() {
-    var price  = parseFloat(sliderPrice.value);
-    var downPct = parseFloat(sliderDown.value);
-    var term   = parseInt(sliderTerm.value, 10);
-    var rate   = parseFloat(sliderRate.value);
+  document.querySelectorAll(".layout-calc-trigger").forEach((el) => el.classList.remove("active"));
+  const trigger = document.querySelector(`.layout-calc-trigger[data-plan-index="${index}"]`);
+  if (trigger) trigger.classList.add("active");
 
-    var downAmt = price * downPct / 100;
-    var loan    = price - downAmt;
-    var months  = term * 12;
-    var r       = rate / 100 / 12;
+  const calcBox = calculatorSection.querySelector(".calc-box");
+  setTimeout(() => vetraCalcScrollToBox(calcBox), 90);
+}
 
-    var monthly;
-    if (r === 0) {
-      monthly = loan / months;
-    } else {
-      monthly = loan * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+document.querySelectorAll(".layout-calc-trigger").forEach((trigger) => {
+  const run = () => vetraSelectCalcPlanByIndex(Number(trigger.dataset.planIndex || 0));
+  trigger.addEventListener("click", run);
+  trigger.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      run();
     }
+  });
+});
 
-    var totalPaid = monthly * months;
-    var overpay   = totalPaid - loan;
 
-    // Update labels
-    valPrice.textContent  = Math.round(price).toLocaleString('ru-RU') + ' ₽';
-    valDown.textContent   = Math.round(downAmt).toLocaleString('ru-RU') + ' ₽ (' + downPct + '%)';
-    valTerm.textContent   = term + ' ' + (term === 1 ? 'год' : term < 5 ? 'года' : 'лет');
-    valRate.textContent   = rate.toFixed(1) + '%';
+/* ===== Imported calculator logic from “Калькулятор берем” ===== */
+function fmt(n) {
+  return Math.max(Math.round(n || 0), 0).toLocaleString('ru-RU') + ' ₽';
+}
 
-    // Update results
-    elMonthly.textContent = fmt(monthly);
-    elLoan.textContent    = fmt(loan);
-    elOverpay.textContent = fmt(overpay);
-    elTotal.textContent   = fmt(totalPaid);
+function smartPrice(area, down, minDown, prMax, prFull) {
+  const full = area * prFull;
+  if (down <= minDown) return prMax;
+  if (down >= full)    return prFull;
+  const r = (down - minDown) / Math.max(full - minDown, 1);
+  return Math.round((prMax - r * (prMax - prFull)) / 500) * 500;
+}
 
-    // Update slider fill
-    updateProgress(sliderPrice);
-    updateProgress(sliderDown);
-    updateProgress(sliderTerm);
-    updateProgress(sliderRate);
+function anim(el, text) {
+  if (!el || el.textContent === text) return;
+  el.classList.remove('npop');
+  void el.offsetWidth;
+  el.textContent = text;
+  el.classList.add('npop');
+}
+
+function fillRange(r) {
+  if (!r) return;
+  const p = ((+r.value - +r.min) / Math.max(+r.max - +r.min, 1) * 100).toFixed(1) + '%';
+  r.style.setProperty('--p', p);
+}
+
+function calc(box) {
+  const area  = parseFloat(box.querySelector('.c-area')?.value)  || 0;
+  let   down  = parseFloat(box.querySelector('.c-down')?.value)  || 0;
+  const term  = Math.max(parseInt(box.querySelector('.c-term')?.value) || 1, 1);
+  const prMax = parseFloat(box.dataset.prMax  || 0);
+  const prFul = parseFloat(box.dataset.prFull || 0);
+  const minDn = parseFloat(box.dataset.minDn  || 0);
+
+  const price   = smartPrice(area, down, minDn, prMax, prFul);
+  const prEl    = box.querySelector('.c-price');
+  if (prEl) prEl.value = price;
+
+  const total   = area * price;
+  if (down > total) { down = total; const d = box.querySelector('.c-down'); if (d) d.value = Math.round(down); }
+  const rest    = Math.max(total - down, 0);
+  const monthly = rest / term;
+  const fullAmt = area * prFul;
+  const saving  = total - fullAmt;
+
+  anim(box.querySelector('.c-monthly'), fmt(monthly) + '/мес');
+  anim(box.querySelector('.c-total'),   fmt(total));
+  anim(box.querySelector('.c-rest'),    fmt(rest));
+  const fe = box.querySelector('.c-full');
+  if (fe) { fe.textContent = fmt(fullAmt); fe.classList.toggle('good-val', fullAmt < total * 0.985); }
+
+  const sv = box.querySelector('.savings');
+  if (sv) { sv.textContent = `Экономия при полной оплате: ${fmt(saving)}`; sv.classList.toggle('show', saving > 5000); }
+
+  const rng = box.querySelector('.crange');
+  if (rng) {
+    const mx = Math.ceil(total / 10000) * 10000 || 1000000;
+    rng.max = mx; rng.value = down; fillRange(rng);
   }
 
-  sliderPrice.addEventListener('input', calculate);
-  sliderDown.addEventListener('input', calculate);
-  sliderTerm.addEventListener('input', calculate);
-  sliderRate.addEventListener('input', calculate);
+  buildWA(box, area, price, down, term, total, rest, monthly);
+}
 
-  calculate();
-})();
+function buildWA(box, area, price, down, term, total, rest, monthly) {
+  const btn = box.querySelector('.wa-btn');
+  if (!btn) return;
+  const proj = box.querySelector('.calc-title')?.textContent?.trim() || '';
+  const plan = box.querySelector('.calc-sub')?.textContent?.trim()   || '';
+  btn.href = `https://wa.me/79894702263?text=${encodeURIComponent(
+    `Здравствуйте! Расчёт с сайта VetraEstate:\n\n` +
+    `Объект: ${proj}\nПланировка: ${plan}\n` +
+    `Площадь: ${area} м²\nЦена за м²: ${fmt(price)}\n` +
+    `Первый взнос: ${fmt(down)}\nСрок: ${term} мес.\n\n` +
+    `Стоимость: ${fmt(total)}\nОстаток: ${fmt(rest)}\nПлатёж: ${fmt(monthly)}/мес.`
+  )}`;
+}
 
-/* ══════════════════════════════════════
-   ABOUT CANVAS — Building Animation
-══════════════════════════════════════ */
-(function() {
-  var canvas = document.getElementById('aboutCanvas');
-  if (!canvas) return;
-  var ctx = canvas.getContext('2d');
-  var W, H;
+function activatePlan(card, scroll) {
+  const sec = card.closest('.calc-section');
+  if (!sec) return;
+  sec.querySelectorAll('.cplan').forEach(c => c.classList.remove('on'));
+  card.classList.add('on');
 
-  function resize() {
-    W = canvas.width = canvas.offsetWidth;
-    H = canvas.height = canvas.offsetHeight;
+  const box = sec.querySelector('.calc-box');
+  if (!box) return;
+
+  box.dataset.prMax  = card.dataset.price;
+  box.dataset.prFull = card.dataset.fullprice;
+  box.dataset.minDn  = card.dataset.mindown || card.dataset.down;
+
+  const ttl = box.querySelector('.calc-title');
+  const sub = box.querySelector('.calc-sub');
+  if (ttl) ttl.textContent = card.dataset.project || '';
+  if (sub) sub.textContent = (card.querySelector('strong')?.textContent || '') + ' · ' + (card.dataset.area || '') + ' м²';
+
+  const ai = box.querySelector('.c-area'), ti = box.querySelector('.c-term'), di = box.querySelector('.c-down');
+  if (ai) ai.value = card.dataset.area  || '';
+  if (ti) ti.value = card.dataset.term  || '';
+  if (di) di.value = card.dataset.down  || 0;
+
+  box.querySelectorAll('.tbtn').forEach(b => b.classList.toggle('on', b.dataset.val === card.dataset.term));
+
+  calc(box);
+
+  const sl = box.querySelector('.crange');
+  if (sl) {
+    sl.classList.remove('vibe'); void sl.offsetWidth; sl.classList.add('vibe');
+    setTimeout(() => sl.classList.remove('vibe'), 320);
+    if (navigator.vibrate) navigator.vibrate([18, 6, 12]);
   }
-  resize();
-  window.addEventListener('resize', resize);
 
-  var t = 0;
-  function draw() {
-    t += 0.008;
-    ctx.clearRect(0, 0, W, H);
+  if (scroll) setTimeout(() => {
+    window.scrollTo({ top: box.getBoundingClientRect().top + scrollY - 110, behavior: 'smooth' });
+  }, 60);
+}
 
-    // Subtle grid lines
-    ctx.strokeStyle = 'rgba(201,168,76,0.04)';
-    ctx.lineWidth = 1;
-    for (var x = 0; x < W; x += 80) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-    }
-    for (var y = 0; y < H; y += 80) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-    }
+/* Init plan cards */
+document.querySelectorAll('.cplan').forEach(c => c.addEventListener('click', () => activatePlan(c, true)));
+document.querySelectorAll('.calc-section').forEach(sec => {
+  const first = sec.querySelector('.cplan.on') || sec.querySelector('.cplan');
+  if (first) activatePlan(first, false);
+});
 
-    // Pulsing dots at intersections
-    for (var gx = 0; gx <= W; gx += 80) {
-      for (var gy = 0; gy <= H; gy += 80) {
-        var pulse = 0.5 + 0.5 * Math.sin(t + gx * 0.05 + gy * 0.03);
-        ctx.beginPath();
-        ctx.arc(gx, gy, 1.5 * pulse, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(201,168,76,' + (0.15 * pulse) + ')';
-        ctx.fill();
-      }
-    }
-
-    // Flowing line
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(201,168,76,0.12)';
-    ctx.lineWidth = 1;
-    for (var i = 0; i <= W; i += 4) {
-      var yw = H * 0.5 + 30 * Math.sin(i * 0.015 + t) + 15 * Math.sin(i * 0.03 - t * 1.3);
-      if (i === 0) ctx.moveTo(i, yw);
-      else ctx.lineTo(i, yw);
-    }
-    ctx.stroke();
-
-    requestAnimationFrame(draw);
+/* Calc inputs */
+document.querySelectorAll('.calc-box').forEach(box => {
+  const ai = box.querySelector('.c-area'), di = box.querySelector('.c-down'), ti = box.querySelector('.c-term');
+  const sl = box.querySelector('.crange');
+  [ai, di, ti].forEach(i => i?.addEventListener('input', () => calc(box)));
+  if (sl && di) {
+    sl.addEventListener('input', () => { di.value = sl.value; fillRange(sl); calc(box); });
+    di.addEventListener('input', () => { sl.value = di.value; fillRange(sl); });
+    fillRange(sl);
   }
-  draw();
-})();
+  box.querySelectorAll('.tbtn').forEach(b => b.addEventListener('click', () => {
+    box.querySelectorAll('.tbtn').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    if (ti) { ti.value = b.dataset.val; calc(box); }
+  }));
+});
 
-/* ══════════════════════════════════════
-   STACKING GAME
-══════════════════════════════════════ */
-(function() {
-  var canvas = document.getElementById('gameCanvas');
-  if (!canvas) return;
-  var ctx = canvas.getContext('2d');
+/* Plan trigger cards */
+document.querySelectorAll('.ptrig, .layout-calc-trigger').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ptrig').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const idx = +btn.dataset.planIndex || 0;
+    const cards = [...document.querySelectorAll('.cplan')];
+    const t = cards[idx] || cards[0];
+    if (!t) return;
+    activatePlan(t, false);
+    const s = document.querySelector('.calc-section');
+    if (s) setTimeout(() => window.scrollTo({ top: s.getBoundingClientRect().top + scrollY - 96, behavior: 'smooth' }), 60);
+  });
+});
 
-  var CW = 360;
-  var CH = 500;
-  canvas.width = CW;
-  canvas.height = CH;
 
-  var overlay    = document.getElementById('gameOverlay');
-  var startBtn   = document.getElementById('gameStartBtn');
-  var elFloors   = document.getElementById('gameFloors');
-  var elBest     = document.getElementById('gameBest');
-  var elAcc      = document.getElementById('gameAcc');
-  var titleEl    = document.getElementById('gameOverlayTitle');
-  var subEl      = document.getElementById('gameOverlaySub');
 
-  var BLOCK_H    = 28;
-  var BASE_W     = 240;
-  var STACK_Y    = CH - 40;
-  var MOVE_SPEED = 2.5;
 
-  var state      = 'idle'; // idle | playing | over | win
-  var best       = 0;
-  var stack      = [];
-  var moving     = null;
-  var direction  = 1;
-  var floors     = 0;
-  var totalAcc   = 0;
-  var animRaf    = null;
-
-  var COLORS = [
-    '#C9A84C','#b8962e','#d4b96a','#a07826',
-    '#e2c47a','#8a6820','#f0d898','#c49a30'
+// MY MONEY FEATURE V2 — bottom drawer budget finder
+(function(){
+  const plans = [
+    { project:"ЖК Новый Горизонт", type:"1К", area:47, price:85000, fullPrice:60000, minDown:150000, term:60, page:"new-horizon.html", photo:"images/horizon-new-photo-1.jpg" },
+    { project:"ЖК Новый Горизонт", type:"2К", area:70, price:85000, fullPrice:60000, minDown:200000, term:60, page:"new-horizon.html", photo:"images/horizon-new-photo-4.jpg" },
+    { project:"ЖК Новый Горизонт", type:"2К", area:76, price:85000, fullPrice:60000, minDown:200000, term:60, page:"new-horizon.html", photo:"images/horizon-new-photo-6.jpg" },
+    { project:"АК Алые Паруса", type:"Студия", area:32, price:90000, fullPrice:50000, minDown:150000, term:42, page:"alye-parusa.html", photo:"images/alye-photo-2.jpg" },
+    { project:"АК Алые Паруса", type:"Евро 2К", area:55, price:90000, fullPrice:50000, minDown:150000, term:42, page:"alye-parusa.html", photo:"images/alye-photo-3.jpg" },
+    { project:"ЖК Московский", type:"1К", area:39, price:85000, fullPrice:70000, minDown:500000, term:70, page:"moskovskiy.html", photo:"images/moscow-photo-1.jpg" },
+    { project:"ЖК Московский", type:"1К", area:53, price:85000, fullPrice:70000, minDown:500000, term:70, page:"moskovskiy.html", photo:"images/moscow-photo-2.jpg" },
+    { project:"ЖК Московский", type:"2К", area:77, price:85000, fullPrice:70000, minDown:500000, term:70, page:"moskovskiy.html", photo:"images/moscow-photo-5.jpg" }
   ];
 
-  function initGame() {
-    stack = [];
-    floors = 0;
-    totalAcc = 0;
-    direction = 1;
+  const rub = (v) => Math.max(Math.round(Number(v)||0),0).toLocaleString("ru-RU") + " ₽";
+  const $ = (s) => document.querySelector(s);
 
-    // Base block
-    var bx = (CW - BASE_W) / 2;
-    stack.push({ x: bx, y: STACK_Y - BLOCK_H, w: BASE_W, color: COLORS[0] });
-
-    // Moving block
-    spawnMoving();
-
-    elFloors.textContent = '0';
-    elAcc.textContent = '—';
-    state = 'playing';
-    overlay.classList.add('hidden');
-    loop();
+  function monthly(plan, money) {
+    return Math.max(plan.area * plan.price - money, 0) / plan.term;
   }
 
-  function spawnMoving() {
-    var last = stack[stack.length - 1];
-    var color = COLORS[(stack.length) % COLORS.length];
-    moving = {
-      x: -last.w,
-      y: last.y - BLOCK_H,
-      w: last.w,
-      color: color
-    };
-    direction = 1;
+  function open() {
+    $(".money-drawer-v2")?.classList.add("open");
+    $(".money-drawer-v2")?.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    setTimeout(() => $(".money-input-v2")?.focus(), 120);
   }
 
-  function placeBlock() {
-    if (state !== 'playing' || !moving) return;
+  function close() {
+    $(".money-drawer-v2")?.classList.remove("open");
+    $(".money-drawer-v2")?.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
 
-    var last  = stack[stack.length - 1];
-    var lx    = last.x;
-    var lw    = last.w;
-    var mx    = moving.x;
-    var mw    = moving.w;
+  function render() {
+    const input = $(".money-input-v2");
+    const summary = $(".money-summary-v2");
+    const results = $(".money-results-v2");
+    const wa = $(".money-whatsapp-v2");
+    if (!input || !summary || !results || !wa) return;
 
-    // Overlap
-    var ol = Math.max(lx, mx);
-    var or_ = Math.min(lx + lw, mx + mw);
-    var overlap = or_ - ol;
+    const money = Number(input.value || 0);
+    const suitable = plans
+      .filter(p => money >= p.minDown)
+      .map(p => ({ ...p, total: p.area * p.price, monthly: monthly(p, money), userDown: money }))
+      .sort((a,b) => a.monthly - b.monthly);
 
-    if (overlap <= 0) {
-      // Missed — game over
-      state = 'over';
-      showOverlay('Игра окончена', 'Вы набрали ' + floors + ' ' + floorWord(floors) + '. Попробуйте ещё раз!', 'Играть снова');
+    if (!money) {
+      summary.innerHTML = "Введите сумму или выберите быстрый вариант.";
+      results.innerHTML = "";
+      wa.classList.remove("show");
       return;
     }
 
-    // Accuracy
-    var acc = overlap / lw;
-    totalAcc += acc;
-    floors++;
+    summary.innerHTML = `<strong>У вас: ${rub(money)}</strong><br>Подходящих вариантов: ${suitable.length}`;
 
-    // Placed block
-    var placed = { x: ol, y: moving.y, w: overlap, color: moving.color };
-    stack.push(placed);
-
-    elFloors.textContent = floors;
-    elAcc.textContent = Math.round((totalAcc / floors) * 100) + '%';
-
-    if (floors > best) {
-      best = floors;
-      elBest.textContent = best;
-    }
-
-    // Win condition
-    if (floors >= 20) {
-      state = 'over';
-      showOverlay('Победа!', 'Небоскрёб построен на ' + floors + ' этажей. Отличная точность!', 'Играть снова');
+    if (!suitable.length) {
+      results.innerHTML = `<div class="money-empty-v2">Пока нет вариантов под эту сумму. Минимальный взнос начинается от ${rub(150000)}. Напишите нам — подберём горящие предложения или альтернативы.</div>`;
+      wa.classList.add("show");
+      wa.href = "https://wa.me/79894702263?text=" + encodeURIComponent(`Здравствуйте! У меня есть ${rub(money)} на первоначальный взнос. Подберите, пожалуйста, варианты.`);
       return;
     }
 
-    // Scroll stack up if needed
-    var topY = stack[stack.length - 1].y;
-    if (topY < CH * 0.35) {
-      var shift = CH * 0.35 - topY + BLOCK_H * 2;
-      stack.forEach(function(b) { b.y += shift; });
-    }
+    results.innerHTML = suitable.map(p => `
+      <article class="money-card-v2">
+        <div class="money-card-photo-wrap">
+          <img class="money-card-photo-v2" src="${p.photo}" alt="${p.project}" loading="lazy">
+          <span class="money-card-badge-v2">✓ Подходит</span>
+          <div class="money-card-photo-title">
+            <h3>${p.project}</h3>
+            <p>${p.type} · ${p.area} м²</p>
+          </div>
+        </div>
+        <div class="money-card-body-v2">
+          <div class="money-card-top-v2">
+            <div>
+              <h3>${p.project}</h3>
+              <p>${p.type} • ${p.area} м²</p>
+            </div>
+            <span class="money-card-badge-old">✓ Подходит</span>
+          </div>
 
-    // Speed up slightly
-    MOVE_SPEED = Math.min(2.5 + floors * 0.07, 5.5);
+          <div class="money-info-v2">
+            <div><small>Цена за м²</small><strong>${rub(p.price)}</strong></div>
+            <div><small>Ваш взнос</small><strong>${rub(p.userDown)}</strong></div>
+            <div><small>Срок</small><strong>${p.term} мес.</strong></div>
+            <div><small>Платёж</small><strong>≈ ${rub(p.monthly)}/мес</strong></div>
+          </div>
 
-    spawnMoving();
+          <a href="${p.page}#calculator">Открыть калькулятор</a>
+        </div>
+      </article>
+    `).join("");
+
+    const msg = `Здравствуйте! Хочу отправить подборку по функции «Мои деньги».
+
+У меня есть: ${rub(money)}
+
+Подходящие варианты:
+${suitable.map(p => `• ${p.project} — ${p.type}, ${p.area} м², взнос ${rub(p.userDown)}, срок ${p.term} мес., платёж ≈ ${rub(p.monthly)}/мес.`).join("\n")}`;
+
+    wa.classList.add("show");
+    wa.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
   }
 
-  function showOverlay(title, sub, btn) {
-    titleEl.textContent = title;
-    subEl.textContent = sub;
-    startBtn.textContent = btn;
-    overlay.classList.remove('hidden');
+  function bind() {
+    $(".money-mini-v2")?.addEventListener("click", open);
+    $(".money-close-v2")?.addEventListener("click", close);
+    $(".money-drawer-bg-v2")?.addEventListener("click", close);
+    $(".money-run-v2")?.addEventListener("click", render);
+    $(".money-input-v2")?.addEventListener("input", render);
+    $(".money-input-v2")?.addEventListener("keydown", e => {
+      if (e.key === "Enter") render();
+    });
+    document.querySelectorAll(".money-chips-v2 button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const input = $(".money-input-v2");
+        if (input) input.value = btn.dataset.money;
+        render();
+      });
+    });
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape" && $(".money-drawer-v2")?.classList.contains("open")) close();
+    });
   }
 
-  function floorWord(n) {
-    if (n % 10 === 1 && n % 100 !== 11) return 'этаж';
-    if ([2,3,4].indexOf(n % 10) !== -1 && ![12,13,14].indexOf(n % 100) === -1) return 'этажа';
-    return 'этажей';
-  }
-
-  function drawBlock(b) {
-    // Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(b.x + 4, b.y + 4, b.w, BLOCK_H);
-
-    // Block face
-    ctx.fillStyle = b.color;
-    ctx.fillRect(b.x, b.y, b.w, BLOCK_H);
-
-    // Top highlight
-    ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    ctx.fillRect(b.x, b.y, b.w, 3);
-
-    // Windows
-    if (b.w > 30) {
-      var ww = 7, wh = 8, gap = 14;
-      var cols = Math.floor((b.w - 10) / (ww + gap));
-      var startX = b.x + (b.w - cols * (ww + gap) + gap) / 2;
-      for (var i = 0; i < cols; i++) {
-        var wx = startX + i * (ww + gap);
-        var wy = b.y + 8;
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.fillRect(wx, wy, ww, wh);
-        // Random lit windows
-        if ((b.y + i * 37) % 5 < 3) {
-          ctx.fillStyle = 'rgba(255,240,180,0.7)';
-          ctx.fillRect(wx + 1, wy + 1, ww - 2, wh - 2);
-        }
-      }
-    }
-
-    // Border
-    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(b.x, b.y, b.w, BLOCK_H);
-  }
-
-  function drawScene() {
-    // Sky gradient
-    var sky = ctx.createLinearGradient(0, 0, 0, CH);
-    sky.addColorStop(0, '#060610');
-    sky.addColorStop(0.6, '#0a0a18');
-    sky.addColorStop(1, '#0f0f0a');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, CW, CH);
-
-    // Stars
-    ctx.fillStyle = 'rgba(255,255,220,0.6)';
-    for (var s = 0; s < 40; s++) {
-      var sx = (s * 137 + 23) % CW;
-      var sy = (s * 61 + 11) % (CH * 0.6);
-      var ss = 0.8 + (s % 3) * 0.4;
-      ctx.beginPath();
-      ctx.arc(sx, sy, ss, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Ground
-    ctx.fillStyle = '#1a1a10';
-    ctx.fillRect(0, CH - 40, CW, 40);
-    ctx.fillStyle = 'rgba(201,168,76,0.15)';
-    ctx.fillRect(0, CH - 42, CW, 2);
-
-    // Draw stacked blocks
-    stack.forEach(function(b) { drawBlock(b); });
-
-    // Draw moving block
-    if (moving && state === 'playing') {
-      drawBlock(moving);
-
-      // Guide line (subtle)
-      var last = stack[stack.length - 1];
-      ctx.strokeStyle = 'rgba(201,168,76,0.08)';
-      ctx.setLineDash([4, 6]);
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(last.x, moving.y + BLOCK_H);
-      ctx.lineTo(last.x + last.w, moving.y + BLOCK_H);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-  }
-
-  function loop() {
-    if (state !== 'playing') return;
-
-    // Move block
-    moving.x += MOVE_SPEED * direction;
-    var last = stack[stack.length - 1];
-    if (moving.x + moving.w > CW + 10) direction = -1;
-    if (moving.x < -10) direction = 1;
-
-    drawScene();
-    animRaf = requestAnimationFrame(loop);
-  }
-
-  // Start / restart
-  startBtn.addEventListener('click', function() {
-    if (animRaf) cancelAnimationFrame(animRaf);
-    MOVE_SPEED = 2.5;
-    initGame();
-  });
-
-  // Click / tap on canvas
-  canvas.addEventListener('click', function() {
-    if (state === 'playing') placeBlock();
-  });
-
-  // Spacebar
-  document.addEventListener('keydown', function(e) {
-    if (e.code === 'Space' && state === 'playing') {
-      e.preventDefault();
-      placeBlock();
-    }
-  });
-
-  // Initial draw
-  drawScene();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
+  else bind();
 })();
 
-/* ══════════════════════════════════════
-   CONTACT FORM
-══════════════════════════════════════ */
-(function() {
-  var form  = document.getElementById('contactForm');
-  var toast = document.getElementById('toast');
-  if (!form) return;
+/* ═══ HERO SWITCHER: выбор ЖК + день/вечер ═══ */
+(function () {
+  const hero = document.querySelector(".hero");
+  const layers = document.querySelectorAll(".hero-layer");
+  if (!hero || !layers.length) return;
 
-  form.addEventListener('submit', function(e) {
+  // вспышка при смене дня/ночи
+  const flash = document.createElement("div");
+  flash.className = "hero-flash";
+  hero.querySelector(".hero-bgs")?.appendChild(flash);
+
+  // слой свечения и световая волна для «оживления» фона
+  const glow = hero.querySelector(".hero-glow");
+  const sweep = hero.querySelector(".hero-sweep");
+  function syncGlow(layer) {
+    if (glow && layer) glow.style.backgroundImage = getComputedStyle(layer).backgroundImage;
+  }
+
+  // ── кинематографичные видео-переходы день ↔ ночь ──
+  const heroVideo = hero.querySelector(".hero-video");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const videoProjects = { horizon: true, moscow: true, alye: true };
+  let videoTimer = null;
+  let transToken = 0;
+
+  function clearVideoTimer() {
+    if (videoTimer) { clearTimeout(videoTimer); videoTimer = null; }
+  }
+
+  function stopHeroVideo() {
+    if (!heroVideo) return;
+    clearVideoTimer();
+    transToken++;                         // отменяем висящие колбэки прошлого перехода
+    heroVideo.classList.remove("is-playing");
+    hero.classList.remove("is-hero-video");
+    try { heroVideo.pause(); } catch (e) {}
+  }
+
+  function samePath(a, b) {
+    try { return new URL(a || "", location.href).pathname === new URL(b, location.href).pathname; }
+    catch (e) { return false; }
+  }
+
+  // proj — комплекс; toNight=true → день→ночь (dn), false → ночь→день (nd).
+  // onReveal вызывается в момент, когда видео уже перекрыло фон — там подменяем
+  // нижний статичный слой на целевой, чтобы по окончании показать точный кадр.
+  function playTransition(proj, toNight, onReveal) {
+    if (!heroVideo || reduceMotion || !videoProjects[proj]) return false;
+    const src = "videos/hero-" + proj + "-" + (toNight ? "dn" : "nd") + ".mp4";
+    clearVideoTimer();
+    const token = ++transToken;
+    if (!samePath(heroVideo.getAttribute("src"), src)) {
+      heroVideo.setAttribute("src", src);
+      heroVideo.load();
+    }
+
+    let revealed = false;
+    // подстраховка: если видео не готово — мгновенно переключаем фон без него
+    const failsafe = setTimeout(() => {
+      if (token !== transToken || revealed) return;
+      if (typeof onReveal === "function") onReveal();
+      stopHeroVideo();
+    }, 1500);
+
+    const reveal = () => {
+      if (token !== transToken || revealed) return;
+      revealed = true;
+      clearTimeout(failsafe);
+      try { heroVideo.currentTime = 0; } catch (e) {}
+      heroVideo.classList.add("is-playing");          // мгновенно, без кросс-фейда
+      hero.classList.add("is-hero-video");
+      if (typeof onReveal === "function") onReveal();  // подменяем нижний слой на целевой
+      const finish = () => {
+        if (token !== transToken) return;
+        heroVideo.removeEventListener("ended", finish);
+        clearVideoTimer();
+        heroVideo.classList.remove("is-playing");      // мгновенно показываем целевой кадр
+        hero.classList.remove("is-hero-video");
+      };
+      heroVideo.addEventListener("ended", finish);
+      videoTimer = setTimeout(finish, 8000);           // подстраховка, если ended не сработает
+      const p = heroVideo.play();
+      if (p && p.catch) p.catch(() => { if (token === transToken) finish(); });
+    };
+
+    if (heroVideo.readyState >= 2) reveal();
+    else heroVideo.addEventListener("loadeddata", function once() {
+      heroVideo.removeEventListener("loadeddata", once);
+      reveal();
+    });
+    return true;
+  }
+
+  // предзагрузка ролика выбранного комплекса (день→ночь)
+  function preloadTransition(proj) {
+    if (!heroVideo || reduceMotion || !videoProjects[proj] || heroVideo.classList.contains("is-playing")) return;
+    const src = "videos/hero-" + proj + "-dn.mp4";
+    if (!samePath(heroVideo.getAttribute("src"), src)) {
+      heroVideo.setAttribute("src", src);
+      heroVideo.load();
+    }
+  }
+
+  let project = "horizon";
+  let time = "day";
+
+  function setLayers(target) {
+    layers.forEach(l => {
+      l.classList.remove("iris", "iris-under");
+      l.classList.toggle("is-active", l === target);
+    });
+    syncGlow(target);
+  }
+
+  function apply(withFlash) {
+    const key = project + "-" + time;
+    const prev = document.querySelector(".hero-layer.is-active");
+    const target = Array.prototype.find.call(layers, l => l.dataset.bg === key) || prev;
+
+    const wantVideo = withFlash && prev && target && prev !== target &&
+                      !reduceMotion && heroVideo && videoProjects[project];
+
+    if (wantVideo) {
+      // фон не трогаем до появления видео — оно стартует на текущем кадре (день/ночь),
+      // который совпадает со статичным фото, поэтому начало перехода незаметно
+      playTransition(project, time === "night", () => setLayers(target));
+    } else {
+      stopHeroVideo();
+      setLayers(target);
+      // запасной плавный переход, если видео недоступно (reduced-motion и т.п.)
+      if (withFlash && prev && target && prev !== target) {
+        const toggle = document.querySelector(".dn-toggle");
+        if (toggle) {
+          const tr = toggle.getBoundingClientRect();
+          const hr = hero.getBoundingClientRect();
+          hero.style.setProperty("--iris-x", (((tr.left + tr.width / 2) - hr.left) / hr.width * 100).toFixed(1) + "%");
+          hero.style.setProperty("--iris-y", (((tr.top + tr.height / 2) - hr.top) / hr.height * 100).toFixed(1) + "%");
+        }
+        prev.classList.add("iris-under");
+        target.classList.add("iris");
+        setTimeout(() => { prev.classList.remove("iris-under"); target.classList.remove("iris"); }, 850);
+        flash.classList.remove("run");
+        sweep?.classList.remove("run");
+        void flash.offsetWidth;
+        flash.classList.add("run");
+        sweep?.classList.add("run");
+      }
+    }
+
+    document.querySelectorAll(".proj-dot").forEach(b =>
+      b.classList.toggle("is-active", b.dataset.project === project));
+    document.querySelectorAll(".dn-btn").forEach(b =>
+      b.classList.toggle("is-active", b.dataset.time === time));
+    document.querySelector(".dn-toggle")?.classList.toggle("is-night", time === "night");
+    hero.classList.toggle("hero--night", time === "night");
+  }
+
+  // инициализируем свечение для стартового фона
+  syncGlow(document.querySelector(".hero-layer.is-active"));
+  preloadTransition(project);
+
+  document.querySelectorAll(".proj-dot").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (btn.dataset.project === project) return;
+      project = btn.dataset.project;
+      apply(false);
+      preloadTransition(project);
+    });
+  });
+
+  document.querySelectorAll(".dn-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      stopAutoCycle();
+      if (btn.dataset.time === time) return;
+      time = btn.dataset.time;
+      apply(true);
+    });
+  });
+
+  /* ── автоматическая смена дня и ночи ──
+     плавно листает день/вечер, пока посетитель сам
+     не воспользуется переключателем */
+  let autoTimer = null;
+  let heroVisible = true;
+
+  function stopAutoCycle() {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+  }
+
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(entries => {
+        heroVisible = entries[0].isIntersecting;
+      }, { threshold: 0.25 }).observe(hero);
+    }
+    autoTimer = setInterval(() => {
+      if (!heroVisible || document.hidden) return;
+      time = time === "day" ? "night" : "day";
+      apply(true);
+    }, 8000);
+    document.querySelectorAll(".proj-dot").forEach(b =>
+      b.addEventListener("click", stopAutoCycle));
+  }
+
+  // предзагрузка всех фонов после загрузки страницы
+  window.addEventListener("load", () => {
+    const mobile = window.matchMedia("(max-width: 900px)").matches;
+    const suffix = mobile ? "-m.jpg" : "-d.jpg";
+    ["horizon-day","horizon-night","moscow-day","moscow-night","alye-day","alye-night"]
+      .forEach(k => { const img = new Image(); img.src = "images/hero-" + k + suffix; });
+  });
+})();
+
+/* ════════════════════════════════════════════════════════
+   ФОРМА «ОСТАВИТЬ ОТЗЫВ» — добавление отзыва на сайт
+   (сохранение в localStorage, без бэкенда)
+   ════════════════════════════════════════════════════════ */
+(function () {
+  const form = document.getElementById("reviewForm");
+  const toggle = document.getElementById("reviewFormToggle");
+  const grid = document.querySelector(".reviews-grid");
+  if (!form || !grid || !toggle) return;
+
+  const STORE_KEY = "vetra_reviews";
+  const MONTHS = ["января","февраля","марта","апреля","мая","июня",
+    "июля","августа","сентября","октября","ноября","декабря"];
+
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+
+  // аватар из инициалов Ф.И.О.: первые 2 буквы
+  function avatarFrom(initials, name) {
+    const letters = (initials || name || "").replace(/[^A-Za-zА-Яа-яЁё]/g, "");
+    return (letters.slice(0, 2) || "VE").toUpperCase();
+  }
+
+  function whenLabel() {
+    const d = new Date();
+    return "Отзыв клиента · " + MONTHS[d.getMonth()] + " " + d.getFullYear();
+  }
+
+  function buildCard(r, isNew) {
+    const stars = "★★★★★☆☆☆☆☆".slice(5 - r.rating, 10 - r.rating);
+    const card = document.createElement("article");
+    card.className = "review-card" + (isNew ? " review-new" : "");
+    card.innerHTML =
+      '<div class="review-top">' +
+        '<span class="review-avatar">' + esc(avatarFrom(r.initials, r.name)) + "</span>" +
+        "<div><strong>" + esc(r.name) + "</strong><em>" + esc(r.when || whenLabel()) + "</em></div>" +
+      "</div>" +
+      '<div class="review-stars">' + stars + "</div>" +
+      "<p>" + esc(r.text) + "</p>";
+    return card;
+  }
+
+  // загрузка сохранённых отзывов (новые — сверху)
+  function loadSaved() {
+    let saved = [];
+    try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); } catch (e) {}
+    saved.forEach((r) => grid.insertBefore(buildCard(r, false), grid.firstChild));
+  }
+
+  function save(r) {
+    let saved = [];
+    try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); } catch (e) {}
+    saved.push(r);
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(saved)); } catch (e) {}
+  }
+
+  // показать / скрыть форму
+  toggle.addEventListener("click", () => {
+    const open = form.hasAttribute("hidden");
+    if (open) {
+      form.removeAttribute("hidden");
+      toggle.setAttribute("aria-expanded", "true");
+      form.querySelector('input[name="name"]').focus();
+    } else {
+      form.setAttribute("hidden", "");
+      toggle.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  // выбор оценки звёздами
+  const ratingInput = form.querySelector('input[name="rating"]');
+  const stars = Array.from(form.querySelectorAll(".rate-star"));
+  function paintStars(val) {
+    stars.forEach((s) => s.classList.toggle("is-on", Number(s.dataset.val) <= val));
+  }
+  stars.forEach((s) => s.addEventListener("click", () => {
+    const val = Number(s.dataset.val);
+    ratingInput.value = String(val);
+    paintStars(val);
+  }));
+
+  // поля формы (form.name указывал бы на атрибут формы — берём элементы явно)
+  const nameEl = form.querySelector('input[name="name"]');
+  const initEl = form.querySelector('input[name="initials"]');
+  const textEl = form.querySelector('textarea[name="text"]');
+  const consentEl = form.querySelector('input[name="consent"]');
+  const consentRow = form.querySelector('.lead-consent');
+
+  // отправка формы
+  form.addEventListener("submit", (e) => {
     e.preventDefault();
+    const name = nameEl.value.trim();
+    const initials = initEl.value.trim();
+    const text = textEl.value.trim();
+    const rating = Math.min(5, Math.max(1, Number(ratingInput.value) || 5));
 
-    var name  = document.getElementById('fName');
-    var phone = document.getElementById('fPhone');
-    var ok = true;
+    let ok = true;
+    [nameEl, initEl, textEl].forEach((el) => {
+      const empty = !el.value.trim();
+      el.classList.toggle("invalid", empty);
+      if (empty) ok = false;
+    });
+    if (consentEl && !consentEl.checked) { consentRow?.classList.add("invalid"); ok = false; }
+    else { consentRow?.classList.remove("invalid"); }
+    if (!ok) { form.querySelector(".invalid")?.focus(); return; }
 
-    [name, phone].forEach(function(el) {
-      el.style.borderColor = '';
-      if (!el.value.trim()) {
-        el.style.borderColor = '#ef4444';
-        ok = false;
+    const review = { name, initials, text, rating, when: whenLabel() };
+    grid.insertBefore(buildCard(review, true), grid.firstChild);
+    save(review);
+
+    form.reset();
+    ratingInput.value = "5";
+    paintStars(5);
+    form.setAttribute("hidden", "");
+    toggle.setAttribute("aria-expanded", "false");
+    document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  loadSaved();
+})();
+
+/* ════════════════════════════════════════════════════════
+   КАЛЬКУЛЯТОР РАССРОЧКИ
+   ════════════════════════════════════════════════════════ */
+(function () {
+  const price = document.getElementById("calcPrice");
+  const down = document.getElementById("calcDown");
+  if (!price || !down) return;
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => Math.round(n).toLocaleString("ru-RU") + " ₽";
+  const priceOut = $("calcPriceOut"), downOut = $("calcDownOut"), monthly = $("calcMonthly");
+  const downAbsEl = $("calcDownAbs"), bodyEl = $("calcBody"), termOut = $("calcTermOut");
+  const wa = $("calcWa"), terms = $("calcTerms");
+  let term = 36;
+
+  function fill(el) {
+    const pct = (el.value - el.min) / (el.max - el.min) * 100;
+    el.style.setProperty("--fill", pct + "%");
+  }
+  function calc() {
+    const p = +price.value, dPct = +down.value;
+    const dAbs = Math.round(p * dPct / 100);
+    const body = Math.max(0, p - dAbs);
+    const m = term ? body / term : 0;
+    priceOut.textContent = fmt(p);
+    downOut.textContent = dPct + "% · " + fmt(dAbs);
+    downAbsEl.textContent = fmt(dAbs);
+    bodyEl.textContent = fmt(body);
+    termOut.textContent = term + " мес";
+    monthly.textContent = fmt(m);
+    fill(price); fill(down);
+    const msg = "Здравствуйте! Хочу расчёт рассрочки:\n" +
+      "Стоимость: " + fmt(p) + "\nПервый взнос: " + dPct + "% (" + fmt(dAbs) + ")\n" +
+      "Срок: " + term + " мес\nПлатёж: " + fmt(m) + "/мес";
+    if (wa) wa.href = "https://wa.me/79894702263?text=" + encodeURIComponent(msg);
+  }
+  price.addEventListener("input", calc);
+  down.addEventListener("input", calc);
+  if (terms) terms.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    term = +b.dataset.term;
+    terms.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+    calc();
+  }));
+  calc();
+})();
+
+/* ════════════════════════════════════════════════════════
+   FAQ — аккордеон
+   ════════════════════════════════════════════════════════ */
+(function () {
+  const items = document.querySelectorAll(".faq-item");
+  if (!items.length) return;
+  items.forEach((item) => {
+    const q = item.querySelector(".faq-q");
+    const a = item.querySelector(".faq-a");
+    if (!q || !a) return;
+    q.addEventListener("click", () => {
+      const isOpen = item.classList.contains("open");
+      items.forEach((it) => {
+        it.classList.remove("open");
+        it.querySelector(".faq-q")?.setAttribute("aria-expanded", "false");
+        const ans = it.querySelector(".faq-a");
+        if (ans) ans.style.maxHeight = null;
+      });
+      if (!isOpen) {
+        item.classList.add("open");
+        q.setAttribute("aria-expanded", "true");
+        a.style.maxHeight = a.scrollHeight + "px";
       }
     });
-    if (!ok) return;
+  });
+})();
 
-    var btn = form.querySelector('button[type=submit]');
-    btn.textContent = 'Отправляем...';
-    btn.disabled = true;
+/* ════════════════════════════════════════════════════════
+   ФОРМА ЗАЯВКИ — отправка в WhatsApp (без бэкенда)
+   ════════════════════════════════════════════════════════ */
+(function () {
+  const form = document.getElementById("leadForm");
+  if (!form) return;
+  const nameEl = form.querySelector('input[name="name"]');
+  const phoneEl = form.querySelector('input[name="phone"]');
+  const goalEl = form.querySelector('input[name="goal"]');
+  const consentEl = form.querySelector('input[name="consent"]');
+  const consentRow = form.querySelector(".lead-consent");
+  const WA_PHONE = "79894702263";
+  const TG_USER = "muhammad_ls";
 
-    setTimeout(function() {
-      btn.textContent = 'Отправить заявку';
-      btn.disabled = false;
-      form.reset();
-      // Show toast
-      toast.classList.add('show');
-      setTimeout(function() { toast.classList.remove('show'); }, 4000);
-    }, 1200);
+  function toast(text) {
+    const t = document.getElementById("toast");
+    if (!t) return;
+    t.textContent = text;
+    t.classList.add("show");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove("show"), 4200);
+  }
+
+  function validate() {
+    let ok = true;
+    [nameEl, phoneEl].forEach((el) => {
+      const empty = !el.value.trim();
+      el.classList.toggle("invalid", empty);
+      if (empty) ok = false;
+    });
+    const digits = (phoneEl.value.match(/\d/g) || []).length;
+    if (digits < 10) { phoneEl.classList.add("invalid"); ok = false; }
+    if (!consentEl.checked) { consentRow?.classList.add("invalid"); ok = false; }
+    else { consentRow?.classList.remove("invalid"); }
+    if (!ok) form.querySelector(".invalid")?.focus?.();
+    return ok;
+  }
+
+  function buildMsg() {
+    const goal = goalEl && goalEl.value.trim();
+    return "Здравствуйте! Заявка с сайта VetraEstate:\n" +
+      "Имя: " + nameEl.value.trim() + "\nТелефон: " + phoneEl.value.trim() +
+      (goal ? "\nЗапрос: " + goal : "");
+  }
+
+  async function send(channel) {
+    if (!validate()) return;
+    const msg = buildMsg();
+    if (channel === "telegram") {
+      let copied = false;
+      try { await navigator.clipboard.writeText(msg); copied = true; } catch (e) {}
+      window.open("https://t.me/" + TG_USER, "_blank");
+      toast(copied
+        ? "Заявка скопирована — вставьте её в чат с менеджером в Telegram"
+        : "Открываем Telegram — напишите менеджеру вашу заявку");
+    } else {
+      window.open("https://wa.me/" + WA_PHONE + "?text=" + encodeURIComponent(msg), "_blank");
+      toast("Открываем WhatsApp — нажмите «Отправить» в мессенджере");
+    }
+    form.reset();
+  }
+
+  form.addEventListener("submit", (e) => { e.preventDefault(); send("whatsapp"); });
+  form.querySelectorAll(".lead-send").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      if (btn.dataset.channel === "telegram") { e.preventDefault(); send("telegram"); }
+    });
+  });
+  form.querySelectorAll("input").forEach((el) =>
+    el.addEventListener("input", () => el.classList.remove("invalid")));
+})();
+
+/* ════════════════════════════════════════════════════════
+   АНИМАЦИЯ КАРТИНОК — появление при скролле + лайтбокс
+   ════════════════════════════════════════════════════════ */
+(function () {
+  // Лайтбокс для галереи объектов (появление картинок — через CSS)
+  const lb = document.getElementById("lightbox");
+  const grid = document.querySelector(".horizon-gallery .gallery-grid");
+  if (!lb || !grid) return;
+  const gimgs = Array.prototype.slice.call(grid.querySelectorAll("img"));
+  if (!gimgs.length) return;
+  const lbImg = lb.querySelector(".lightbox-img");
+  const closeBtn = lb.querySelector(".lightbox-close");
+  const prevBtn = lb.querySelector(".lightbox-prev");
+  const nextBtn = lb.querySelector(".lightbox-next");
+  let idx = 0;
+
+  function show(i) {
+    idx = (i + gimgs.length) % gimgs.length;
+    lbImg.src = gimgs[idx].src;
+    lbImg.alt = gimgs[idx].alt || "";
+  }
+  function open(i) {
+    show(i);
+    lb.classList.add("open");
+    lb.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+  function close() {
+    lb.classList.remove("open");
+    lb.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+  gimgs.forEach((img, i) => img.addEventListener("click", () => open(i)));
+  closeBtn.addEventListener("click", close);
+  prevBtn.addEventListener("click", () => show(idx - 1));
+  nextBtn.addEventListener("click", () => show(idx + 1));
+  lb.addEventListener("click", (e) => { if (e.target === lb) close(); });
+  document.addEventListener("keydown", (e) => {
+    if (!lb.classList.contains("open")) return;
+    if (e.key === "Escape") close();
+    else if (e.key === "ArrowLeft") show(idx - 1);
+    else if (e.key === "ArrowRight") show(idx + 1);
   });
 })();
