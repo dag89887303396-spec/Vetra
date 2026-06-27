@@ -7,6 +7,8 @@
     "dev": "remotion studio",
     "render": "remotion render",
     "prepare:clips": "node prepare-clips.mjs",
+    "enhance:reel": "node enhance-reel.mjs",
+    "render:reel": "remotion render ReelEdit out/reel.mp4",
     "transcribe": "node transcribe.mjs",
     "render:all": "node render-all.mjs",
     "bundle": "remotion bundle",
