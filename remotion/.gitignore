@@ -1,0 +1,9 @@
+node_modules/
+out/
+build/
+.remotion/
+whisper.cpp/
+yt-dlp
+public/source.mp4
+public/clips/
+public/captions/

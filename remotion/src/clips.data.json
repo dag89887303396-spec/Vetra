@@ -1,0 +1,8 @@
+{
+  "orientation": "horizontal",
+  "source": "https://www.youtube.com/live/pUAQaFSscJk",
+  "clipCount": 10,
+  "clipLength": 55,
+  "_comment": "STANDARD: 10 clean 16:9 clips, each <1 min, NO subtitles. Leave \"clips\" empty and prepare-clips.mjs auto-slices `clipCount` evenly-spaced clips of up to `clipLength`s across the source. To override, add explicit {id,title,start,end} entries to \"clips\".",
+  "clips": []
+}

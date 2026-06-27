@@ -1,0 +1,60 @@
+name: Render highlight videos
+
+# Renders the Remotion compositions (the edited highlight videos) on a
+# GitHub-hosted runner and uploads the 5 mp4s as the `highlight-videos` artifact.
+#
+# MANUAL ONLY (workflow_dispatch). YouTube blocks anonymous yt-dlp from CI
+# runner IPs ("Sign in to confirm you're not a bot"), so the default render path
+# is LOCAL (see remotion/README.md). To use CI you must authenticate yt-dlp:
+# add a `YOUTUBE_COOKIES` repo secret (Netscape cookies.txt) and a step that
+# writes it to a file + passes `--cookies` (and installs a JS runtime, e.g.
+# deno) — then trigger this workflow from the Actions tab.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: remotion
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: remotion/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install ffmpeg + yt-dlp
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+          sudo chmod a+rx /usr/local/bin/yt-dlp
+          yt-dlp --version
+
+      - name: Install Chrome Headless Shell for Remotion
+        run: npx remotion browser ensure
+
+      - name: Download source + cut clean clips
+        run: npm run prepare:clips
+
+      - name: Transcribe clips (Whisper) for captions
+        run: npm run transcribe
+
+      - name: Render all highlight videos
+        run: npm run render:all
+
+      - name: Upload rendered videos
+        uses: actions/upload-artifact@v4
+        with:
+          name: highlight-videos
+          path: remotion/out/*.mp4
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,27 @@
+{
+  "_comment": "Vertical 9:16 Reel overlay editor (NON-generative). The original video is never altered — captions, motion graphics and appearance SFX are layered on top with Remotion, after enhance-reel.mjs cleans the picture/audio with ffmpeg. Tweak caption start/end (seconds) to match the speech, and list which words to highlight yellow.",
+  "videoSrc": "reel/enhanced.mp4",
+  "sfxSrc": "sfx/whoosh.wav",
+  "title": "ЖК «Новый Горизонт»",
+  "fps": 30,
+  "captions": [
+    {
+      "text": "Прямо сейчас идёт заливка подушки",
+      "start": 0.6,
+      "end": 4.2,
+      "highlight": ["заливка", "подушки"]
+    },
+    {
+      "text": "26-го блока ЖК «Новый Горизонт»",
+      "start": 4.4,
+      "end": 8.2,
+      "highlight": ["Новый", "Горизонт"]
+    },
+    {
+      "text": "И всё ещё действует предложение с минимальным взносом и рассрочкой на 60 месяцев",
+      "start": 8.4,
+      "end": 14.5,
+      "highlight": ["минимальным", "взносом", "60", "месяцев"]
+    }
+  ]
+}
