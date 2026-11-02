@@ -1,0 +1,11 @@
+[{"t": 0.50, "type": "whoosh", "len": 0.5, "notes": "VETRA ESTATE flies in from the left, lands ~0.92"},
+ {"t": 1.40, "type": "pop", "g": 0.6, "notes": "subtitle fades in"},
+ {"t": 3.00, "type": "wipe", "len": 0.5, "notes": "wipe-left transition to orange scene"},
+ {"t": 3.80, "type": "whoosh", "len": 0.8, "notes": "white bar crosses right->left"},
+ {"t": 4.70, "type": "pop", "notes": "word NOVYY appears"},
+ {"t": 5.00, "type": "pop", "notes": "word GORIZONT appears"},
+ {"t": 5.30, "type": "pop", "notes": "2026 appears"},
+ {"t": 6.00, "type": "wipe", "len": 0.5, "notes": "slide-left transition to logo scene"},
+ {"t": 6.60, "type": "hit", "g": 0.8, "notes": "logo V scales up"},
+ {"t": 6.75, "type": "chime", "g": 0.7, "notes": "logo settles"},
+ {"t": 7.20, "type": "pop", "g": 0.5, "notes": "url fades in"}]

@@ -1,0 +1,11 @@
+interface:
+  display_name: "Video Sound Design"
+  short_description: "Real, licence-checked SFX for videos, text animations and transitions"
+  default_prompt: "Sound-design this video with real, commercially licensed sound effects; keep the voice, music and picture quality."
+policy:
+  allow_implicit_invocation: true
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "earshot"
+      description: "Earshot: listening tools (describe, match, rank, find, timeline, sheet, critique) for sound files and films"

@@ -1,0 +1,21 @@
+{
+ "video": "~/vsd-test/test_promo.mp4",
+ "keep_audio": "yes",
+ "cues": [
+  {"t": 0.92, "label": "title VETRA ESTATE flies in (lands 0.92)", "file": "~/.agents/sfx-library/openverse/impact/thunder__7a5eac0d.ogg", "role": "whoosh",
+   "slice": [4.55, 1.0], "reverse": true, "fit_dur": 0.55, "anchor": "end", "highpass": 220, "lowpass": 7000, "pan": -0.2},
+  {"t": 1.40, "label": "subtitle fades in", "uisfx": "select", "pack": "studio", "gain_db": -4},
+  {"t": 3.30, "label": "wipe-left transition", "file": "~/.agents/sfx-library/openverse/impact/thunder__7a5eac0d.ogg", "role": "whoosh",
+   "slice": [9.2, 0.9], "reverse": true, "fit_dur": 0.5, "anchor": "end", "highpass": 300, "lowpass": 6000, "gain_db": -3},
+  {"t": 4.40, "label": "white bar crosses right->left", "file": "~/.agents/sfx-library/openverse/impact/thunder__7a5eac0d.ogg", "role": "whoosh",
+   "slice": [10.4, 0.8], "reverse": true, "anchor": "end", "highpass": 400, "pan": 0.4, "gain_db": -6},
+  {"t": 4.70, "label": "word NOVYY", "uisfx": "select", "pack": "studio", "gain_db": -2, "pitch": 0},
+  {"t": 5.00, "label": "word GORIZONT", "uisfx": "select", "pack": "studio", "gain_db": -2, "pitch": 2},
+  {"t": 5.30, "label": "2026", "uisfx": "select", "pack": "studio", "gain_db": -1, "pitch": 4},
+  {"t": 6.30, "label": "slide-left transition", "file": "~/.agents/sfx-library/openverse/impact/thunder__7a5eac0d.ogg", "role": "whoosh",
+   "slice": [0.4, 0.9], "reverse": true, "fit_dur": 0.5, "anchor": "end", "highpass": 300, "lowpass": 6000, "gain_db": -3},
+  {"t": 6.62, "label": "logo V scales up (hit)", "file": "~/.agents/sfx-library/openverse/impact/thunder__7a5eac0d.ogg", "role": "hit", "slice": [4.6, 2.2], "anchor": "arrive",
+   "gain_db": -2, "layers": [{"dt": 0.15, "uisfx": "achievement", "pack": "studio", "gain_db": -5}]},
+  {"t": 7.20, "label": "url fades in", "uisfx": "select", "pack": "studio", "gain_db": -6}
+ ]
+}

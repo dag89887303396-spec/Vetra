@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Builds the 9 s test promo: text fly-in, subtitle fade, wipe, moving bar, word pops, slide, logo scale-up,
+# with a synthetic music pad and an espeak-ng Russian voice-over (both are only stand-ins for the author's audio).
+set -e; OUT="${1:-test_promo.mp4}"; T=$(mktemp -d); cd "$T"; F=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
+espeak-ng -v ru -s 150 -w v1.wav "Ветра Эстейт. Недвижимость премиум класса."
+espeak-ng -v ru -s 150 -w v2.wav "Новый горизонт вашей жизни."
+ffmpeg -y -v error -f lavfi -i color=c=0x0d1b2a:s=1280x720:r=30:d=3.5 -vf "drawtext=fontfile=$F:text='VETRA ESTATE':fontsize=96:fontcolor=white:y=280:x='if(lt(t,0.5),-900,min((w-tw)/2,-900+(t-0.5)*2600))',drawtext=fontfile=$F:text='premium real estate':fontsize=40:fontcolor=0xe0b060:x=(w-tw)/2:y=410:alpha='clip((t-1.4)/0.4,0,1)'" -c:v libx264 -crf 16 -pix_fmt yuv420p a.mp4
+ffmpeg -y -v error -f lavfi -i color=c=0xc8642a:s=1280x720:r=30:d=3.5 -vf "drawbox=x='if(lt(t,0.8),1400,1400-(t-0.8)*2000)':y=520:w=220:h=60:color=white@0.9:t=fill,drawtext=fontfile=$F:text='НОВЫЙ':fontsize=80:fontcolor=white:x=180:y=260:enable='gte(t,1.7)',drawtext=fontfile=$F:text='ГОРИЗОНТ':fontsize=80:fontcolor=white:x=520:y=260:enable='gte(t,2.0)',drawtext=fontfile=$F:text='2026':fontsize=80:fontcolor=0x0d1b2a:x=1000:y=260:enable='gte(t,2.3)'" -c:v libx264 -crf 16 -pix_fmt yuv420p b.mp4
+ffmpeg -y -v error -f lavfi -i color=c=0x101010:s=1280x720:r=30:d=3.0 -vf "drawtext=fontfile=$F:text='V':fontcolor=0xe0b060:fontsize='if(lt(t,0.6),1,min(260,1+(t-0.6)*1300))':x=(w-tw)/2:y=(h-th)/2-40,drawtext=fontfile=$F:text='vetra.estate':fontsize=36:fontcolor=white:x=(w-tw)/2:y=560:alpha='clip((t-1.2)/0.3,0,1)'" -c:v libx264 -crf 16 -pix_fmt yuv420p c.mp4
+ffmpeg -y -v error -i a.mp4 -i b.mp4 -i c.mp4 -filter_complex "[0][1]xfade=transition=wipeleft:duration=0.5:offset=3.0[ab];[ab][2]xfade=transition=slideleft:duration=0.5:offset=6.0[v]" -map "[v]" -c:v libx264 -crf 16 -pix_fmt yuv420p -r 30 video.mp4
+ffmpeg -y -v error -f lavfi -i "aevalsrc='0.06*(sin(2*PI*220*t)+0.8*sin(2*PI*261.63*t)+0.7*sin(2*PI*329.63*t)+0.4*sin(2*PI*110*t))*(0.75+0.25*sin(2*PI*2*t))|0.06*(sin(2*PI*220.5*t)+0.8*sin(2*PI*262*t)+0.7*sin(2*PI*329.2*t)+0.4*sin(2*PI*110*t))*(0.75+0.25*sin(2*PI*2*t))':s=48000:d=9" -af "afade=t=in:d=0.5,afade=t=out:st=8.0:d=1.0" music.wav
+ffmpeg -y -v error -i music.wav -i v1.wav -i v2.wav -filter_complex "[1]aresample=48000,adelay=900|900,pan=stereo|c0=c0|c1=c0[a];[2]aresample=48000,adelay=6800|6800,pan=stereo|c0=c0|c1=c0[b];[0][a][b]amix=inputs=3:normalize=0[m]" -map "[m]" -c:a pcm_s16le mix.wav
+cd - >/dev/null; ffmpeg -y -v error -i "$T/video.mp4" -i "$T/mix.wav" -map 0:v -map 1:a -c:v copy -c:a aac -b:a 192k -shortest "$OUT"; rm -rf "$T"; echo "$OUT"

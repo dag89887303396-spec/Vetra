@@ -1,0 +1,45 @@
+{
+ "video": {
+  "original": {
+   "codec_name": "h264",
+   "width": 1280,
+   "height": 720,
+   "pix_fmt": "yuv420p",
+   "r_frame_rate": "30/1",
+   "bit_rate": "92648",
+   "nb_read_packets": "270"
+  },
+  "result": {
+   "codec_name": "h264",
+   "width": 1280,
+   "height": 720,
+   "pix_fmt": "yuv420p",
+   "r_frame_rate": "30/1",
+   "bit_rate": "92648",
+   "nb_read_packets": "270"
+  },
+  "same_format": true,
+  "bit_identical": true
+ },
+ "base_full": {
+  "corr": 1.0,
+  "level_diff_db": -0.05
+ },
+ "base_voice_band": {
+  "corr": 1.0,
+  "level_diff_db": -0.05
+ },
+ "loudness": {
+  "original": {
+   "lufs": -18.9,
+   "lra": 5.3,
+   "true_peak_db": -0.8
+  },
+  "result": {
+   "lufs": -18.8,
+   "lra": 4.8,
+   "true_peak_db": -1.4
+  }
+ },
+ "ok": true
+}
