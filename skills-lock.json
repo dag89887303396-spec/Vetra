@@ -1,6 +1,30 @@
 {
   "version": 2,
   "skills": {
+    "cut-mistakes": {
+      "source": "nateherkai/herk-edit-kit",
+      "commit": "10511e5af86fc47756ea89803b397422e2d89284",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/cut-mistakes/SKILL.md",
+      "computedHash": "f7886e411efb7ec0cad51bcda89818e02040a5a2c567c6b622d14cf239457cf2",
+      "installMode": "copy"
+    },
+    "cut-silences": {
+      "source": "nateherkai/herk-edit-kit",
+      "commit": "10511e5af86fc47756ea89803b397422e2d89284",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/cut-silences/SKILL.md",
+      "computedHash": "f91a368ac3ad9c2f65c1db08f2dab687bf5b6f68163e48b200e95a001f9a234c",
+      "installMode": "copy"
+    },
+    "edit-video": {
+      "source": "nateherkai/herk-edit-kit",
+      "commit": "10511e5af86fc47756ea89803b397422e2d89284",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/edit-video/SKILL.md",
+      "computedHash": "59e09c5d9026482cb8f4511c38711e12b7b3acec515b3efe65fd1e54af53411c",
+      "installMode": "copy"
+    },
     "hyperframes": {
       "source": "heygen-com/hyperframes",
       "commit": "9797faea05944a260547d86a5a5b6a0ed89ad982",
@@ -22,12 +46,28 @@
       "skillPath": "skills/hyperframes-registry/SKILL.md",
       "computedHash": "a3c816f09a2ff43bc1502983a68c3fb4e2bb40c6b70dc065d4c11bd91cfa8740"
     },
+    "hyperframes-video-beats": {
+      "source": "nateherkai/herk-edit-kit",
+      "commit": "10511e5af86fc47756ea89803b397422e2d89284",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/hyperframes-video-beats/SKILL.md",
+      "computedHash": "616ccaebff1c00cb6fd4db78bee8612022d6ce9fe32d5d74edf4765d8bfaaa63",
+      "installMode": "copy"
+    },
     "media-use": {
       "source": "heygen-com/hyperframes",
       "commit": "9797faea05944a260547d86a5a5b6a0ed89ad982",
       "sourceType": "github",
       "skillPath": "skills/media-use/SKILL.md",
       "computedHash": "5bb15ce0e6c1768702ffeb0b169e6aadecc67a9ab3fddae31f9b87dcf67192cd"
+    },
+    "motionmaxxing": {
+      "source": "Tejashmakwana/motionmaxxing",
+      "commit": "8c8ec0f2a6f6c9a0da15cd24f7b1298ab298368c",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "7b72654564c77dc2c0faee415835589529bc38aa6ae0d9e1100a51fed2c26d3e",
+      "installMode": "copy"
     },
     "remotion-best-practices": {
       "source": "remotion-dev/skills",
@@ -127,12 +167,44 @@
       "skillPath": "skills/reverse-any-video/SKILL.md",
       "computedHash": "782fcf46450fc859611c2466f744df02bc890b3f88459f8489031b0752d8731b"
     },
+    "short-form-edit": {
+      "source": "nateherkai/herk-edit-kit",
+      "commit": "10511e5af86fc47756ea89803b397422e2d89284",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/short-form-edit/SKILL.md",
+      "computedHash": "d2df7ed8744df6ad65bc23b1814c2b2ef7cd39acdb3e2abe65d70dfc13eded61",
+      "installMode": "copy"
+    },
+    "style-library": {
+      "source": "nateherkai/herk-edit-kit",
+      "commit": "10511e5af86fc47756ea89803b397422e2d89284",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/style-library/SKILL.md",
+      "computedHash": "93d40d365f8eb6bfcf6bca9ca9c5a5be2a5f16f3302ae59ad6c7c3bfbd9c1049",
+      "installMode": "copy"
+    },
     "style-sampling": {
       "source": "heygen-com/hyperframes",
       "commit": "9797faea05944a260547d86a5a5b6a0ed89ad982",
       "sourceType": "github",
       "skillPath": "skills/style-sampling/SKILL.md",
       "computedHash": "86da7c4f9b678b950c43c9b1ca323ac11e761be91d8ad14feb3cb9043926d20d"
+    },
+    "video-storytelling": {
+      "source": "nateherkai/herk-edit-kit",
+      "commit": "10511e5af86fc47756ea89803b397422e2d89284",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/video-storytelling/SKILL.md",
+      "computedHash": "fbf85717c7264d48c959ea05b5b0f949bea8aeef8c5a94eaed354ec6ae0bb4ee",
+      "installMode": "copy"
+    },
+    "video-use": {
+      "source": "browser-use/video-use",
+      "commit": "43cfc566833548093455c9d4a46bd69913b7e552",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "51abac63c2a9189dc482cd9ae2674dd028e7e7a85e2439fc7e524cf553f867fc",
+      "installMode": "copy"
     }
   }
 }
